@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Search, Eye, Mail, Phone, MapPin, Calendar, ShoppingBag } from "lucide-react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Skeleton } from "@/components/ui/skeleton"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { usePagination } from "@/hooks/use-pagination"
@@ -120,6 +121,7 @@ const initialCustomers: Customer[] = [
 export default function CustomersPage() {
   const router = useRouter()
   const [customers] = useState<Customer[]>(initialCustomers)
+  const [isLoading, setIsLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null)
   const [isDetailsOpen, setIsDetailsOpen] = useState(false)
@@ -144,6 +146,13 @@ export default function CustomersPage() {
   const handleFilterChange = () => {
     setCurrentPage(1)
   }
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false)
+    }, 2000)
+    return () => clearTimeout(timer)
+  }, [])
 
   const handleViewDetails = (customer: Customer) => {
     setSelectedCustomer(customer)
@@ -195,55 +204,87 @@ export default function CustomersPage() {
               </tr>
             </thead>
             <tbody>
-              {currentCustomers.map((customer) => (
-                <tr key={customer.id} className="border-b last:border-0 hover:bg-gray-50">
-                  <td className="py-3 px-4">
-                    <div className="flex items-center gap-3">
-                      <Avatar>
-                        <AvatarFallback className="bg-emerald-100 text-emerald-700 font-medium">
-                          {getInitials(customer.name)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="font-medium text-gray-900">{customer.name}</p>
-                        <p className="text-sm text-gray-500">Joined {customer.joinDate}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="py-3 px-4">
-                    <div className="space-y-1">
-                      <p className="text-sm text-gray-600 flex items-center gap-2">
-                        <Mail className="w-4 h-4" />
-                        {customer.email}
-                      </p>
-                      <p className="text-sm text-gray-600 flex items-center gap-2">
-                        <Phone className="w-4 h-4" />
-                        {customer.phone}
-                      </p>
-                    </div>
-                  </td>
-                  <td className="py-3 px-4">
-                    <Link
-                      href={`/dashboard/orders?customer=${encodeURIComponent(customer.name)}`}
-                      className="font-medium text-emerald-600 hover:text-emerald-700 hover:underline cursor-pointer"
-                    >
-                      {customer.totalOrders}
-                    </Link>
-                  </td>
-                  <td className="py-3 px-4">
-                    <p className="font-semibold text-gray-900">${customer.totalSpent.toFixed(2)}</p>
-                  </td>
-                  <td className="py-3 px-4">
-                    <StatusBadge status={customer.status} />
-                  </td>
-                  <td className="py-3 px-4 text-right">
-                    <Button variant="ghost" size="sm" onClick={() => handleViewDetails(customer)}>
-                      <Eye className="w-4 h-4 mr-2" />
-                      View
-                    </Button>
-                  </td>
-                </tr>
-              ))}
+              {isLoading
+                ? Array.from({ length: 3 }).map((_, index) => (
+                    <tr key={index} className="border-b last:border-0 hover:bg-gray-50">
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-3">
+                          <Skeleton className="h-10 w-10 rounded-full" />
+                          <div>
+                            <Skeleton className="h-4 w-32 mb-1" />
+                            <Skeleton className="h-3 w-24" />
+                          </div>
+                        </div>
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="space-y-1">
+                          <Skeleton className="h-4 w-32 mb-1" />
+                          <Skeleton className="h-4 w-28" />
+                        </div>
+                      </td>
+                      <td className="py-3 px-4">
+                        <Skeleton className="h-4 w-8" />
+                      </td>
+                      <td className="py-3 px-4">
+                        <Skeleton className="h-4 w-16" />
+                      </td>
+                      <td className="py-3 px-4">
+                        <Skeleton className="h-6 w-16 rounded-full" />
+                      </td>
+                      <td className="py-3 px-4 text-right">
+                        <Skeleton className="h-8 w-16 ml-auto rounded" />
+                      </td>
+                    </tr>
+                  ))
+                : currentCustomers.map((customer) => (
+                    <tr key={customer.id} className="border-b last:border-0 hover:bg-gray-50">
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-3">
+                          <Avatar>
+                            <AvatarFallback className="bg-emerald-100 text-emerald-700 font-medium">
+                              {getInitials(customer.name)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <p className="font-medium text-gray-900">{customer.name}</p>
+                            <p className="text-sm text-gray-500">Joined {customer.joinDate}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="space-y-1">
+                          <p className="text-sm text-gray-600 flex items-center gap-2">
+                            <Mail className="w-4 h-4" />
+                            {customer.email}
+                          </p>
+                          <p className="text-sm text-gray-600 flex items-center gap-2">
+                            <Phone className="w-4 h-4" />
+                            {customer.phone}
+                          </p>
+                        </div>
+                      </td>
+                      <td className="py-3 px-4">
+                        <Link
+                          href={`/dashboard/orders?customer=${encodeURIComponent(customer.name)}`}
+                          className="font-medium text-emerald-600 hover:text-emerald-700 hover:underline cursor-pointer"
+                        >
+                          {customer.totalOrders}
+                        </Link>
+                      </td>
+                      <td className="py-3 px-4">
+                        <p className="font-semibold text-gray-900">${customer.totalSpent.toFixed(2)}</p>
+                      </td>
+                      <td className="py-3 px-4">
+                        <StatusBadge status={customer.status} />
+                      </td>
+                      <td className="py-3 px-4 text-right">
+                        <Button variant="ghost" size="sm" onClick={() => handleViewDetails(customer)}>
+                          <Eye className="w-4 h-4 mr-2" />
+                          View
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
             </tbody>
           </table>
         </div>

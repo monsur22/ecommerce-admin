@@ -2,8 +2,9 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
+import { Skeleton } from "@/components/ui/skeleton"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
@@ -105,6 +106,7 @@ const initialCategories: Category[] = [
 
 export default function CategoriesPage() {
   const [categories, setCategories] = useState<Category[]>(initialCategories)
+  const [isLoading, setIsLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [parentsOnly, setParentsOnly] = useState(false)
@@ -137,6 +139,13 @@ export default function CategoriesPage() {
   const handleFilterChange = () => {
     setCurrentPage(1)
   }
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false)
+    }, 2000)
+    return () => clearTimeout(timer)
+  }, [])
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
@@ -372,44 +381,74 @@ export default function CategoriesPage() {
               </tr>
             </thead>
             <tbody>
-              {currentCategories.map((category) => (
-                <tr key={category.id} className="border-b hover:bg-gray-50">
-                  <td className="py-3 px-4">
-                    <input
-                      type="checkbox"
-                      checked={selectedIds.includes(category.id)}
-                      onChange={(e) => handleSelectOne(category.id, e.target.checked)}
-                      className="rounded border-gray-300"
-                    />
-                  </td>
-                  <td className="py-3 px-4 text-gray-600">{category.id}</td>
-                  <td className="py-3 px-4">
-                    <div className="w-10 h-10 flex items-center justify-center text-2xl">{category.icon}</div>
-                  </td>
-                  <td className="py-3 px-4 text-gray-900">{category.name}</td>
-                  <td className="py-3 px-4 text-gray-600">{category.description}</td>
-                  <td className="py-3 px-4">
-                    <Switch
-                      checked={category.published}
-                      onCheckedChange={() => togglePublished(category.id)}
-                      className="data-[state=checked]:bg-emerald-500"
-                    />
-                  </td>
-                  <td className="py-3 px-4">
-                    <div className="flex items-center gap-2">
-                      <button className="text-gray-500 hover:text-gray-700">
-                        <Eye className="w-5 h-5" />
-                      </button>
-                      <button className="text-gray-500 hover:text-gray-700" onClick={() => handleEdit(category)}>
-                        <Edit className="w-5 h-5" />
-                      </button>
-                      <button className="text-gray-500 hover:text-red-600" onClick={() => handleDelete(category.id)}>
-                        <Trash2 className="w-5 h-5" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {isLoading
+                ? Array.from({ length: 3 }).map((_, index) => (
+                    <tr key={index} className="border-b hover:bg-gray-50">
+                      <td className="py-3 px-4">
+                        <Skeleton className="h-4 w-4 rounded" />
+                      </td>
+                      <td className="py-3 px-4">
+                        <Skeleton className="h-4 w-12" />
+                      </td>
+                      <td className="py-3 px-4">
+                        <Skeleton className="h-10 w-10 text-2xl" />
+                      </td>
+                      <td className="py-3 px-4">
+                        <Skeleton className="h-4 w-32" />
+                      </td>
+                      <td className="py-3 px-4">
+                        <Skeleton className="h-4 w-48" />
+                      </td>
+                      <td className="py-3 px-4">
+                        <Skeleton className="h-6 w-11 rounded-full" />
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-2">
+                          <Skeleton className="w-5 h-5 rounded" />
+                          <Skeleton className="w-5 h-5 rounded" />
+                          <Skeleton className="w-5 h-5 rounded" />
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                : currentCategories.map((category) => (
+                    <tr key={category.id} className="border-b hover:bg-gray-50">
+                      <td className="py-3 px-4">
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.includes(category.id)}
+                          onChange={(e) => handleSelectOne(category.id, e.target.checked)}
+                          className="rounded border-gray-300"
+                        />
+                      </td>
+                      <td className="py-3 px-4 text-gray-600">{category.id}</td>
+                      <td className="py-3 px-4">
+                        <div className="w-10 h-10 flex items-center justify-center text-2xl">{category.icon}</div>
+                      </td>
+                      <td className="py-3 px-4 text-gray-900">{category.name}</td>
+                      <td className="py-3 px-4 text-gray-600">{category.description}</td>
+                      <td className="py-3 px-4">
+                        <Switch
+                          checked={category.published}
+                          onCheckedChange={() => togglePublished(category.id)}
+                          className="data-[state=checked]:bg-emerald-500"
+                        />
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-2">
+                          <button className="text-gray-500 hover:text-gray-700">
+                            <Eye className="w-5 h-5" />
+                          </button>
+                          <button className="text-gray-500 hover:text-gray-700" onClick={() => handleEdit(category)}>
+                            <Edit className="w-5 h-5" />
+                          </button>
+                          <button className="text-gray-500 hover:text-red-600" onClick={() => handleDelete(category.id)}>
+                            <Trash2 className="w-5 h-5" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
             </tbody>
           </table>
         </div>

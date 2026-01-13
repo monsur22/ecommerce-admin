@@ -1,13 +1,14 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Plus, Edit, Trash2, Search, Filter } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Skeleton } from "@/components/ui/skeleton"
 import { useStaff, type Role, type Module, type Permission } from "@/contexts/staff-context"
 
 const modules: Module[] = [
@@ -32,6 +33,14 @@ export default function RolesPage() {
     const [searchQuery, setSearchQuery] = useState("")
     const [isDialogOpen, setIsDialogOpen] = useState(false)
     const [editingRole, setEditingRole] = useState<Role | null>(null)
+    const [isLoading, setIsLoading] = useState(true)
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setIsLoading(false)
+        }, 2000)
+        return () => clearTimeout(timer)
+    }, [])
 
     // Form State
     const [roleName, setRoleName] = useState("")
@@ -134,21 +143,35 @@ export default function RolesPage() {
                             </tr>
                         </thead>
                         <tbody className="divide-y">
-                            {filteredRoles.map((role) => (
-                                <tr key={role.id} className="hover:bg-gray-50">
-                                    <td className="py-3 px-4 font-medium text-gray-900">{role.name}</td>
-                                    <td className="py-3 px-4">
-                                        <div className="flex items-center gap-2">
-                                            <button onClick={() => handleOpenDialog(role)} className="p-1 hover:bg-gray-100 rounded">
-                                                <Edit className="w-4 h-4 text-gray-600" />
-                                            </button>
-                                            <button onClick={() => handleDelete(role.id)} className="p-1 hover:bg-gray-100 rounded">
-                                                <Trash2 className="w-4 h-4 text-red-600" />
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
+                            {isLoading
+                                ? Array.from({ length: 3 }).map((_, index) => (
+                                    <tr key={index} className="hover:bg-gray-50">
+                                        <td className="py-3 px-4">
+                                            <Skeleton className="h-4 w-32" />
+                                        </td>
+                                        <td className="py-3 px-4">
+                                            <div className="flex items-center gap-2">
+                                                <Skeleton className="h-6 w-6 rounded" />
+                                                <Skeleton className="h-6 w-6 rounded" />
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))
+                                : filteredRoles.map((role) => (
+                                    <tr key={role.id} className="hover:bg-gray-50">
+                                        <td className="py-3 px-4 font-medium text-gray-900">{role.name}</td>
+                                        <td className="py-3 px-4">
+                                            <div className="flex items-center gap-2">
+                                                <button onClick={() => handleOpenDialog(role)} className="p-1 hover:bg-gray-100 rounded">
+                                                    <Edit className="w-4 h-4 text-gray-600" />
+                                                </button>
+                                                <button onClick={() => handleDelete(role.id)} className="p-1 hover:bg-gray-100 rounded">
+                                                    <Trash2 className="w-4 h-4 text-red-600" />
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
                             {filteredRoles.length === 0 && (
                                 <tr>
                                     <td colSpan={2} className="py-8 text-center text-gray-500">No roles found</td>

@@ -2,6 +2,14 @@
 
 import React, { createContext, useContext, useState } from "react"
 
+export interface PaymentTransaction {
+    id: string
+    amount: number
+    date: string
+    type: "PAYMENT" | "BILL"
+    note?: string
+}
+
 export interface Vendor {
     id: string
     name: string
@@ -11,7 +19,9 @@ export interface Vendor {
     logo: string
     status: "Active" | "Inactive" | "Blocked"
     description?: string
-    totalPaid: number // Amount paid to the vendor manually tracked
+    totalPaid: number
+    amountPayable: number
+    transactions: PaymentTransaction[]
 }
 
 interface VendorContextType {
@@ -20,6 +30,7 @@ interface VendorContextType {
     updateVendor: (vendor: Vendor) => void
     deleteVendor: (id: string) => void
     getVendorById: (id: string) => Vendor | undefined
+    addTransaction: (vendorId: string, transaction: PaymentTransaction) => void
 }
 
 const VendorContext = createContext<VendorContextType | undefined>(undefined)
@@ -35,6 +46,10 @@ const initialVendors: Vendor[] = [
         status: "Active",
         description: "Supplier of fresh organic vegetables and fruits.",
         totalPaid: 5000,
+        amountPayable: 1200,
+        transactions: [
+            { id: "t1", amount: 5000, date: "2025-12-01", type: "PAYMENT", note: "Initial payment" },
+        ],
     },
     {
         id: "2",
@@ -46,6 +61,8 @@ const initialVendors: Vendor[] = [
         status: "Active",
         description: "Premium electronic goods supplier.",
         totalPaid: 12500,
+        amountPayable: 4500,
+        transactions: [],
     },
     {
         id: "3",
@@ -57,6 +74,8 @@ const initialVendors: Vendor[] = [
         status: "Inactive",
         description: "Imported goods distributor.",
         totalPaid: 0,
+        amountPayable: 0,
+        transactions: [],
     },
 ]
 
@@ -64,7 +83,7 @@ export function VendorProvider({ children }: { children: React.ReactNode }) {
     const [vendors, setVendors] = useState<Vendor[]>(initialVendors)
 
     const addVendor = (vendor: Vendor) => {
-        setVendors((prev) => [...prev, vendor])
+        setVendors((prev) => [...prev, { ...vendor, transactions: vendor.transactions || [] }])
     }
 
     const updateVendor = (vendor: Vendor) => {
@@ -79,6 +98,32 @@ export function VendorProvider({ children }: { children: React.ReactNode }) {
         return vendors.find((v) => v.id === id)
     }
 
+    const addTransaction = (vendorId: string, transaction: PaymentTransaction) => {
+        setVendors((prev) =>
+            prev.map((vendor) => {
+                if (vendor.id !== vendorId) return vendor
+
+                const updatedTransactions = [transaction, ...(vendor.transactions || [])]
+                let newTotalPaid = vendor.totalPaid
+                let newAmountPayable = vendor.amountPayable
+
+                if (transaction.type === "PAYMENT") {
+                    newTotalPaid += transaction.amount
+                    newAmountPayable = Math.max(0, newAmountPayable - transaction.amount)
+                } else if (transaction.type === "BILL") {
+                    newAmountPayable += transaction.amount
+                }
+
+                return {
+                    ...vendor,
+                    totalPaid: newTotalPaid,
+                    amountPayable: newAmountPayable,
+                    transactions: updatedTransactions,
+                }
+            }),
+        )
+    }
+
     return (
         <VendorContext.Provider
             value={{
@@ -87,6 +132,7 @@ export function VendorProvider({ children }: { children: React.ReactNode }) {
                 updateVendor,
                 deleteVendor,
                 getVendorById,
+                addTransaction,
             }}
         >
             {children}

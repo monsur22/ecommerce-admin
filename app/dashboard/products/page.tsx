@@ -2,10 +2,11 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Skeleton } from "@/components/ui/skeleton"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
@@ -38,6 +39,7 @@ export default function ProductsPage() {
   const [selectedVendor, setSelectedVendor] = useState<string>("all")
   const [sortOption, setSortOption] = useState<string>("default")
   const [selectedProducts, setSelectedProducts] = useState<string[]>([])
+  const [isLoading, setIsLoading] = useState(true)
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [viewingProduct, setViewingProduct] = useState<Product | null>(null)
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
@@ -53,6 +55,7 @@ export default function ProductsPage() {
     sku: "",
     barcode: "",
     vendorId: "",
+    receiptNumber: "",
   })
   const [isBulkActionDialogOpen, setIsBulkActionDialogOpen] = useState(false)
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false)
@@ -110,6 +113,13 @@ export default function ProductsPage() {
     handleItemsPerPageChange,
   } = usePagination(filteredProducts, 10)
 
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false)
+    }, 2000)
+    return () => clearTimeout(timer)
+  }, [])
+
   // Reset pagination when filter changes
   const handleFilterChange = () => {
     setCurrentPage(1)
@@ -151,6 +161,7 @@ export default function ProductsPage() {
       sku: product.sku,
       barcode: product.barcode,
       vendorId: product.vendorId || "",
+      receiptNumber: product.receiptNumber || "",
     })
     setIsAddDialogOpen(true)
   }
@@ -184,12 +195,13 @@ export default function ProductsPage() {
       sku: formData.sku,
       barcode: formData.barcode,
       vendorId: formData.vendorId || undefined,
+      receiptNumber: formData.receiptNumber || undefined,
     }
 
     addProduct(newProduct)
     setIsAddDialogOpen(false)
     setUploadedImages([])
-    setFormData({ name: "", description: "", category: "", price: "", salePrice: "", stock: "", sku: "", barcode: "", vendorId: "" })
+    setFormData({ name: "", description: "", category: "", price: "", salePrice: "", stock: "", sku: "", barcode: "", vendorId: "", receiptNumber: "" })
   }
 
   const handleUpdate = () => {
@@ -215,19 +227,20 @@ export default function ProductsPage() {
       barcode: formData.barcode,
       image: uploadedImages[0] || editingProduct.image,
       vendorId: formData.vendorId || undefined,
+      receiptNumber: formData.receiptNumber || undefined,
     })
 
     setIsAddDialogOpen(false)
     setEditingProduct(null)
     setUploadedImages([])
-    setFormData({ name: "", description: "", category: "", price: "", salePrice: "", stock: "", sku: "", barcode: "", vendorId: "" })
+    setFormData({ name: "", description: "", category: "", price: "", salePrice: "", stock: "", sku: "", barcode: "", vendorId: "", receiptNumber: "" })
   }
 
   const closeDialog = () => {
     setIsAddDialogOpen(false)
     setEditingProduct(null)
     setUploadedImages([])
-    setFormData({ name: "", description: "", category: "", price: "", salePrice: "", stock: "", sku: "", barcode: "", vendorId: "" })
+    setFormData({ name: "", description: "", category: "", price: "", salePrice: "", stock: "", sku: "", barcode: "", vendorId: "", receiptNumber: "" })
   }
 
   const categories = [
@@ -544,6 +557,7 @@ export default function ProductsPage() {
                   />
                 </th>
                 <th className="text-left py-3 px-4 text-xs font-semibold text-gray-700 uppercase tracking-wider">Product Name</th>
+                <th className="text-left py-3 px-4 text-xs font-semibold text-gray-700 uppercase tracking-wider">Receipt No.</th>
                 <th className="text-left py-3 px-4 text-xs font-semibold text-gray-700 uppercase tracking-wider">Category</th>
                 <th className="text-left py-3 px-4 text-xs font-semibold text-gray-700 uppercase tracking-wider">Price</th>
                 <th className="text-left py-3 px-4 text-xs font-semibold text-gray-700 uppercase tracking-wider">Sale Price</th>
@@ -556,64 +570,112 @@ export default function ProductsPage() {
               </tr>
             </thead>
             <tbody>
-              {currentProducts.map((product) => (
-                <tr key={product.id} className="border-b last:border-0 hover:bg-gray-50">
-                  <td className="py-3 px-4">
-                    <Checkbox
-                      checked={selectedProducts.includes(product.id)}
-                      onCheckedChange={(checked) => handleSelectProduct(product.id, checked as boolean)}
-                    />
-                  </td>
-                  <td className="py-3 px-4">
-                    <div className="flex items-center gap-3">
-                      <img
-                        src={product.image || "/placeholder.svg"}
-                        alt={product.name}
-                        className="w-10 h-10 rounded object-cover"
-                      />
-                      <span className="font-medium text-gray-900">{product.name}</span>
-                    </div>
-                  </td>
-                  <td className="py-3 px-4 text-sm text-gray-600">{product.category}</td>
-                  <td className="py-3 px-4 text-sm font-semibold text-gray-900">${product.price.toFixed(2)}</td>
-                  <td className="py-3 px-4 text-sm font-semibold text-gray-900">${product.salePrice.toFixed(2)}</td>
-                  <td className="py-3 px-4 text-sm text-gray-600">{product.stock}</td>
-                  <td className="py-3 px-4 text-sm text-gray-600">
-                    {product.vendorId ? (
-                      <Link href={`/dashboard/vendors/${product.vendorId}`} className="text-emerald-600 hover:underline">
-                        {vendors.find(v => v.id === product.vendorId)?.name || "Unknown"}
-                      </Link>
-                    ) : (
-                      <span className="text-gray-400">No Vendor</span>
-                    )}
-                  </td>
-                  <td className="py-3 px-4">
-                    <StatusBadge status={product.status} />
-                  </td>
-                  <td className="py-3 px-4 text-center">
-                    <button onClick={() => setViewingProduct(product)} className="text-gray-400 hover:text-emerald-600">
-                      <Eye className="w-5 h-5" />
-                    </button>
-                  </td>
-                  <td className="py-3 px-4 text-center">
-                    <Switch
-                      checked={product.published}
-                      onCheckedChange={() => handleTogglePublished(product.id)}
-                      className="data-[state=checked]:bg-emerald-600"
-                    />
-                  </td>
-                  <td className="py-3 px-4">
-                    <div className="flex items-center justify-center gap-2">
-                      <button onClick={() => handleEdit(product)} className="text-gray-400 hover:text-emerald-600">
-                        <Edit2 className="w-4 h-4" />
-                      </button>
-                      <button onClick={() => handleDelete(product.id)} className="text-gray-400 hover:text-red-600">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {isLoading
+                ? Array.from({ length: 3 }).map((_, index) => (
+                    <tr key={index} className="border-b last:border-0 hover:bg-gray-50">
+                      <td className="py-3 px-4">
+                        <Skeleton className="h-4 w-4 rounded" />
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-3">
+                          <Skeleton className="h-10 w-10 rounded object-cover" />
+                          <Skeleton className="h-4 w-32" />
+                        </div>
+                      </td>
+                      <td className="py-3 px-4">
+                        <Skeleton className="h-4 w-24" />
+                      </td>
+                      <td className="py-3 px-4">
+                        <Skeleton className="h-4 w-20" />
+                      </td>
+                      <td className="py-3 px-4">
+                        <Skeleton className="h-4 w-16" />
+                      </td>
+                      <td className="py-3 px-4">
+                        <Skeleton className="h-4 w-16" />
+                      </td>
+                      <td className="py-3 px-4">
+                        <Skeleton className="h-4 w-12" />
+                      </td>
+                      <td className="py-3 px-4">
+                        <Skeleton className="h-4 w-24" />
+                      </td>
+                      <td className="py-3 px-4">
+                        <Skeleton className="h-6 w-20 rounded-full" />
+                      </td>
+                      <td className="py-3 px-4 text-center">
+                        <Skeleton className="h-5 w-5 mx-auto" />
+                      </td>
+                      <td className="py-3 px-4 text-center">
+                        <Skeleton className="h-6 w-11 rounded-full mx-auto" />
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="flex items-center justify-center gap-2">
+                          <Skeleton className="h-4 w-4" />
+                          <Skeleton className="h-4 w-4" />
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                : currentProducts.map((product) => (
+                    <tr key={product.id} className="border-b last:border-0 hover:bg-gray-50">
+                      <td className="py-3 px-4">
+                        <Checkbox
+                          checked={selectedProducts.includes(product.id)}
+                          onCheckedChange={(checked) => handleSelectProduct(product.id, checked as boolean)}
+                        />
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-3">
+                          <img
+                            src={product.image || "/placeholder.svg"}
+                            alt={product.name}
+                            className="w-10 h-10 rounded object-cover"
+                          />
+                          <span className="font-medium text-gray-900">{product.name}</span>
+                        </div>
+                      </td>
+                      <td className="py-3 px-4 text-sm text-gray-600">{product.receiptNumber || "-"}</td>
+                      <td className="py-3 px-4 text-sm text-gray-600">{product.category}</td>
+                      <td className="py-3 px-4 text-sm font-semibold text-gray-900">${product.price.toFixed(2)}</td>
+                      <td className="py-3 px-4 text-sm font-semibold text-gray-900">${product.salePrice.toFixed(2)}</td>
+                      <td className="py-3 px-4 text-sm text-gray-600">{product.stock}</td>
+                      <td className="py-3 px-4 text-sm text-gray-600">
+                        {product.vendorId ? (
+                          <Link href={`/dashboard/vendors/${product.vendorId}`} className="text-emerald-600 hover:underline">
+                            {vendors.find((v) => v.id === product.vendorId)?.name || "Unknown"}
+                          </Link>
+                        ) : (
+                          <span className="text-gray-400">No Vendor</span>
+                        )}
+                      </td>
+                      <td className="py-3 px-4">
+                        <StatusBadge status={product.status} />
+                      </td>
+                      <td className="py-3 px-4 text-center">
+                        <button onClick={() => setViewingProduct(product)} className="text-gray-400 hover:text-emerald-600">
+                          <Eye className="w-5 h-5" />
+                        </button>
+                      </td>
+                      <td className="py-3 px-4 text-center">
+                        <Switch
+                          checked={product.published}
+                          onCheckedChange={() => handleTogglePublished(product.id)}
+                          className="data-[state=checked]:bg-emerald-600"
+                        />
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="flex items-center justify-center gap-2">
+                          <button onClick={() => handleEdit(product)} className="text-gray-400 hover:text-emerald-600">
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+                          <button onClick={() => handleDelete(product.id)} className="text-gray-400 hover:text-red-600">
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
             </tbody>
           </table>
         </div>
@@ -635,7 +697,7 @@ export default function ProductsPage() {
       />
 
       <Dialog open={isAddDialogOpen} onOpenChange={closeDialog}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-2xl">{editingProduct ? "Edit Product" : "Add Product"}</DialogTitle>
             <DialogDescription>
@@ -643,7 +705,7 @@ export default function ProductsPage() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-6 py-4">
+          <div className="space-y-6 py-4 grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="name">Product Title/Name</Label>
               <Input
@@ -654,66 +716,11 @@ export default function ProductsPage() {
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="description">Product Description</Label>
-              <Textarea
-                id="description"
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Product Description"
-                rows={4}
-                className="resize-none"
-              />
-            </div>
+            
 
-            <div className="space-y-2">
-              <Label>Product Images</Label>
-              <div
-                onDragEnter={handleDragEnter}
-                onDragLeave={handleDragLeave}
-                onDragOver={handleDragOver}
-                onDrop={handleDrop}
-                className={`border-2 border-dashed rounded-lg p-12 text-center transition-colors cursor-pointer ${isDragging ? "border-emerald-500 bg-emerald-50" : "border-gray-300 hover:border-emerald-500"
-                  }`}
-              >
-                <input
-                  type="file"
-                  id="file-upload"
-                  accept="image/jpeg,image/png,image/webp"
-                  multiple
-                  onChange={handleFileInput}
-                  className="hidden"
-                />
-                <label htmlFor="file-upload" className="cursor-pointer">
-                  <CloudUpload className="w-12 h-12 mx-auto mb-4 text-emerald-600" />
-                  <p className="text-gray-600 font-medium mb-1">Drag your images here</p>
-                  <p className="text-sm text-gray-400">(Only *.jpeg, *.webp and *.png images will be accepted)</p>
-                </label>
-              </div>
+            
 
-              {uploadedImages.length > 0 && (
-                <div className="grid grid-cols-4 gap-4 mt-4">
-                  {uploadedImages.map((image, index) => (
-                    <div key={index} className="relative group">
-                      <img
-                        src={image || "/placeholder.svg"}
-                        alt={`Upload ${index + 1}`}
-                        className="w-full h-24 object-cover rounded-lg border"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => removeImage(index)}
-                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
+            <>
               <div className="space-y-2">
                 <Label htmlFor="sku">Product SKU</Label>
                 <Input
@@ -733,64 +740,76 @@ export default function ProductsPage() {
                   placeholder="Product Barcode"
                 />
               </div>
-            </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="category">Category</Label>
-              <Select
-                value={formData.category}
-                onValueChange={(value) => setFormData({ ...formData, category: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select Category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {categories.map((cat) => (
-                    <SelectItem key={cat.value} value={cat.value}>
-                      <div className="flex items-center gap-2">
-                        <span>{cat.icon}</span>
-                        <span>{cat.value}</span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+              <div className="space-y-2">
+                <Label htmlFor="receiptNumber">Receipt Number</Label>
+                <Input
+                  id="receiptNumber"
+                  value={formData.receiptNumber}
+                  onChange={(e) => setFormData({ ...formData, receiptNumber: e.target.value })}
+                  placeholder="Receipt Number (Optional)"
+                />
+              </div>
+            </>
 
-            <div className="space-y-2">
-              <Label htmlFor="vendor">Vendor</Label>
-              <Select
-                value={formData.vendorId || undefined}
-                onValueChange={(value) => setFormData({ ...formData, vendorId: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select Vendor (Optional)" />
-                </SelectTrigger>
-                <SelectContent>
-                  {vendors.map((vendor) => (
-                    <SelectItem key={vendor.id} value={vendor.id}>
-                      {vendor.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="category">Category</Label>
+                <Select
+                  value={formData.category}
+                  onValueChange={(value) => setFormData({ ...formData, category: value })}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select Category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map((cat) => (
+                      <SelectItem key={cat.value} value={cat.value}>
+                        <div className="flex items-center gap-2">
+                          <span>{cat.icon}</span>
+                          <span>{cat.value}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="defaultCategory">Default Category</Label>
-              <Select>
-                <SelectTrigger>
-                  <SelectValue placeholder="Default Category" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="general">General</SelectItem>
-                  <SelectItem value="featured">Featured</SelectItem>
-                  <SelectItem value="trending">Trending</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+              <div className="space-y-2">
+                <Label htmlFor="vendor">Vendor</Label>
+                <Select
+                  value={formData.vendorId || undefined}
+                  onValueChange={(value) => setFormData({ ...formData, vendorId: value })}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select Vendor (Optional)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {vendors.map((vendor) => (
+                      <SelectItem key={vendor.id} value={vendor.id}>
+                        {vendor.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="defaultCategory">Default Category</Label>
+                <Select>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Default Category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="general">General</SelectItem>
+                    <SelectItem value="featured">Featured</SelectItem>
+                    <SelectItem value="trending">Trending</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </>
+
+            <>
               <div className="space-y-2">
                 <Label htmlFor="price">Product Price</Label>
                 <div className="relative">
@@ -831,9 +850,77 @@ export default function ProductsPage() {
                   placeholder="0"
                 />
               </div>
-            </div>
+            </>
           </div>
+           <div className="space-y-2">
+                <Label htmlFor="description">Product Description</Label>
+                <Textarea
+                  id="description"
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  placeholder="Product Description"
+                  rows={4}
+                  className="resize-none"
+                />
+              </div>
 
+            <div className="space-y-2 w-full">
+              <Label>Product Images</Label>
+              <div
+                onDragEnter={handleDragEnter}
+                onDragLeave={handleDragLeave}
+                onDragOver={handleDragOver}
+                onDrop={handleDrop}
+                className={`border-2 border-dashed rounded-lg p-12 text-center transition-colors cursor-pointer ${
+                  isDragging ? "border-emerald-500 bg-emerald-50" : "border-gray-300 hover:border-emerald-500"
+                }`}
+              >
+                <input
+                  type="file"
+                  id="file-upload"
+                  accept="image/jpeg,image/png,image/webp"
+                  multiple
+                  onChange={handleFileInput}
+                  className="hidden"
+                />
+                <label htmlFor="file-upload" className="cursor-pointer">
+                  <CloudUpload className="w-12 h-12 mx-auto mb-4 text-emerald-600" />
+                  <p className="text-gray-600 font-medium mb-1">Drag your images here</p>
+                  <p className="text-sm text-gray-400">
+                    (Only *.jpeg, *.webp and *.png images will be accepted)
+                  </p>
+                </label>
+              </div>
+
+              {uploadedImages.length > 0 && (
+                <div className="flex flex-wrap gap-4 mt-4">
+                  {uploadedImages.map((image, index) => (
+                    <div key={index} className="relative">
+                      <button
+                        type="button"
+                        onClick={() => removeImage(index)}
+                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 z-10 hover:bg-red-600 transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                      <img
+                        src={image || "/placeholder.svg"}
+                        alt={`Upload ${index + 1}`}
+                        className="w-24 h-24 object-cover rounded-lg border-2 border-gray-200"
+                      />
+                      {index === 0 && (
+                        <button
+                          type="button"
+                          className="mt-2 w-24 px-2 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600 transition-colors"
+                        >
+                          Default Image
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           <DialogFooter>
             <Button variant="outline" onClick={closeDialog}>
               Cancel
