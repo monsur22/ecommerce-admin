@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { useSearchParams } from "next/navigation"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Skeleton } from "@/components/ui/skeleton"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
@@ -131,6 +132,7 @@ const initialOrders: Order[] = [
 export default function OrdersPage() {
   const searchParams = useSearchParams()
   const [orders, setOrders] = useState<Order[]>(initialOrders)
+  const [isLoading, setIsLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [limitFilter, setLimitFilter] = useState<string>("all")
@@ -146,6 +148,13 @@ export default function OrdersPage() {
       setSearchQuery(customerParam)
     }
   }, [searchParams])
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false)
+    }, 2000)
+    return () => clearTimeout(timer)
+  }, [])
 
   const filteredOrders = orders.filter((order) => {
     const matchesSearch = order.customerName.toLowerCase().includes(searchQuery.toLowerCase())
@@ -594,45 +603,77 @@ export default function OrdersPage() {
               </tr>
             </thead>
             <tbody>
-              {currentOrders.map((order) => (
-                <tr key={order.invoiceNo} className="border-b last:border-0 hover:bg-gray-50">
-                  <td className="py-3 px-4">
-                    <span className="font-semibold text-gray-900">{order.invoiceNo}</span>
-                  </td>
-                  <td className="py-3 px-4 text-sm text-gray-600">{order.orderTime}</td>
-                  <td className="py-3 px-4 text-sm text-gray-900">{order.customerName}</td>
-                  <td className="py-3 px-4 text-sm text-gray-900">{order.method}</td>
-                  <td className="py-3 px-4 text-sm font-semibold text-gray-900">${order.amount.toFixed(2)}</td>
-                  <td className="py-3 px-4">
-                    <StatusBadge status={order.status} />
-                  </td>
-                  <td className="py-3 px-4">
-                    <Select
-                      value={order.status}
-                      onValueChange={(value) => handleStatusChange(order.invoiceNo, value as Order["status"])}
-                    >
-                      <SelectTrigger className="w-32 h-8 text-xs">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Delivered">Delivered</SelectItem>
-                        <SelectItem value="Processing">Processing</SelectItem>
-                        <SelectItem value="Pending">Pending</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </td>
-                  <td className="py-3 px-4">
-                    <div className="flex items-center gap-2">
-                      <Button variant="ghost" size="sm" onClick={() => handlePrintInvoice(order)} className="p-2 h-8 w-8 hover:bg-emerald-50 hover:text-emerald-600">
-                        <Printer className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm" onClick={() => handleViewDetails(order)} className="p-2 h-8 w-8 hover:bg-emerald-50 hover:text-emerald-600">
-                        <Eye className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {isLoading
+                ? Array.from({ length: 3 }).map((_, index) => (
+                    <tr key={index} className="border-b last:border-0 hover:bg-gray-50">
+                      <td className="py-3 px-4">
+                        <Skeleton className="h-4 w-16" />
+                      </td>
+                      <td className="py-3 px-4">
+                        <Skeleton className="h-4 w-32" />
+                      </td>
+                      <td className="py-3 px-4">
+                        <Skeleton className="h-4 w-24" />
+                      </td>
+                      <td className="py-3 px-4">
+                        <Skeleton className="h-4 w-12" />
+                      </td>
+                      <td className="py-3 px-4">
+                        <Skeleton className="h-4 w-16" />
+                      </td>
+                      <td className="py-3 px-4">
+                        <Skeleton className="h-6 w-20 rounded-full" />
+                      </td>
+                      <td className="py-3 px-4">
+                        <Skeleton className="h-8 w-32" />
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-2">
+                          <Skeleton className="h-8 w-8 rounded" />
+                          <Skeleton className="h-8 w-8 rounded" />
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                : currentOrders.map((order) => (
+                    <tr key={order.invoiceNo} className="border-b last:border-0 hover:bg-gray-50">
+                      <td className="py-3 px-4">
+                        <span className="font-semibold text-gray-900">{order.invoiceNo}</span>
+                      </td>
+                      <td className="py-3 px-4 text-sm text-gray-600">{order.orderTime}</td>
+                      <td className="py-3 px-4 text-sm text-gray-900">{order.customerName}</td>
+                      <td className="py-3 px-4 text-sm text-gray-900">{order.method}</td>
+                      <td className="py-3 px-4 text-sm font-semibold text-gray-900">${order.amount.toFixed(2)}</td>
+                      <td className="py-3 px-4">
+                        <StatusBadge status={order.status} />
+                      </td>
+                      <td className="py-3 px-4">
+                        <Select
+                          value={order.status}
+                          onValueChange={(value) => handleStatusChange(order.invoiceNo, value as Order["status"])}
+                        >
+                          <SelectTrigger className="w-32 h-8 text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Delivered">Delivered</SelectItem>
+                            <SelectItem value="Processing">Processing</SelectItem>
+                            <SelectItem value="Pending">Pending</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-2">
+                          <Button variant="ghost" size="sm" onClick={() => handlePrintInvoice(order)} className="p-2 h-8 w-8 hover:bg-emerald-50 hover:text-emerald-600">
+                            <Printer className="w-4 h-4" />
+                          </Button>
+                          <Button variant="ghost" size="sm" onClick={() => handleViewDetails(order)} className="p-2 h-8 w-8 hover:bg-emerald-50 hover:text-emerald-600">
+                            <Eye className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
             </tbody>
           </table>
         </div>

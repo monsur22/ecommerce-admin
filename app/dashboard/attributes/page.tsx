@@ -2,9 +2,10 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Search, Download, Upload, Trash2, Edit2, Plus, FilePen } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Skeleton } from "@/components/ui/skeleton"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -30,6 +31,7 @@ export default function AttributesPage() {
   const [isBulkActionDialogOpen, setIsBulkActionDialogOpen] = useState(false)
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false)
   const [bulkAction, setBulkAction] = useState("")
+  const [isLoading, setIsLoading] = useState(true)
 
   const [attributes, setAttributes] = useState<Attribute[]>([
     {
@@ -69,6 +71,13 @@ export default function AttributesPage() {
   const handleFilterChange = () => {
     setCurrentPage(1)
   }
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false)
+    }, 2000)
+    return () => clearTimeout(timer)
+  }, [])
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
@@ -251,53 +260,85 @@ export default function AttributesPage() {
               </tr>
             </thead>
             <tbody>
-              {currentAttributes.map((attribute) => (
-                <tr key={attribute.id} className="border-b hover:bg-gray-50">
-                  <td className="py-3 px-4">
-                    <Checkbox
-                      checked={selectedAttributes.includes(attribute.id)}
-                      onCheckedChange={(checked) => handleSelectAttribute(attribute.id, checked as boolean)}
-                    />
-                  </td>
-                  <td className="py-3 px-4 text-gray-900 font-medium">{attribute.id}</td>
-                  <td className="py-3 px-4 text-gray-900">{attribute.name}</td>
-                  <td className="py-3 px-4 text-gray-900">{attribute.displayName}</td>
-                  <td className="py-3 px-4 text-gray-600">{attribute.option}</td>
-                  <td className="py-3 px-4">
-                    <button
-                      onClick={() => handleTogglePublished(attribute.id)}
-                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${attribute.published ? "bg-emerald-500" : "bg-gray-300"
-                        }`}
-                    >
-                      <span
-                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${attribute.published ? "translate-x-6" : "translate-x-1"
-                          }`}
-                      />
-                    </button>
-                  </td>
-                  <td className="py-3 px-4">
-                    <Link
-                      href={`/dashboard/attributes/${attribute.id}`}
-                      className="p-2 hover:bg-gray-100 rounded inline-block"
-                    >
-                      <Edit2 className="w-4 h-4 text-gray-600" />
-                    </Link>
-                  </td>
-                  <td className="py-3 px-4">
-                    <div className="flex items-center gap-2">
-                      <Link
-                        href={`/dashboard/attributes/${attribute.id}`}
-                        className="p-2 hover:bg-gray-100 rounded inline-block"
-                      >
-                        <Edit2 className="w-4 h-4 text-gray-600" />
-                      </Link>
-                      <button onClick={() => handleDelete(attribute.id)} className="p-2 hover:bg-gray-100 rounded">
-                        <Trash2 className="w-4 h-4 text-gray-600" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {isLoading
+                ? Array.from({ length: 3 }).map((_, index) => (
+                    <tr key={index} className="border-b hover:bg-gray-50">
+                      <td className="py-3 px-4">
+                        <Skeleton className="h-4 w-4 rounded" />
+                      </td>
+                      <td className="py-3 px-4">
+                        <Skeleton className="h-4 w-12" />
+                      </td>
+                      <td className="py-3 px-4">
+                        <Skeleton className="h-4 w-32" />
+                      </td>
+                      <td className="py-3 px-4">
+                        <Skeleton className="h-4 w-32" />
+                      </td>
+                      <td className="py-3 px-4">
+                        <Skeleton className="h-4 w-20" />
+                      </td>
+                      <td className="py-3 px-4">
+                        <Skeleton className="h-6 w-11 rounded-full" />
+                      </td>
+                      <td className="py-3 px-4">
+                        <Skeleton className="h-8 w-8 rounded" />
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-2">
+                          <Skeleton className="h-8 w-8 rounded" />
+                          <Skeleton className="h-8 w-8 rounded" />
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                : currentAttributes.map((attribute) => (
+                    <tr key={attribute.id} className="border-b hover:bg-gray-50">
+                      <td className="py-3 px-4">
+                        <Checkbox
+                          checked={selectedAttributes.includes(attribute.id)}
+                          onCheckedChange={(checked) => handleSelectAttribute(attribute.id, checked as boolean)}
+                        />
+                      </td>
+                      <td className="py-3 px-4 text-gray-900 font-medium">{attribute.id}</td>
+                      <td className="py-3 px-4 text-gray-900">{attribute.name}</td>
+                      <td className="py-3 px-4 text-gray-900">{attribute.displayName}</td>
+                      <td className="py-3 px-4 text-gray-600">{attribute.option}</td>
+                      <td className="py-3 px-4">
+                        <button
+                          onClick={() => handleTogglePublished(attribute.id)}
+                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${attribute.published ? "bg-emerald-500" : "bg-gray-300"
+                            }`}
+                        >
+                          <span
+                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${attribute.published ? "translate-x-6" : "translate-x-1"
+                              }`}
+                          />
+                        </button>
+                      </td>
+                      <td className="py-3 px-4">
+                        <Link
+                          href={`/dashboard/attributes/${attribute.id}`}
+                          className="p-2 hover:bg-gray-100 rounded inline-block"
+                        >
+                          <Edit2 className="w-4 h-4 text-gray-600" />
+                        </Link>
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-2">
+                          <Link
+                            href={`/dashboard/attributes/${attribute.id}`}
+                            className="p-2 hover:bg-gray-100 rounded inline-block"
+                          >
+                            <Edit2 className="w-4 h-4 text-gray-600" />
+                          </Link>
+                          <button onClick={() => handleDelete(attribute.id)} className="p-2 hover:bg-gray-100 rounded">
+                            <Trash2 className="w-4 h-4 text-gray-600" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
             </tbody>
           </table>
         </div>

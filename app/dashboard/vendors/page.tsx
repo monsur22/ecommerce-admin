@@ -1,9 +1,10 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
-import { Plus, Edit, Trash2, Search, Eye } from "lucide-react"
+import { useState, useEffect } from "react"
+import { Plus, Edit, Trash2, Search, Eye, CreditCard } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Skeleton } from "@/components/ui/skeleton"
 import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
@@ -16,11 +17,16 @@ import { usePagination } from "@/hooks/use-pagination"
 import { PaginationControl } from "@/components/ui/pagination-control"
 
 export default function VendorsPage() {
-    const { vendors, addVendor, updateVendor, deleteVendor } = useVendor()
+    const { vendors, addVendor, updateVendor, deleteVendor, addTransaction } = useVendor()
     const router = useRouter()
+    const [isLoading, setIsLoading] = useState(true)
     const [searchQuery, setSearchQuery] = useState("")
     const [isDialogOpen, setIsDialogOpen] = useState(false)
     const [editingVendor, setEditingVendor] = useState<Vendor | null>(null)
+    const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false)
+    const [payingVendor, setPayingVendor] = useState<Vendor | null>(null)
+    const [paymentAmount, setPaymentAmount] = useState("")
+    const [paymentNote, setPaymentNote] = useState("")
 
     // Form State
     const [formData, setFormData] = useState({
@@ -31,6 +37,7 @@ export default function VendorsPage() {
         description: "",
         status: "Active" as "Active" | "Inactive" | "Blocked",
         totalPaid: 0,
+        amountPayable: 0,
     })
 
     const filteredVendors = vendors.filter((vendor) =>
@@ -48,6 +55,13 @@ export default function VendorsPage() {
         handleItemsPerPageChange,
     } = usePagination(filteredVendors, 10)
 
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setIsLoading(false)
+        }, 2000)
+        return () => clearTimeout(timer)
+    }, [])
+
     const handleOpenDialog = (vendor?: Vendor) => {
         if (vendor) {
             setEditingVendor(vendor)
@@ -59,6 +73,7 @@ export default function VendorsPage() {
                 description: vendor.description || "",
                 status: vendor.status,
                 totalPaid: vendor.totalPaid,
+                amountPayable: vendor.amountPayable || 0,
             })
         } else {
             setEditingVendor(null)
@@ -70,6 +85,7 @@ export default function VendorsPage() {
                 description: "",
                 status: "Active",
                 totalPaid: 0,
+                amountPayable: 0,
             })
         }
         setIsDialogOpen(true)
@@ -87,6 +103,7 @@ export default function VendorsPage() {
             addVendor({
                 id: Date.now().toString(),
                 logo: "/placeholder.svg?height=40&width=40",
+                transactions: [],
                 ...formData,
             })
         }
@@ -101,6 +118,32 @@ export default function VendorsPage() {
 
     const handleViewDetails = (id: string) => {
         router.push(`/dashboard/vendors/${id}`)
+    }
+
+    const handleOpenPayment = (vendor: Vendor) => {
+        setPayingVendor(vendor)
+        setPaymentAmount("")
+        setPaymentNote("")
+        setIsPaymentDialogOpen(true)
+    }
+
+    const handlePaymentSubmit = (e: React.FormEvent) => {
+        e.preventDefault()
+        if (!payingVendor || !paymentAmount) return
+
+        const amount = parseFloat(paymentAmount)
+        if (isNaN(amount) || amount <= 0) return
+
+        addTransaction(payingVendor.id, {
+            id: Date.now().toString(),
+            amount: amount,
+            date: new Date().toISOString().split('T')[0],
+            type: "PAYMENT",
+            note: paymentNote
+        })
+
+        setIsPaymentDialogOpen(false)
+        setPayingVendor(null)
     }
 
     const getStatusColor = (status: string) => {
@@ -163,57 +206,103 @@ export default function VendorsPage() {
                                     Total Paid
                                 </th>
                                 <th className="text-left py-3 px-4 text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                                    Payable
+                                </th>
+                                <th className="text-left py-3 px-4 text-xs font-semibold text-gray-700 uppercase tracking-wider">
                                     Actions
                                 </th>
                             </tr>
                         </thead>
                         <tbody className="divide-y">
-                            {currentVendors.map((vendor) => (
-                                <tr key={vendor.id} className="hover:bg-gray-50">
-                                    <td className="py-3 px-4">
-                                        <div className="flex items-center gap-3">
-                                            <Image
-                                                src={vendor.logo || "/placeholder.svg"}
-                                                alt={vendor.name}
-                                                width={40}
-                                                height={40}
-                                                className="rounded-full"
-                                            />
-                                            <div>
-                                                <div className="font-medium text-gray-900">{vendor.name}</div>
-                                                <div className="text-sm text-gray-500">{vendor.email}</div>
+                            {isLoading
+                                ? Array.from({ length: 3 }).map((_, index) => (
+                                    <tr key={index} className="hover:bg-gray-50">
+                                        <td className="py-3 px-4">
+                                            <div className="flex items-center gap-3">
+                                                <Skeleton className="h-10 w-10 rounded-full" />
+                                                <div>
+                                                    <Skeleton className="h-4 w-32 mb-1" />
+                                                    <Skeleton className="h-3 w-24" />
+                                                </div>
                                             </div>
-                                        </div>
-                                    </td>
-                                    <td className="py-3 px-4 text-sm text-gray-600">{vendor.phone}</td>
-                                    <td className="py-3 px-4 text-sm text-gray-600">{vendor.address}</td>
-                                    <td className="py-3 px-4">
-                                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(vendor.status)}`}>
-                                            {vendor.status}
-                                        </span>
-                                    </td>
-                                    <td className="py-3 px-4 text-sm font-semibold text-gray-900">
-                                        ${vendor.totalPaid.toFixed(2)}
-                                    </td>
-                                    <td className="py-3 px-4">
-                                        <div className="flex items-center gap-2">
-                                            <button
-                                                onClick={() => handleViewDetails(vendor.id)}
-                                                className="p-1 hover:bg-gray-100 rounded"
-                                            >
-                                                <Eye className="w-4 h-4 text-gray-600" />
-                                            </button>
-                                            <button onClick={() => handleOpenDialog(vendor)} className="p-1 hover:bg-gray-100 rounded">
-                                                <Edit className="w-4 h-4 text-gray-600" />
-                                            </button>
-                                            <button onClick={() => handleDelete(vendor.id)} className="p-1 hover:bg-gray-100 rounded">
-                                                <Trash2 className="w-4 h-4 text-red-600" />
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
-                            {currentVendors.length === 0 && (
+                                        </td>
+                                        <td className="py-3 px-4">
+                                            <Skeleton className="h-4 w-24" />
+                                        </td>
+                                        <td className="py-3 px-4">
+                                            <Skeleton className="h-4 w-40" />
+                                        </td>
+                                        <td className="py-3 px-4">
+                                            <Skeleton className="h-6 w-16 rounded-full" />
+                                        </td>
+                                        <td className="py-3 px-4">
+                                            <Skeleton className="h-4 w-20" />
+                                        </td>
+                                        <td className="py-3 px-4">
+                                            <div className="flex items-center gap-2">
+                                                <Skeleton className="h-6 w-6 rounded" />
+                                                <Skeleton className="h-6 w-6 rounded" />
+                                                <Skeleton className="h-6 w-6 rounded" />
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))
+                                : currentVendors.map((vendor) => (
+                                    <tr key={vendor.id} className="hover:bg-gray-50">
+                                        <td className="py-3 px-4">
+                                            <div className="flex items-center gap-3">
+                                                <Image
+                                                    src={vendor.logo || "/placeholder.svg"}
+                                                    alt={vendor.name}
+                                                    width={40}
+                                                    height={40}
+                                                    className="rounded-full"
+                                                />
+                                                <div>
+                                                    <div className="font-medium text-gray-900">{vendor.name}</div>
+                                                    <div className="text-sm text-gray-500">{vendor.email}</div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td className="py-3 px-4 text-sm text-gray-600">{vendor.phone}</td>
+                                        <td className="py-3 px-4 text-sm text-gray-600">{vendor.address}</td>
+                                        <td className="py-3 px-4">
+                                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(vendor.status)}`}>
+                                                {vendor.status}
+                                            </span>
+                                        </td>
+                                        <td className="py-3 px-4 text-sm font-semibold text-gray-900">
+                                            ${vendor.totalPaid.toFixed(2)}
+                                        </td>
+                                        <td className="py-3 px-4 text-sm font-semibold text-red-600">
+                                            ${(vendor.amountPayable || 0).toFixed(2)}
+                                        </td>
+                                        <td className="py-3 px-4">
+                                            <div className="flex items-center gap-2">
+                                                <button
+                                                    onClick={() => handleViewDetails(vendor.id)}
+                                                    className="p-1 hover:bg-gray-100 rounded"
+                                                >
+                                                    <Eye className="w-4 h-4 text-gray-600" />
+                                                </button>
+                                                <button onClick={() => handleOpenDialog(vendor)} className="p-1 hover:bg-gray-100 rounded">
+                                                    <Edit className="w-4 h-4 text-gray-600" />
+                                                </button>
+                                                <button
+                                                    onClick={() => handleOpenPayment(vendor)}
+                                                    className="p-1 hover:bg-emerald-100 rounded text-emerald-600"
+                                                    title="Make Payment"
+                                                >
+                                                    <CreditCard className="w-4 h-4" />
+                                                </button>
+                                                <button onClick={() => handleDelete(vendor.id)} className="p-1 hover:bg-gray-100 rounded">
+                                                    <Trash2 className="w-4 h-4 text-red-600" />
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            {(!isLoading && currentVendors.length === 0) && (
                                 <tr>
                                     <td colSpan={6} className="py-8 text-center text-gray-500">
                                         No vendors found
@@ -237,6 +326,7 @@ export default function VendorsPage() {
             </div>
 
             {/* Add/Edit Vendor Dialog */}
+
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogContent className="max-w-2xl">
                     <DialogHeader>
@@ -319,18 +409,33 @@ export default function VendorsPage() {
                                     </SelectContent>
                                 </Select>
                             </div>
-                            <div>
-                                <Label>Total Paid</Label>
-                                <Input
-                                    type="number"
-                                    value={formData.totalPaid}
-                                    onChange={(e) => setFormData({ ...formData, totalPaid: parseFloat(e.target.value) || 0 })}
-                                    placeholder="0.00"
-                                    className="mt-1"
-                                    step="0.01"
-                                />
-                            </div>
                         </div>
+
+                        {/* Show financial fields only when editing */}
+                        {editingVendor && (
+                            <div className="grid grid-cols-2 gap-4 pt-4 border-t">
+                                <div>
+                                    <Label>Total Paid</Label>
+                                    <Input
+                                        type="number"
+                                        value={formData.totalPaid}
+                                        readOnly
+                                        className="mt-1 bg-gray-50 cursor-not-allowed"
+                                        step="0.01"
+                                    />
+                                </div>
+                                <div>
+                                    <Label>Payable Amount</Label>
+                                    <Input
+                                        type="number"
+                                        value={formData.amountPayable}
+                                        readOnly
+                                        className="mt-1 bg-gray-50 cursor-not-allowed"
+                                        step="0.01"
+                                    />
+                                </div>
+                            </div>
+                        )}
 
                         <div className="flex justify-end gap-2 pt-4 border-t">
                             <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
@@ -338,6 +443,60 @@ export default function VendorsPage() {
                             </Button>
                             <Button type="submit" className="bg-emerald-500 hover:bg-emerald-600">
                                 {editingVendor ? "Update Vendor" : "Add Vendor"}
+                            </Button>
+                        </div>
+                    </form>
+                </DialogContent>
+            </Dialog>
+            {/* Payment Modal */}
+            <Dialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen}>
+                <DialogContent className="max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Make Payment - {payingVendor?.name}</DialogTitle>
+                    </DialogHeader>
+                    <form onSubmit={handlePaymentSubmit} className="space-y-4">
+                        <div className="p-4 bg-gray-50 rounded-lg space-y-2">
+                             <div className="flex justify-between text-sm">
+                                <span className="text-gray-600">Total Paid:</span>
+                                <span className="font-semibold">${payingVendor?.totalPaid.toFixed(2)}</span>
+                            </div>
+                            <div className="flex justify-between text-sm">
+                                <span className="text-gray-600">Current Payable:</span>
+                                <span className="font-semibold text-red-600">${payingVendor?.amountPayable?.toFixed(2) || "0.00"}</span>
+                            </div>
+                        </div>
+
+                        <div>
+                            <Label>Payment Amount</Label>
+                            <Input
+                                type="number"
+                                value={paymentAmount}
+                                onChange={(e) => setPaymentAmount(e.target.value)}
+                                required
+                                placeholder="0.00"
+                                className="mt-1"
+                                step="0.01"
+                                min="0.01"
+                            />
+                        </div>
+
+                        <div>
+                            <Label>Note (Optional)</Label>
+                            <Textarea
+                                value={paymentNote}
+                                onChange={(e) => setPaymentNote(e.target.value)}
+                                placeholder="Payment reference or note..."
+                                className="mt-1"
+                                rows={2}
+                            />
+                        </div>
+
+                        <div className="flex justify-end gap-2 pt-4">
+                            <Button type="button" variant="outline" onClick={() => setIsPaymentDialogOpen(false)}>
+                                Cancel
+                            </Button>
+                            <Button type="submit" className="bg-emerald-500 hover:bg-emerald-600">
+                                Confirm Payment
                             </Button>
                         </div>
                     </form>

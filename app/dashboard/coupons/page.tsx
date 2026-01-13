@@ -2,9 +2,10 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Search, Upload, Download, Edit2, Trash2, FilePen } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Skeleton } from "@/components/ui/skeleton"
 import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
@@ -75,6 +76,7 @@ const initialCoupons: Coupon[] = [
 
 export default function CouponsPage() {
   const [coupons, setCoupons] = useState<Coupon[]>(initialCoupons)
+  const [isLoading, setIsLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedCoupons, setSelectedCoupons] = useState<string[]>([])
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
@@ -112,6 +114,13 @@ export default function CouponsPage() {
   const handleFilterChange = () => {
     setCurrentPage(1)
   }
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false)
+    }, 2000)
+    return () => clearTimeout(timer)
+  }, [])
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
@@ -363,56 +372,94 @@ export default function CouponsPage() {
               </tr>
             </thead>
             <tbody className="divide-y">
-              {currentCoupons.map((coupon) => (
-                <tr key={coupon.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3">
-                    <input
-                      type="checkbox"
-                      checked={selectedCoupons.includes(coupon.id)}
-                      onChange={(e) => handleSelectCoupon(coupon.id, e.target.checked)}
-                      className="rounded border-gray-300"
-                    />
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-3">
-                      <img
-                        src={coupon.image || "/placeholder.svg"}
-                        alt={coupon.campaignName}
-                        className="w-10 h-10 rounded object-cover"
-                      />
-                      <span className="font-medium text-gray-900">{coupon.campaignName}</span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-gray-700">{coupon.code}</td>
-                  <td className="px-4 py-3 font-semibold text-gray-900">{coupon.discount}</td>
-                  <td className="px-4 py-3">
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={coupon.published}
-                        onChange={() => handleTogglePublished(coupon.id)}
-                        className="sr-only peer"
-                      />
-                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
-                    </label>
-                  </td>
-                  <td className="px-4 py-3 text-gray-700">{coupon.startDate}</td>
-                  <td className="px-4 py-3 text-gray-700">{coupon.endDate}</td>
-                  <td className="px-4 py-3">
-                    <StatusBadge status={coupon.status} />
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      <button onClick={() => handleEdit(coupon)} className="p-1 hover:bg-gray-100 rounded">
-                        <Edit2 className="w-4 h-4 text-gray-600" />
-                      </button>
-                      <button onClick={() => handleDelete(coupon.id)} className="p-1 hover:bg-gray-100 rounded">
-                        <Trash2 className="w-4 h-4 text-gray-600" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {isLoading
+                ? Array.from({ length: 3 }).map((_, index) => (
+                    <tr key={index} className="hover:bg-gray-50">
+                      <td className="px-4 py-3">
+                        <Skeleton className="h-4 w-4 rounded" />
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-3">
+                          <Skeleton className="w-10 h-10 rounded" />
+                          <Skeleton className="h-4 w-32" />
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-gray-700">
+                        <Skeleton className="h-4 w-24" />
+                      </td>
+                      <td className="px-4 py-3 font-semibold text-gray-900">
+                        <Skeleton className="h-4 w-16" />
+                      </td>
+                      <td className="px-4 py-3">
+                        <Skeleton className="h-6 w-11 rounded-full" />
+                      </td>
+                      <td className="px-4 py-3 text-gray-700">
+                        <Skeleton className="h-4 w-24" />
+                      </td>
+                      <td className="px-4 py-3 text-gray-700">
+                        <Skeleton className="h-4 w-24" />
+                      </td>
+                      <td className="px-4 py-3">
+                        <Skeleton className="h-6 w-16 rounded-full" />
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <Skeleton className="h-6 w-6 rounded" />
+                          <Skeleton className="h-6 w-6 rounded" />
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                : currentCoupons.map((coupon) => (
+                    <tr key={coupon.id} className="hover:bg-gray-50">
+                      <td className="px-4 py-3">
+                        <input
+                          type="checkbox"
+                          checked={selectedCoupons.includes(coupon.id)}
+                          onChange={(e) => handleSelectCoupon(coupon.id, e.target.checked)}
+                          className="rounded border-gray-300"
+                        />
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-3">
+                          <img
+                            src={coupon.image || "/placeholder.svg"}
+                            alt={coupon.campaignName}
+                            className="w-10 h-10 rounded object-cover"
+                          />
+                          <span className="font-medium text-gray-900">{coupon.campaignName}</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-gray-700">{coupon.code}</td>
+                      <td className="px-4 py-3 font-semibold text-gray-900">{coupon.discount}</td>
+                      <td className="px-4 py-3">
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={coupon.published}
+                            onChange={() => handleTogglePublished(coupon.id)}
+                            className="sr-only peer"
+                          />
+                          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+                        </label>
+                      </td>
+                      <td className="px-4 py-3 text-gray-700">{coupon.startDate}</td>
+                      <td className="px-4 py-3 text-gray-700">{coupon.endDate}</td>
+                      <td className="px-4 py-3">
+                        <StatusBadge status={coupon.status} />
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <button onClick={() => handleEdit(coupon)} className="p-1 hover:bg-gray-100 rounded">
+                            <Edit2 className="w-4 h-4 text-gray-600" />
+                          </button>
+                          <button onClick={() => handleDelete(coupon.id)} className="p-1 hover:bg-gray-100 rounded">
+                            <Trash2 className="w-4 h-4 text-gray-600" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
             </tbody>
           </table>
         </div>

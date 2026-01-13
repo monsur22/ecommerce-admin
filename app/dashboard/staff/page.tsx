@@ -1,8 +1,7 @@
 "use client"
 
 import type React from "react"
-
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Search, Filter, Eye, Edit, Trash2, Plus, ChevronDown } from "lucide-react"
 import { usePagination } from "@/hooks/use-pagination"
 import { PaginationControl } from "@/components/ui/pagination-control"
@@ -10,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
+import { Skeleton } from "@/components/ui/skeleton"
 import Image from "next/image"
 import { useStaff, type Staff } from "@/contexts/staff-context"
 
@@ -46,6 +46,15 @@ export default function StaffPage() {
   const handleFilterChange = () => {
     setCurrentPage(1)
   }
+
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false)
+    }, 2000)
+    return () => clearTimeout(timer)
+  }, [])
 
   const handleTogglePublished = (id: string) => {
     const member = staff.find((s) => s.id === id)
@@ -200,61 +209,100 @@ export default function StaffPage() {
               </tr>
             </thead>
             <tbody className="divide-y">
-              {currentStaff.map((member) => (
-                <tr key={member.id} className="hover:bg-gray-50">
-                  <td className="py-3 px-4">
-                    <div className="flex items-center gap-3">
-                      <Image
-                        src={member.avatar || "/placeholder.svg"}
-                        alt={member.name}
-                        width={40}
-                        height={40}
-                        className="rounded-full"
-                      />
-                      <span className="font-medium text-gray-900">{member.name}</span>
-                    </div>
-                  </td>
-                  <td className="py-3 px-4 text-sm text-blue-600">{member.email}</td>
-                  <td className="py-3 px-4 text-sm text-gray-600">{member.contact}</td>
-                  <td className="py-3 px-4 text-sm text-gray-600">{member.joiningDate}</td>
-                  <td className="py-3 px-4">
-                    <span className="font-semibold text-gray-900">{member.role}</span>
-                  </td>
-                  <td className="py-3 px-4 text-sm font-semibold text-emerald-600">
-                    ${member.salary.toLocaleString()}
-                  </td>
-                  <td className="py-3 px-4">
-                    <span className="px-3 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">
-                      {member.status}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4">
-                    <button
-                      onClick={() => handleTogglePublished(member.id)}
-                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${member.published ? "bg-emerald-500" : "bg-gray-200"
-                        }`}
-                    >
-                      <span
-                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${member.published ? "translate-x-6" : "translate-x-1"
-                          }`}
-                      />
-                    </button>
-                  </td>
-                  <td className="py-3 px-4">
-                    <div className="flex items-center gap-2">
-                      <button onClick={() => handleView(member)} className="p-1 hover:bg-gray-100 rounded">
-                        <Eye className="w-4 h-4 text-gray-600" />
-                      </button>
-                      <button onClick={() => handleEdit(member)} className="p-1 hover:bg-gray-100 rounded">
-                        <Edit className="w-4 h-4 text-gray-600" />
-                      </button>
-                      <button onClick={() => handleDelete(member.id)} className="p-1 hover:bg-gray-100 rounded">
-                        <Trash2 className="w-4 h-4 text-gray-600" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {isLoading
+                ? Array.from({ length: 3 }).map((_, index) => (
+                    <tr key={index} className="hover:bg-gray-50">
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-3">
+                          <Skeleton className="h-10 w-10 rounded-full" />
+                          <Skeleton className="h-4 w-32" />
+                        </div>
+                      </td>
+                      <td className="py-3 px-4">
+                        <Skeleton className="h-4 w-48" />
+                      </td>
+                      <td className="py-3 px-4">
+                        <Skeleton className="h-4 w-32" />
+                      </td>
+                      <td className="py-3 px-4">
+                        <Skeleton className="h-4 w-24" />
+                      </td>
+                      <td className="py-3 px-4">
+                        <Skeleton className="h-4 w-24" />
+                      </td>
+                      <td className="py-3 px-4">
+                        <Skeleton className="h-4 w-20" />
+                      </td>
+                      <td className="py-3 px-4">
+                        <Skeleton className="h-6 w-16 rounded-full" />
+                      </td>
+                      <td className="py-3 px-4">
+                        <Skeleton className="h-6 w-12 rounded-full" />
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-2">
+                          <Skeleton className="h-6 w-6 rounded" />
+                          <Skeleton className="h-6 w-6 rounded" />
+                          <Skeleton className="h-6 w-6 rounded" />
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                : currentStaff.map((member) => (
+                    <tr key={member.id} className="hover:bg-gray-50">
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-3">
+                          <Image
+                            src={member.avatar || "/placeholder.svg"}
+                            alt={member.name}
+                            width={40}
+                            height={40}
+                            className="rounded-full"
+                          />
+                          <span className="font-medium text-gray-900">{member.name}</span>
+                        </div>
+                      </td>
+                      <td className="py-3 px-4 text-sm text-blue-600">{member.email}</td>
+                      <td className="py-3 px-4 text-sm text-gray-600">{member.contact}</td>
+                      <td className="py-3 px-4 text-sm text-gray-600">{member.joiningDate}</td>
+                      <td className="py-3 px-4">
+                        <span className="font-semibold text-gray-900">{member.role}</span>
+                      </td>
+                      <td className="py-3 px-4 text-sm font-semibold text-emerald-600">
+                        ${member.salary.toLocaleString()}
+                      </td>
+                      <td className="py-3 px-4">
+                        <span className="px-3 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">
+                          {member.status}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4">
+                        <button
+                          onClick={() => handleTogglePublished(member.id)}
+                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${member.published ? "bg-emerald-500" : "bg-gray-200"
+                            }`}
+                        >
+                          <span
+                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${member.published ? "translate-x-6" : "translate-x-1"
+                              }`}
+                          />
+                        </button>
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-2">
+                          <button onClick={() => handleView(member)} className="p-1 hover:bg-gray-100 rounded">
+                            <Eye className="w-4 h-4 text-gray-600" />
+                          </button>
+                          <button onClick={() => handleEdit(member)} className="p-1 hover:bg-gray-100 rounded">
+                            <Edit className="w-4 h-4 text-gray-600" />
+                          </button>
+                          <button onClick={() => handleDelete(member.id)} className="p-1 hover:bg-gray-100 rounded">
+                            <Trash2 className="w-4 h-4 text-gray-600" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
             </tbody>
           </table>
         </div>

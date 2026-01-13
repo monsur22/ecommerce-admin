@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useStaff, type SalaryPayment } from "@/contexts/staff-context"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
+import { Skeleton } from "@/components/ui/skeleton"
 import Link from "next/link"
 
 export default function SalaryManagementPage() {
@@ -21,6 +22,14 @@ export default function SalaryManagementPage() {
     const [selectedStaffId, setSelectedStaffId] = useState<string | null>(null)
     const [paymentAmount, setPaymentAmount] = useState("")
     const [paymentNotes, setPaymentNotes] = useState("")
+    const [isLoading, setIsLoading] = useState(true)
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setIsLoading(false)
+        }, 2000)
+        return () => clearTimeout(timer)
+    }, [])
 
     // Generate month options (last 12 months)
     const monthOptions = Array.from({ length: 12 }, (_, i) => {
@@ -194,47 +203,71 @@ export default function SalaryManagementPage() {
                             </tr>
                         </thead>
                         <tbody className="divide-y">
-                            {staff.map((member) => {
-                                const status = getPaymentStatus(member.id)
-                                return (
-                                    <tr key={member.id} className="hover:bg-gray-50">
+                            {isLoading
+                                ? Array.from({ length: 3 }).map((_, index) => (
+                                    <tr key={index} className="hover:bg-gray-50">
                                         <td className="py-3 px-4">
-                                            <Link
-                                                href={`/dashboard/staff/salary/${member.id}`}
-                                                className="font-medium text-gray-900 hover:text-emerald-600"
-                                            >
-                                                {member.name}
-                                            </Link>
-                                        </td>
-                                        <td className="py-3 px-4 text-sm text-gray-600">{member.role}</td>
-                                        <td className="py-3 px-4 text-sm font-semibold text-gray-900">
-                                            ${member.salary.toLocaleString()}
-                                        </td>
-                                        <td className="py-3 px-4 text-sm text-gray-600">{member.paymentMethod}</td>
-                                        <td className="py-3 px-4">
-                                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(status)}`}>
-                                                {status}
-                                            </span>
+                                            <Skeleton className="h-4 w-32" />
                                         </td>
                                         <td className="py-3 px-4">
-                                            {status !== "Paid" && (
-                                                <Button
-                                                    size="sm"
-                                                    onClick={() => handleMarkAsPaid(member.id, member.salary)}
-                                                    className="bg-emerald-600 hover:bg-emerald-700"
-                                                >
-                                                    <CreditCard className="w-4 h-4 mr-2" />
-                                                    Mark as Paid
-                                                </Button>
-                                            )}
-                                            {status === "Paid" && (
-                                                <span className="text-sm text-emerald-600 font-medium">✓ Paid</span>
-                                            )}
+                                            <Skeleton className="h-4 w-24" />
+                                        </td>
+                                        <td className="py-3 px-4">
+                                            <Skeleton className="h-4 w-24" />
+                                        </td>
+                                        <td className="py-3 px-4">
+                                            <Skeleton className="h-4 w-20" />
+                                        </td>
+                                        <td className="py-3 px-4">
+                                            <Skeleton className="h-6 w-16 rounded-full" />
+                                        </td>
+                                        <td className="py-3 px-4">
+                                            <Skeleton className="h-8 w-24 rounded" />
                                         </td>
                                     </tr>
-                                )
-                            })}
+                                ))
+                                : staff.map((member) => {
+                                    const status = getPaymentStatus(member.id)
+                                    return (
+                                        <tr key={member.id} className="hover:bg-gray-50">
+                                            <td className="py-3 px-4">
+                                                <Link
+                                                    href={`/dashboard/staff/salary/${member.id}`}
+                                                    className="font-medium text-gray-900 hover:text-emerald-600"
+                                                >
+                                                    {member.name}
+                                                </Link>
+                                            </td>
+                                            <td className="py-3 px-4 text-sm text-gray-600">{member.role}</td>
+                                            <td className="py-3 px-4 text-sm font-semibold text-gray-900">
+                                                ${member.salary.toLocaleString()}
+                                            </td>
+                                            <td className="py-3 px-4 text-sm text-gray-600">{member.paymentMethod}</td>
+                                            <td className="py-3 px-4">
+                                                <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(status)}`}>
+                                                    {status}
+                                                </span>
+                                            </td>
+                                            <td className="py-3 px-4">
+                                                {status !== "Paid" && (
+                                                    <Button
+                                                        size="sm"
+                                                        onClick={() => handleMarkAsPaid(member.id, member.salary)}
+                                                        className="bg-emerald-600 hover:bg-emerald-700"
+                                                    >
+                                                        <CreditCard className="w-4 h-4 mr-2" />
+                                                        Mark as Paid
+                                                    </Button>
+                                                )}
+                                                {status === "Paid" && (
+                                                    <span className="text-sm text-emerald-600 font-medium">✓ Paid</span>
+                                                )}
+                                            </td>
+                                        </tr>
+                                    )
+                                })}
                         </tbody>
+
                     </table>
                 </div>
             </Card>

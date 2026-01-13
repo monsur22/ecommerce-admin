@@ -38,7 +38,7 @@ export default function VendorDetailsPage() {
     const totalProducts = vendorProducts.length
     const inventoryValue = vendorProducts.reduce((sum, product) => sum + product.salePrice * product.stock, 0)
     const totalPaid = vendor.totalPaid
-    const balance = inventoryValue - totalPaid
+    const amountPayable = vendor.amountPayable || 0
 
     const handleUpdatePaid = () => {
         updateVendor({
@@ -172,18 +172,56 @@ export default function VendorDetailsPage() {
 
                 <Card className="p-6">
                     <div className="flex items-center gap-4">
-                        <div className={`p-3 rounded-lg ${balance >= 0 ? "bg-orange-100" : "bg-red-100"}`}>
-                            <Wallet className={`w-6 h-6 ${balance >= 0 ? "text-orange-600" : "text-red-600"}`} />
+                        <div className={`p-3 rounded-lg ${amountPayable > 0 ? "bg-red-100" : "bg-emerald-100"}`}>
+                            <Wallet className={`w-6 h-6 ${amountPayable > 0 ? "text-red-600" : "text-emerald-600"}`} />
                         </div>
                         <div>
-                            <p className="text-sm text-gray-600">Balance Due</p>
-                            <p className={`text-2xl font-bold ${balance >= 0 ? "text-orange-600" : "text-red-600"}`}>
-                                ${balance.toFixed(2)}
+                            <p className="text-sm text-gray-600">Payable Due</p>
+                            <p className={`text-2xl font-bold ${amountPayable > 0 ? "text-red-600" : "text-emerald-600"}`}>
+                                ${amountPayable.toFixed(2)}
                             </p>
                         </div>
                     </div>
                 </Card>
             </div>
+
+            {/* Transaction History */}
+            <Card className="p-6">
+                <h3 className="text-lg font-bold text-gray-900 mb-4">Transaction History</h3>
+                <div className="overflow-x-auto">
+                    <table className="w-full">
+                        <thead className="bg-gray-50 border-b">
+                            <tr>
+                                <th className="text-left py-3 px-4 text-xs font-semibold text-gray-700 uppercase tracking-wider">Date</th>
+                                <th className="text-left py-3 px-4 text-xs font-semibold text-gray-700 uppercase tracking-wider">Type</th>
+                                <th className="text-left py-3 px-4 text-xs font-semibold text-gray-700 uppercase tracking-wider">Amount</th>
+                                <th className="text-left py-3 px-4 text-xs font-semibold text-gray-700 uppercase tracking-wider">Note</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y">
+                            {(vendor.transactions || []).map((t) => (
+                                <tr key={t.id} className="hover:bg-gray-50">
+                                    <td className="py-3 px-4 text-sm text-gray-600">{t.date}</td>
+                                    <td className="py-3 px-4">
+                                        <span className={`px-2 py-1 rounded text-xs font-medium ${
+                                            t.type === 'PAYMENT' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'
+                                        }`}>
+                                            {t.type}
+                                        </span>
+                                    </td>
+                                    <td className="py-3 px-4 text-sm font-semibold text-gray-900">${t.amount.toFixed(2)}</td>
+                                    <td className="py-3 px-4 text-sm text-gray-600">{t.note || "-"}</td>
+                                </tr>
+                            ))}
+                            {(!vendor.transactions || vendor.transactions.length === 0) && (
+                                <tr>
+                                    <td colSpan={4} className="py-6 text-center text-gray-500">No transactions recorded</td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+            </Card>
 
             {/* Products Table */}
             <Card className="p-6">

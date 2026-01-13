@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Printer, Eye, Download, Mail, ShoppingBag } from "lucide-react"
+import { Skeleton } from "@/components/ui/skeleton"
 import { usePagination } from "@/hooks/use-pagination"
 import { PaginationControl } from "@/components/ui/pagination-control"
 import { StatusBadge } from "@/components/ui/status-badge"
@@ -137,14 +138,21 @@ export default function SellsPage() {
     const [methodFilter, setMethodFilter] = useState<string>("all")
     const [startDate, setStartDate] = useState("")
     const [endDate, setEndDate] = useState("")
+
     const [selectedSell, setSelectedSell] = useState<Sell | null>(null)
     const [isDetailsOpen, setIsDetailsOpen] = useState(false)
+    const [isLoading, setIsLoading] = useState(true)
 
     useEffect(() => {
         const customerParam = searchParams.get("customer")
         if (customerParam) {
             setSearchQuery(customerParam)
         }
+        
+        const timer = setTimeout(() => {
+            setIsLoading(false)
+        }, 2000)
+        return () => clearTimeout(timer)
     }, [searchParams])
 
     const filteredSells = sells.filter((sell) => {
@@ -592,45 +600,77 @@ export default function SellsPage() {
                             </tr>
                         </thead>
                         <tbody>
-                            {currentSells.map((sell) => (
-                                <tr key={sell.invoiceNo} className="border-b last:border-0 hover:bg-gray-50">
-                                    <td className="py-3 px-4">
-                                        <span className="font-semibold text-gray-900">{sell.invoiceNo}</span>
-                                    </td>
-                                    <td className="py-3 px-4 text-sm text-gray-600">{sell.orderTime}</td>
-                                    <td className="py-3 px-4 text-sm text-gray-900">{sell.customerName}</td>
-                                    <td className="py-3 px-4 text-sm text-gray-900">{sell.method}</td>
-                                    <td className="py-3 px-4 text-sm font-semibold text-gray-900">${sell.amount.toFixed(2)}</td>
-                                    <td className="py-3 px-4">
-                                        <StatusBadge status={sell.status} />
-                                    </td>
-                                    <td className="py-3 px-4">
-                                        <Select
-                                            value={sell.status}
-                                            onValueChange={(value) => handleStatusChange(sell.invoiceNo, value as Sell["status"])}
-                                        >
-                                            <SelectTrigger className="w-32 h-8 text-xs">
-                                                <SelectValue />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="Delivered">Delivered</SelectItem>
-                                                <SelectItem value="Processing">Processing</SelectItem>
-                                                <SelectItem value="Pending">Pending</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </td>
-                                    <td className="py-3 px-4">
-                                        <div className="flex items-center gap-2">
-                                            <Button variant="ghost" size="sm" onClick={() => handlePrintInvoice(sell)} className="p-2 h-8 w-8 hover:bg-emerald-50 hover:text-emerald-600">
-                                                <Printer className="w-4 h-4" />
-                                            </Button>
-                                            <Button variant="ghost" size="sm" onClick={() => handleViewDetails(sell)} className="p-2 h-8 w-8 hover:bg-emerald-50 hover:text-emerald-600">
-                                                <Eye className="w-4 h-4" />
-                                            </Button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
+                            {isLoading
+                                ? Array.from({ length: 3 }).map((_, index) => (
+                                    <tr key={index} className="border-b last:border-0 hover:bg-gray-50">
+                                        <td className="py-3 px-4">
+                                            <Skeleton className="h-4 w-12" />
+                                        </td>
+                                        <td className="py-3 px-4">
+                                            <Skeleton className="h-4 w-32" />
+                                        </td>
+                                        <td className="py-3 px-4">
+                                            <Skeleton className="h-4 w-24" />
+                                        </td>
+                                        <td className="py-3 px-4">
+                                            <Skeleton className="h-4 w-16" />
+                                        </td>
+                                        <td className="py-3 px-4">
+                                            <Skeleton className="h-4 w-16" />
+                                        </td>
+                                        <td className="py-3 px-4">
+                                            <Skeleton className="h-6 w-16 rounded-full" />
+                                        </td>
+                                        <td className="py-3 px-4">
+                                            <Skeleton className="h-8 w-32 rounded" />
+                                        </td>
+                                        <td className="py-3 px-4">
+                                            <div className="flex items-center gap-2">
+                                                <Skeleton className="h-8 w-8 rounded" />
+                                                <Skeleton className="h-8 w-8 rounded" />
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))
+                                : currentSells.map((sell) => (
+                                    <tr key={sell.invoiceNo} className="border-b last:border-0 hover:bg-gray-50">
+                                        <td className="py-3 px-4">
+                                            <span className="font-semibold text-gray-900">{sell.invoiceNo}</span>
+                                        </td>
+                                        <td className="py-3 px-4 text-sm text-gray-600">{sell.orderTime}</td>
+                                        <td className="py-3 px-4 text-sm text-gray-900">{sell.customerName}</td>
+                                        <td className="py-3 px-4 text-sm text-gray-900">{sell.method}</td>
+                                        <td className="py-3 px-4 text-sm font-semibold text-gray-900">${sell.amount.toFixed(2)}</td>
+                                        <td className="py-3 px-4">
+                                            <StatusBadge status={sell.status} />
+                                        </td>
+                                        <td className="py-3 px-4">
+                                            <Select
+                                                value={sell.status}
+                                                onValueChange={(value) => handleStatusChange(sell.invoiceNo, value as Sell["status"])}
+                                            >
+                                                <SelectTrigger className="w-32 h-8 text-xs">
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="Delivered">Delivered</SelectItem>
+                                                    <SelectItem value="Processing">Processing</SelectItem>
+                                                    <SelectItem value="Pending">Pending</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </td>
+                                        <td className="py-3 px-4">
+                                            <div className="flex items-center gap-2">
+                                                <Button variant="ghost" size="sm" onClick={() => handlePrintInvoice(sell)} className="p-2 h-8 w-8 hover:bg-emerald-50 hover:text-emerald-600">
+                                                    <Printer className="w-4 h-4" />
+                                                </Button>
+                                                <Button variant="ghost" size="sm" onClick={() => handleViewDetails(sell)} className="p-2 h-8 w-8 hover:bg-emerald-50 hover:text-emerald-600">
+                                                    <Eye className="w-4 h-4" />
+                                                </Button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
                         </tbody>
                     </table>
                 </div>

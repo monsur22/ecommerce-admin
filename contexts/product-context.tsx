@@ -19,6 +19,7 @@ export interface Product {
     createdAt?: string
     updatedAt?: string
     vendorId?: string // Link to Vendor
+    receiptNumber?: string
 }
 
 interface ProductContextType {
