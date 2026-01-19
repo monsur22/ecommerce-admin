@@ -66,16 +66,16 @@ const initialProducts: Product[] = [
         updatedAt: "2023-11-21T10:00:00Z",
         vendorId: "1",
         attributes: [
-            { id: "1", name: "Size", value: ["S", "M", "L"] },
-            { id: "2", name: "Color", value: ["Red", "Blue"] }
+            { id: "81B6", name: "Size", value: ["Small", "Medium", "Large"] },
+            { id: "81B2", name: "Color", value: ["Red", "Blue"] }
         ],
         variants: [
-            { id: "v1", name: "S / Red", attributes: { "Size": "S", "Color": "Red" }, price: 450, salePrice: 450, stock: 5, sku: "TSH-001-S-RE" },
-            { id: "v2", name: "S / Blue", attributes: { "Size": "S", "Color": "Blue" }, price: 450, salePrice: 450, stock: 5, sku: "TSH-001-S-BL" },
-            { id: "v3", name: "M / Red", attributes: { "Size": "M", "Color": "Red" }, price: 460, salePrice: 460, stock: 5, sku: "TSH-001-M-RE" },
-            { id: "v4", name: "M / Blue", attributes: { "Size": "M", "Color": "Blue" }, price: 460, salePrice: 460, stock: 5, sku: "TSH-001-M-BL" },
-            { id: "v5", name: "L / Red", attributes: { "Size": "L", "Color": "Red" }, price: 470, salePrice: 470, stock: 5, sku: "TSH-001-L-RE" },
-            { id: "v6", name: "L / Blue", attributes: { "Size": "L", "Color": "Blue" }, price: 470, salePrice: 470, stock: 5, sku: "TSH-001-L-BL" }
+            { id: "v1", name: "Small / Red", attributes: { "Size": "Small", "Color": "Red" }, price: 450, salePrice: 450, stock: 5, sku: "TSH-001-S-RE" },
+            { id: "v2", name: "Small / Blue", attributes: { "Size": "Small", "Color": "Blue" }, price: 450, salePrice: 450, stock: 5, sku: "TSH-001-S-BL" },
+            { id: "v3", name: "Medium / Red", attributes: { "Size": "Medium", "Color": "Red" }, price: 460, salePrice: 460, stock: 5, sku: "TSH-001-M-RE" },
+            { id: "v4", name: "Medium / Blue", attributes: { "Size": "Medium", "Color": "Blue" }, price: 460, salePrice: 460, stock: 5, sku: "TSH-001-M-BL" },
+            { id: "v5", name: "Large / Red", attributes: { "Size": "Large", "Color": "Red" }, price: 470, salePrice: 470, stock: 5, sku: "TSH-001-L-RE" },
+            { id: "v6", name: "Large / Blue", attributes: { "Size": "Large", "Color": "Blue" }, price: 470, salePrice: 470, stock: 5, sku: "TSH-001-L-BL" }
         ]
     },
     {

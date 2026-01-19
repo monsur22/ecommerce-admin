@@ -67,11 +67,16 @@ export default function ProductsPage() {
   const [generatedVariants, setGeneratedVariants] = useState<Variant[]>([])
 
   // Real-time stock sync
+  // Real-time stock sync
   useEffect(() => {
     if (generatedVariants.length > 0) {
-        const totalStock = generatedVariants.reduce((sum, v) => sum + v.stock, 0)
-        setFormData(prev => ({ ...prev, stock: String(totalStock) }))
+      const totalStock = generatedVariants.reduce((sum, v) => sum + (v.stock || 0), 0)
+      setFormData(prev => ({ ...prev, stock: String(totalStock) }))
     }
+    // Logic for when variants are removed to 0? 
+    // If I delete all variants, maybe I should let the user manually enter stock again.
+    // The Input field for stock has `disabled={generatedVariants.length > 0}`
+    // So if length is 0, it becomes enabled, and current value remains.
   }, [generatedVariants])
 
   const [bulkAction, setBulkAction] = useState("")
@@ -178,20 +183,24 @@ export default function ProductsPage() {
       vendorId: product.vendorId || "",
       receiptNumber: product.receiptNumber || "",
     })
-    
+
     // Load attributes and variants
-    if (product.attributes) {
-        setProductAttributes(product.attributes)
-        setSelectedAttributeIds(product.attributes.map(a => a.id))
+    if (product.attributes && product.attributes.length > 0) {
+      // Map existing attributes to ensure we have the correct structure
+      // We need to match them with global attributes to get generated variant logic working
+      setProductAttributes(product.attributes)
+
+      // Essential: Set selectedAttributeIds so checkboxes are checked
+      setSelectedAttributeIds(product.attributes.map(a => a.id))
     } else {
-        setProductAttributes([])
-        setSelectedAttributeIds([])
+      setProductAttributes([])
+      setSelectedAttributeIds([])
     }
-    
-    if (product.variants) {
-        setGeneratedVariants(product.variants)
+
+    if (product.variants && product.variants.length > 0) {
+      setGeneratedVariants(product.variants)
     } else {
-        setGeneratedVariants([])
+      setGeneratedVariants([])
     }
 
     setIsAddDialogOpen(true)
@@ -213,7 +222,7 @@ export default function ProductsPage() {
     // Calculate total stock from variants if they exist
     let finalStock = Number.parseInt(formData.stock)
     if (generatedVariants.length > 0) {
-        finalStock = generatedVariants.reduce((sum, v) => sum + v.stock, 0)
+      finalStock = generatedVariants.reduce((sum, v) => sum + v.stock, 0)
     }
 
     const newProduct: Product = {
@@ -255,7 +264,7 @@ export default function ProductsPage() {
     // Calculate total stock from variants if they exist
     let finalStock = Number.parseInt(formData.stock)
     if (generatedVariants.length > 0) {
-        finalStock = generatedVariants.reduce((sum, v) => sum + v.stock, 0)
+      finalStock = generatedVariants.reduce((sum, v) => sum + v.stock, 0)
     }
 
     updateProduct({
@@ -455,89 +464,129 @@ export default function ProductsPage() {
       const attr = globalAttributes.find((a) => a.id === attributeId)
       if (attr) {
         // ALWAYS initialize as array for variant generation purposes
-        setProductAttributes([...productAttributes, { id: attr.id, name: attr.name, value: [] }])
+        // Check if it already exists to avoid overwriting existing data if re-checked
+        const existing = productAttributes.find(pa => pa.id === attributeId)
+        if (!existing) {
+          setProductAttributes([...productAttributes, { id: attr.id, name: attr.name, value: [] }])
+        }
       }
     } else {
-      setSelectedAttributeIds(selectedAttributeIds.filter((id) => id !== attributeId))
-      setProductAttributes(productAttributes.filter((pa) => pa.id !== attributeId))
-      // Cleanup: clear generated variants if an attribute is removed to force regeneration
-      setGeneratedVariants([])
+      const newSelectedIds = selectedAttributeIds.filter((id) => id !== attributeId)
+      const newProductAttributes = productAttributes.filter((pa) => pa.id !== attributeId)
+
+      setSelectedAttributeIds(newSelectedIds)
+      setProductAttributes(newProductAttributes)
+
+      // Regenerate variants based on REMAINING attributes instead of clearing
+      // This allows fallback (e.g. Size removed -> show Color variants)
+      generateVariants(newProductAttributes)
     }
   }
 
   const handleAttributeValueChange = (attributeId: string, value: string | string[]) => {
-    setProductAttributes(
-      productAttributes.map((pa) => (pa.id === attributeId ? { ...pa, value } : pa))
-    )
+    setProductAttributes(prev => {
+      const attr = prev.find(p => p.id === attributeId);
+      const newAttributes = prev.map((pa) => (pa.id === attributeId ? { ...pa, value } : pa))
+
+      // Check if we are removing a value (only for arrays)
+      if (attr && Array.isArray(attr.value) && Array.isArray(value)) {
+        const removed = attr.value.filter(v => !value.includes(v));
+
+        if (removed.length > 0) {
+          // If the resulting value array is EMPTY, regenerate (fallback to other attributes)
+          // We check 'value' which is the NEW array.
+          if (value.length === 0) {
+            // We need to use newAttributes for generation, but wait, newAttributes state update won't be immediate in generateVariants call?
+            // generateVariants uses 'productAttributes' state by default, but we can pass 'newAttributes' to it.
+            // However, generateVariants filters out attributes with empty values. 
+            // So if Size has empty values, it will simply be ignored, effectively falling back to Color.
+            generateVariants(newAttributes)
+          } else {
+            // Otherwise, filter specific removed variants as before
+            setGeneratedVariants(currentVariants =>
+              currentVariants.filter(v => {
+                const variantValue = v.attributes[attr.name];
+                return !removed.includes(variantValue);
+              })
+            )
+          }
+        }
+      }
+
+      return newAttributes
+    })
   }
 
-  const generateVariants = () => {
-    if (productAttributes.length === 0) return
+  const generateVariants = (attributesToUse?: typeof productAttributes | any) => {
+    // Note: When called from onClick, attributesToUse is an Event object, which is not an array.
+    // Use passed attributes ONLY if it is an array, otherwise use current state.
+    const attrs = Array.isArray(attributesToUse) ? attributesToUse : productAttributes
 
     // Filter out attributes with no values selected
-    const activeAttributes = productAttributes.filter(attr => 
-        Array.isArray(attr.value) ? attr.value.length > 0 : attr.value !== ""
+    // Note: If an attribute has [] values, it is excluded here.
+    // This effectively implements the "Fallback" logic.
+    const activeAttributes = attrs.filter(attr =>
+      Array.isArray(attr.value) ? attr.value.length > 0 : attr.value !== ""
     )
 
     if (activeAttributes.length === 0) {
-        setGeneratedVariants([])
-        return
+      setGeneratedVariants([])
+      return
     }
 
     // Helper to generate cartesian product
     const cartesian = (args: any[][]): any[][] => {
-        const result: any[][] = [];
-        const max = args.length - 1;
-        function helper(arr: any[], i: number) {
-            for (let j = 0, l = args[i].length; j < l; j++) {
-                const a = arr.slice(0); // clone arr
-                a.push(args[i][j]);
-                if (i === max) result.push(a);
-                else helper(a, i + 1);
-            }
+      const result: any[][] = [];
+      const max = args.length - 1;
+      function helper(arr: any[], i: number) {
+        for (let j = 0, l = args[i].length; j < l; j++) {
+          const a = arr.slice(0); // clone arr
+          a.push(args[i][j]);
+          if (i === max) result.push(a);
+          else helper(a, i + 1);
         }
-        helper([], 0);
-        return result;
+      }
+      helper([], 0);
+      return result;
     }
 
     // Prepare arrays of values
-    // validValues will be an array of arrays, e.g. [['S', 'M'], ['Red', 'Blue']]
-    const valueArrays = activeAttributes.map(attr => 
-        Array.isArray(attr.value) ? attr.value : [attr.value]
+    const valueArrays = activeAttributes.map(attr =>
+      Array.isArray(attr.value) ? attr.value : [attr.value]
     )
 
     const combinations = cartesian(valueArrays)
-    
-    const newVariants: Variant[] = combinations.map((combo) => {
-        const variantAttributes: { [key: string]: string } = {}
-        let variantNameParts: string[] = []
-        
-        combo.forEach((val: string, index: number) => {
-            const attrName = activeAttributes[index].name
-            variantAttributes[attrName] = val
-            variantNameParts.push(val)
-        })
 
-        return {
-            id: generateId(),
-            name: variantNameParts.join(" / "),
-            attributes: variantAttributes,
-            price: Number(formData.price) || 0,
-            salePrice: Number(formData.salePrice) || 0,
-            stock: Math.floor(Number(formData.stock) / combinations.length) || 0,
-            sku: `${formData.sku}-${variantNameParts.map(p => p.substring(0,2).toUpperCase()).join("-")}`
-        }
+    const newVariants: Variant[] = combinations.map((combo) => {
+      const variantAttributes: { [key: string]: string } = {}
+      let variantNameParts: string[] = []
+
+      combo.forEach((val: string, index: number) => {
+        const attrName = activeAttributes[index].name
+        variantAttributes[attrName] = val
+        variantNameParts.push(val)
+      })
+
+      return {
+        id: generateId(),
+        name: variantNameParts.join(" / "),
+        attributes: variantAttributes,
+        price: Number(formData.price) || 0,
+        salePrice: Number(formData.salePrice) || 0,
+        stock: Math.floor(Number(formData.stock) / combinations.length) || 0,
+        sku: `${formData.sku}-${variantNameParts.map(p => p.substring(0, 2).toUpperCase()).join("-")}`
+      }
     })
 
     setGeneratedVariants(newVariants)
   }
 
   const updateVariant = (id: string, field: keyof Variant, value: any) => {
-      setGeneratedVariants(prev => prev.map(v => v.id === id ? { ...v, [field]: value } : v))
+    setGeneratedVariants(prev => prev.map(v => v.id === id ? { ...v, [field]: value } : v))
   }
 
   const removeVariant = (id: string) => {
-      setGeneratedVariants(prev => prev.filter(v => v.id !== id))
+    setGeneratedVariants(prev => prev.filter(v => v.id !== id))
   }
 
   return (
@@ -710,110 +759,110 @@ export default function ProductsPage() {
             <tbody>
               {isLoading
                 ? Array.from({ length: 3 }).map((_, index) => (
-                    <tr key={index} className="border-b last:border-0 hover:bg-gray-50">
-                      <td className="py-3 px-4">
-                        <Skeleton className="h-4 w-4 rounded" />
-                      </td>
-                      <td className="py-3 px-4">
-                        <div className="flex items-center gap-3">
-                          <Skeleton className="h-10 w-10 rounded object-cover" />
-                          <Skeleton className="h-4 w-32" />
-                        </div>
-                      </td>
-                      <td className="py-3 px-4">
-                        <Skeleton className="h-4 w-24" />
-                      </td>
-                      <td className="py-3 px-4">
-                        <Skeleton className="h-4 w-20" />
-                      </td>
-                      <td className="py-3 px-4">
-                        <Skeleton className="h-4 w-16" />
-                      </td>
-                      <td className="py-3 px-4">
-                        <Skeleton className="h-4 w-16" />
-                      </td>
-                      <td className="py-3 px-4">
-                        <Skeleton className="h-4 w-12" />
-                      </td>
-                      <td className="py-3 px-4">
-                        <Skeleton className="h-4 w-24" />
-                      </td>
-                      <td className="py-3 px-4">
-                        <Skeleton className="h-6 w-20 rounded-full" />
-                      </td>
-                      <td className="py-3 px-4 text-center">
-                        <Skeleton className="h-5 w-5 mx-auto" />
-                      </td>
-                      <td className="py-3 px-4 text-center">
-                        <Skeleton className="h-6 w-11 rounded-full mx-auto" />
-                      </td>
-                      <td className="py-3 px-4">
-                        <div className="flex items-center justify-center gap-2">
-                          <Skeleton className="h-4 w-4" />
-                          <Skeleton className="h-4 w-4" />
-                        </div>
-                      </td>
-                    </tr>
-                  ))
+                  <tr key={index} className="border-b last:border-0 hover:bg-gray-50">
+                    <td className="py-3 px-4">
+                      <Skeleton className="h-4 w-4 rounded" />
+                    </td>
+                    <td className="py-3 px-4">
+                      <div className="flex items-center gap-3">
+                        <Skeleton className="h-10 w-10 rounded object-cover" />
+                        <Skeleton className="h-4 w-32" />
+                      </div>
+                    </td>
+                    <td className="py-3 px-4">
+                      <Skeleton className="h-4 w-24" />
+                    </td>
+                    <td className="py-3 px-4">
+                      <Skeleton className="h-4 w-20" />
+                    </td>
+                    <td className="py-3 px-4">
+                      <Skeleton className="h-4 w-16" />
+                    </td>
+                    <td className="py-3 px-4">
+                      <Skeleton className="h-4 w-16" />
+                    </td>
+                    <td className="py-3 px-4">
+                      <Skeleton className="h-4 w-12" />
+                    </td>
+                    <td className="py-3 px-4">
+                      <Skeleton className="h-4 w-24" />
+                    </td>
+                    <td className="py-3 px-4">
+                      <Skeleton className="h-6 w-20 rounded-full" />
+                    </td>
+                    <td className="py-3 px-4 text-center">
+                      <Skeleton className="h-5 w-5 mx-auto" />
+                    </td>
+                    <td className="py-3 px-4 text-center">
+                      <Skeleton className="h-6 w-11 rounded-full mx-auto" />
+                    </td>
+                    <td className="py-3 px-4">
+                      <div className="flex items-center justify-center gap-2">
+                        <Skeleton className="h-4 w-4" />
+                        <Skeleton className="h-4 w-4" />
+                      </div>
+                    </td>
+                  </tr>
+                ))
                 : currentProducts.map((product) => (
-                    <tr key={product.id} className="border-b last:border-0 hover:bg-gray-50">
-                      <td className="py-3 px-4">
-                        <Checkbox
-                          checked={selectedProducts.includes(product.id)}
-                          onCheckedChange={(checked) => handleSelectProduct(product.id, checked as boolean)}
+                  <tr key={product.id} className="border-b last:border-0 hover:bg-gray-50">
+                    <td className="py-3 px-4">
+                      <Checkbox
+                        checked={selectedProducts.includes(product.id)}
+                        onCheckedChange={(checked) => handleSelectProduct(product.id, checked as boolean)}
+                      />
+                    </td>
+                    <td className="py-3 px-4">
+                      <div className="flex items-center gap-3">
+                        <img
+                          src={product.image || "/placeholder.svg"}
+                          alt={product.name}
+                          className="w-10 h-10 rounded object-cover"
                         />
-                      </td>
-                      <td className="py-3 px-4">
-                        <div className="flex items-center gap-3">
-                          <img
-                            src={product.image || "/placeholder.svg"}
-                            alt={product.name}
-                            className="w-10 h-10 rounded object-cover"
-                          />
-                          <span className="font-medium text-gray-900">{product.name}</span>
-                        </div>
-                      </td>
-                      <td className="py-3 px-4 text-sm text-gray-600">{product.receiptNumber || "-"}</td>
-                      <td className="py-3 px-4 text-sm text-gray-600">{product.category}</td>
-                      <td className="py-3 px-4 text-sm font-semibold text-gray-900">${product.price.toFixed(2)}</td>
-                      <td className="py-3 px-4 text-sm font-semibold text-gray-900">${product.salePrice.toFixed(2)}</td>
-                      <td className="py-3 px-4 text-sm text-gray-600">{product.stock}</td>
-                      <td className="py-3 px-4 text-sm text-gray-600">
-                        {product.vendorId ? (
-                          <Link href={`/dashboard/vendors/${product.vendorId}`} className="text-emerald-600 hover:underline">
-                            {vendors.find((v) => v.id === product.vendorId)?.name || "Unknown"}
-                          </Link>
-                        ) : (
-                          <span className="text-gray-400">No Vendor</span>
-                        )}
-                      </td>
-                      <td className="py-3 px-4">
-                        <StatusBadge status={product.status} />
-                      </td>
-                      <td className="py-3 px-4 text-center">
-                        <button onClick={() => setViewingProduct(product)} className="text-gray-400 hover:text-emerald-600">
-                          <Eye className="w-5 h-5" />
+                        <span className="font-medium text-gray-900">{product.name}</span>
+                      </div>
+                    </td>
+                    <td className="py-3 px-4 text-sm text-gray-600">{product.receiptNumber || "-"}</td>
+                    <td className="py-3 px-4 text-sm text-gray-600">{product.category}</td>
+                    <td className="py-3 px-4 text-sm font-semibold text-gray-900">${product.price.toFixed(2)}</td>
+                    <td className="py-3 px-4 text-sm font-semibold text-gray-900">${product.salePrice.toFixed(2)}</td>
+                    <td className="py-3 px-4 text-sm text-gray-600">{product.stock}</td>
+                    <td className="py-3 px-4 text-sm text-gray-600">
+                      {product.vendorId ? (
+                        <Link href={`/dashboard/vendors/${product.vendorId}`} className="text-emerald-600 hover:underline">
+                          {vendors.find((v) => v.id === product.vendorId)?.name || "Unknown"}
+                        </Link>
+                      ) : (
+                        <span className="text-gray-400">No Vendor</span>
+                      )}
+                    </td>
+                    <td className="py-3 px-4">
+                      <StatusBadge status={product.status} />
+                    </td>
+                    <td className="py-3 px-4 text-center">
+                      <button onClick={() => setViewingProduct(product)} className="text-gray-400 hover:text-emerald-600">
+                        <Eye className="w-5 h-5" />
+                      </button>
+                    </td>
+                    <td className="py-3 px-4 text-center">
+                      <Switch
+                        checked={product.published}
+                        onCheckedChange={() => handleTogglePublished(product.id)}
+                        className="data-[state=checked]:bg-emerald-600"
+                      />
+                    </td>
+                    <td className="py-3 px-4">
+                      <div className="flex items-center justify-center gap-2">
+                        <button onClick={() => handleEdit(product)} className="text-gray-400 hover:text-emerald-600">
+                          <Edit2 className="w-4 h-4" />
                         </button>
-                      </td>
-                      <td className="py-3 px-4 text-center">
-                        <Switch
-                          checked={product.published}
-                          onCheckedChange={() => handleTogglePublished(product.id)}
-                          className="data-[state=checked]:bg-emerald-600"
-                        />
-                      </td>
-                      <td className="py-3 px-4">
-                        <div className="flex items-center justify-center gap-2">
-                          <button onClick={() => handleEdit(product)} className="text-gray-400 hover:text-emerald-600">
-                            <Edit2 className="w-4 h-4" />
-                          </button>
-                          <button onClick={() => handleDelete(product.id)} className="text-gray-400 hover:text-red-600">
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                        <button onClick={() => handleDelete(product.id)} className="text-gray-400 hover:text-red-600">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
             </tbody>
           </table>
         </div>
@@ -835,318 +884,315 @@ export default function ProductsPage() {
       />
 
       <Dialog open={isAddDialogOpen} onOpenChange={closeDialog}>
-        <DialogContent className="max-w-[90vw] max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
+        <DialogContent className="sm:max-w-5xl p-0 gap-0 max-h-[90vh] flex flex-col bg-white">
+          <DialogHeader className="p-6 border-b">
             <DialogTitle className="text-2xl">{editingProduct ? "Edit Product" : "Add Product"}</DialogTitle>
             <DialogDescription>
               {editingProduct ? "Update the product details below" : "Fill in the product details below"}
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-6 py-4 grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Product Title/Name</Label>
-              <Input
-                id="name"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="Product Title/Name"
-              />
+          <div className="flex-1 overflow-y-auto p-6 space-y-6">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Product Title/Name</Label>
+                <Input
+                  id="name"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  placeholder="Product Title/Name"
+                />
+              </div>
+
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="sku">Product SKU</Label>
+                  <Input
+                    id="sku"
+                    value={formData.sku}
+                    onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
+                    placeholder="Product SKU"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="barcode">Product Barcode</Label>
+                  <Input
+                    id="barcode"
+                    value={formData.barcode}
+                    onChange={(e) => setFormData({ ...formData, barcode: e.target.value })}
+                    placeholder="Product Barcode"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="receiptNumber">Receipt Number</Label>
+                  <Input
+                    id="receiptNumber"
+                    value={formData.receiptNumber}
+                    onChange={(e) => setFormData({ ...formData, receiptNumber: e.target.value })}
+                    placeholder="Receipt Number (Optional)"
+                  />
+                </div>
+              </>
+
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="category">Category</Label>
+                  <Select
+                    value={formData.category}
+                    onValueChange={(value) => setFormData({ ...formData, category: value })}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select Category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categories.map((cat) => (
+                        <SelectItem key={cat.value} value={cat.value}>
+                          <div className="flex items-center gap-2">
+                            <span>{cat.icon}</span>
+                            <span>{cat.value}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="vendor">Vendor</Label>
+                  <Select
+                    value={formData.vendorId || undefined}
+                    onValueChange={(value) => setFormData({ ...formData, vendorId: value })}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select Vendor (Optional)" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {vendors.map((vendor) => (
+                        <SelectItem key={vendor.id} value={vendor.id}>
+                          {vendor.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="defaultCategory">Default Category</Label>
+                  <Select>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Default Category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="general">General</SelectItem>
+                      <SelectItem value="featured">Featured</SelectItem>
+                      <SelectItem value="trending">Trending</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </>
+
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="price">Product Price</Label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+                    <Input
+                      id="price"
+                      type="number"
+                      value={formData.price}
+                      onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                      placeholder="0"
+                      className="pl-7"
+                      disabled={generatedVariants.length > 0}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="salePrice">Sale Price</Label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+                    <Input
+                      id="salePrice"
+                      type="number"
+                      value={formData.salePrice}
+                      onChange={(e) => setFormData({ ...formData, salePrice: e.target.value })}
+                      placeholder="0"
+                      className="pl-7"
+                      disabled={generatedVariants.length > 0}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="stock">Stock</Label>
+                  <Input
+                    id="stock"
+                    type="number"
+                    value={formData.stock}
+                    onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
+                    placeholder="0"
+                  />
+                </div>
+              </>
             </div>
 
-            
+            <div className="space-y-4 border-t pt-4">
+              <h3 className="text-lg font-medium">Attributes & Variants</h3>
 
-            
-
-            <>
-              <div className="space-y-2">
-                <Label htmlFor="sku">Product SKU</Label>
-                <Input
-                  id="sku"
-                  value={formData.sku}
-                  onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
-                  placeholder="Product SKU"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="barcode">Product Barcode</Label>
-                <Input
-                  id="barcode"
-                  value={formData.barcode}
-                  onChange={(e) => setFormData({ ...formData, barcode: e.target.value })}
-                  placeholder="Product Barcode"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="receiptNumber">Receipt Number</Label>
-                <Input
-                  id="receiptNumber"
-                  value={formData.receiptNumber}
-                  onChange={(e) => setFormData({ ...formData, receiptNumber: e.target.value })}
-                  placeholder="Receipt Number (Optional)"
-                />
-              </div>
-            </>
-
-            <>
-              <div className="space-y-2">
-                <Label htmlFor="category">Category</Label>
-                <Select
-                  value={formData.category}
-                  onValueChange={(value) => setFormData({ ...formData, category: value })}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select Category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categories.map((cat) => (
-                      <SelectItem key={cat.value} value={cat.value}>
-                        <div className="flex items-center gap-2">
-                          <span>{cat.icon}</span>
-                          <span>{cat.value}</span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="vendor">Vendor</Label>
-                <Select
-                  value={formData.vendorId || undefined}
-                  onValueChange={(value) => setFormData({ ...formData, vendorId: value })}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select Vendor (Optional)" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {vendors.map((vendor) => (
-                      <SelectItem key={vendor.id} value={vendor.id}>
-                        {vendor.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="defaultCategory">Default Category</Label>
-                <Select>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Default Category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="general">General</SelectItem>
-                    <SelectItem value="featured">Featured</SelectItem>
-                    <SelectItem value="trending">Trending</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </>
-
-            <>
-              <div className="space-y-2">
-                <Label htmlFor="price">Product Price</Label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
-                  <Input
-                    id="price"
-                    type="number"
-                    value={formData.price}
-                    onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                    placeholder="0"
-                    className="pl-7"
-                    disabled={generatedVariants.length > 0}
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="salePrice">Sale Price</Label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
-                  <Input
-                    id="salePrice"
-                    type="number"
-                    value={formData.salePrice}
-                    onChange={(e) => setFormData({ ...formData, salePrice: e.target.value })}
-                    placeholder="0"
-                    className="pl-7"
-                    disabled={generatedVariants.length > 0}
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="stock">Stock</Label>
-                <Input
-                  id="stock"
-                  type="number"
-                  value={formData.stock}
-                  onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
-                  placeholder="0"
-                />
-              </div>
-            </>
-          </div>
-
-          <div className="space-y-4 border-t pt-4">
-            <h3 className="text-lg font-medium">Attributes & Variants</h3>
-            
-            <div className="space-y-4">
+              <div className="space-y-4">
                 <div className="flex flex-wrap gap-4">
-                    {globalAttributes.map(attr => (
-                        <div key={attr.id} className="flex items-center space-x-2">
-                            <Checkbox 
-                                id={`attr-${attr.id}`} 
-                                checked={selectedAttributeIds.includes(attr.id)}
-                                onCheckedChange={(checked) => handleAttributeSelect(attr.id, checked as boolean)}
-                            />
-                            <Label htmlFor={`attr-${attr.id}`}>{attr.displayName}</Label>
-                        </div>
-                    ))}
+                  {globalAttributes.map(attr => (
+                    <div key={attr.id} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`attr-${attr.id}`}
+                        checked={selectedAttributeIds.includes(attr.id)}
+                        onCheckedChange={(checked) => handleAttributeSelect(attr.id, checked as boolean)}
+                      />
+                      <Label htmlFor={`attr-${attr.id}`}>{attr.displayName}</Label>
+                    </div>
+                  ))}
                 </div>
 
                 {productAttributes.map(attr => {
-                    const globalAttr = globalAttributes.find(a => a.id === attr.id)
-                    if (!globalAttr) return null
-                    
-                    return (
-                        <div key={attr.id} className="grid grid-cols-4 items-center gap-4">
-                            <Label className="text-right">{attr.name}</Label>
-                            <div className="col-span-3">
-                                {globalAttr.option === "dropdown" || globalAttr.option === "radio" ? (
-                                    <>
-                                       <div className="flex flex-wrap gap-2">
-                                           {globalAttr.values.map(val => {
-                                               const isSelected = Array.isArray(attr.value) ? attr.value.includes(val) : attr.value === val
-                                               return (
-                                                   <Badge 
-                                                    key={val}
-                                                    variant={isSelected ? "default" : "outline"}
-                                                    className="cursor-pointer"
-                                                    onClick={() => {
-                                                        let newValue: string | string[] = attr.value;
-                                                        if (!Array.isArray(newValue)) {
-                                                            // If it was a string (shouldn't happen with new logic but safe to handle), convert to array
-                                                            newValue = newValue ? [newValue] : []
-                                                        }
-                                                        
-                                                        // It's an array now
-                                                        if ((newValue as string[]).includes(val)) {
-                                                            newValue = (newValue as string[]).filter(v => v !== val)
-                                                        } else {
-                                                            newValue = [...(newValue as string[]), val]
-                                                        }
-                                                        
-                                                        handleAttributeValueChange(attr.id, newValue)
-                                                    }}
-                                                   >
-                                                    {val}
-                                                   </Badge>
-                                               )
-                                           })}
-                                       </div>
-                                    </>
-                                ) : (
-                                    <Input 
-                                        value={attr.value as string} 
-                                        onChange={(e) => handleAttributeValueChange(attr.id, e.target.value)}
-                                        placeholder={`Enter ${attr.name}`}
-                                    />
-                                )}
+                  const globalAttr = globalAttributes.find(a => a.id === attr.id)
+                  if (!globalAttr) return null
+
+                  return (
+                    <div key={attr.id} className="grid grid-cols-4 items-center gap-4">
+                      <Label className="text-right">{attr.name}</Label>
+                      <div className="col-span-3">
+                        {globalAttr.option === "dropdown" || globalAttr.option === "radio" ? (
+                          <>
+                            <div className="flex flex-wrap gap-2">
+                              {globalAttr.values.map(val => {
+                                const isSelected = Array.isArray(attr.value) ? attr.value.includes(val) : attr.value === val
+                                return (
+                                  <Badge
+                                    key={val}
+                                    variant={isSelected ? "default" : "outline"}
+                                    className="cursor-pointer"
+                                    onClick={() => {
+                                      let newValue: string | string[] = attr.value;
+                                      if (!Array.isArray(newValue)) {
+                                        // If it was a string (shouldn't happen with new logic but safe to handle), convert to array
+                                        newValue = newValue ? [newValue] : []
+                                      }
+
+                                      // It's an array now
+                                      if ((newValue as string[]).includes(val)) {
+                                        newValue = (newValue as string[]).filter(v => v !== val)
+                                      } else {
+                                        newValue = [...(newValue as string[]), val]
+                                      }
+
+                                      handleAttributeValueChange(attr.id, newValue)
+                                    }}
+                                  >
+                                    {val}
+                                  </Badge>
+                                )
+                              })}
                             </div>
-                        </div>
-                    )
+                          </>
+                        ) : (
+                          <Input
+                            value={attr.value as string}
+                            onChange={(e) => handleAttributeValueChange(attr.id, e.target.value)}
+                            placeholder={`Enter ${attr.name}`}
+                          />
+                        )}
+                      </div>
+                    </div>
+                  )
                 })}
 
                 {productAttributes.length > 0 && (
-                    <Button type="button" onClick={generateVariants} variant="secondary" className="w-full">
-                        Generate Variants
-                    </Button>
+                  <Button type="button" onClick={generateVariants} variant="secondary" className="w-full">
+                    Generate Variants
+                  </Button>
                 )}
+              </div>
+
+              {generatedVariants.length > 0 && (
+                <div className="rounded-md border">
+                  <table className="w-full text-sm">
+                    <thead className="bg-gray-50 border-b">
+                      <tr>
+                        <th className="p-2 text-left">Variant</th>
+                        <th className="p-2 text-left">Price</th>
+                        <th className="p-2 text-left">Sale Price</th>
+                        <th className="p-2 text-left">Stock</th>
+                        <th className="p-2 text-left">SKU</th>
+                        <th className="p-2 text-left">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {generatedVariants.map(variant => (
+                        <tr key={variant.id} className="border-b last:border-0">
+                          <td className="p-2 font-medium">{variant.name}</td>
+                          <td className="p-2">
+                            <Input
+                              type="number"
+                              className="h-8 w-24"
+                              value={variant.price || ''}
+                              onChange={(e) => updateVariant(variant.id, 'price', Number(e.target.value))}
+                            />
+                          </td>
+                          <td className="p-2">
+                            <Input
+                              type="number"
+                              className="h-8 w-24"
+                              value={variant.salePrice || ''}
+                              onChange={(e) => updateVariant(variant.id, 'salePrice', Number(e.target.value))}
+                            />
+                          </td>
+                          <td className="p-2">
+                            <Input
+                              type="number"
+                              className="h-8 w-24"
+                              value={variant.stock || ''}
+                              onChange={(e) => updateVariant(variant.id, 'stock', Number(e.target.value))}
+                            />
+                          </td>
+                          <td className="p-2">
+                            <Input
+                              className="h-8 w-32"
+                              value={variant.sku}
+                              onChange={(e) => updateVariant(variant.id, 'sku', e.target.value)}
+                            />
+                          </td>
+                          <td className="p-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+                              onClick={() => removeVariant(variant.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
 
-            {generatedVariants.length > 0 && (
-                <div className="rounded-md border">
-                    <table className="w-full text-sm">
-                        <thead className="bg-gray-50 border-b">
-                            <tr>
-                                <th className="p-2 text-left">Variant</th>
-                                <th className="p-2 text-left">Price</th>
-                                <th className="p-2 text-left">Sale Price</th>
-                                <th className="p-2 text-left">Stock</th>
-                                <th className="p-2 text-left">SKU</th>
-                                <th className="p-2 text-left">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {generatedVariants.map(variant => (
-                                <tr key={variant.id} className="border-b last:border-0">
-                                    <td className="p-2 font-medium">{variant.name}</td>
-                                    <td className="p-2">
-                                        <Input 
-                                            type="number" 
-                                            className="h-8 w-24" 
-                                            value={variant.price || ''}
-                                            onChange={(e) => updateVariant(variant.id, 'price', Number(e.target.value))}
-                                        />
-                                    </td>
-                                    <td className="p-2">
-                                        <Input 
-                                            type="number" 
-                                            className="h-8 w-24" 
-                                            value={variant.salePrice || ''}
-                                            onChange={(e) => updateVariant(variant.id, 'salePrice', Number(e.target.value))}
-                                        />
-                                    </td>
-                                    <td className="p-2">
-                                         <Input 
-                                            type="number" 
-                                            className="h-8 w-24" 
-                                            value={variant.stock || ''}
-                                            onChange={(e) => updateVariant(variant.id, 'stock', Number(e.target.value))}
-                                        />
-                                    </td>
-                                    <td className="p-2">
-                                         <Input 
-                                            className="h-8 w-32" 
-                                            value={variant.sku}
-                                            onChange={(e) => updateVariant(variant.id, 'sku', e.target.value)}
-                                        />
-                                    </td>
-                                    <td className="p-2">
-                                        <Button 
-                                            variant="ghost" 
-                                            size="sm" 
-                                            className="h-8 w-8 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
-                                            onClick={() => removeVariant(variant.id)}
-                                        >
-                                            <Trash2 className="h-4 w-4" />
-                                        </Button>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            )}
-          </div>
-
-           <div className="space-y-2">
-                <Label htmlFor="description">Product Description</Label>
-                <Textarea
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Product Description"
-                  rows={4}
-                  className="resize-none"
-                />
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="description">Product Description</Label>
+              <Textarea
+                id="description"
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                placeholder="Product Description"
+                rows={4}
+                className="resize-none"
+              />
+            </div>
 
             <div className="space-y-2 w-full">
               <Label>Product Images</Label>
@@ -1155,9 +1201,8 @@ export default function ProductsPage() {
                 onDragLeave={handleDragLeave}
                 onDragOver={handleDragOver}
                 onDrop={handleDrop}
-                className={`border-2 border-dashed rounded-lg p-12 text-center transition-colors cursor-pointer ${
-                  isDragging ? "border-emerald-500 bg-emerald-50" : "border-gray-300 hover:border-emerald-500"
-                }`}
+                className={`border-2 border-dashed rounded-lg p-12 text-center transition-colors cursor-pointer ${isDragging ? "border-emerald-500 bg-emerald-50" : "border-gray-300 hover:border-emerald-500"
+                  }`}
               >
                 <input
                   type="file"
@@ -1205,7 +1250,8 @@ export default function ProductsPage() {
                 </div>
               )}
             </div>
-          <DialogFooter>
+          </div>
+          <DialogFooter className="p-6 border-t">
             <Button variant="outline" onClick={closeDialog}>
               Cancel
             </Button>
@@ -1277,47 +1323,47 @@ export default function ProductsPage() {
               </div>
 
               {viewingProduct.variants && viewingProduct.variants.length > 0 && (
-                  <div className="mt-6 border-t pt-4">
-                      <h4 className="text-lg font-semibold mb-3">Variants</h4>
-                      <div className="rounded-md border overflow-hidden">
-                          <table className="w-full text-sm">
-                              <thead className="bg-gray-50 border-b">
-                                  <tr>
-                                      <th className="p-2 text-left">Variant</th>
-                                      <th className="p-2 text-left">SKU</th>
-                                      <th className="p-2 text-left">Product Price</th>
-                                      <th className="p-2 text-left">Sale Price</th>
-                                      <th className="p-2 text-left">Stock</th>
-                                  </tr>
-                              </thead>
-                              <tbody>
-                                  {viewingProduct.variants.map((variant) => (
-                                      <tr key={variant.id} className="border-b last:border-0 hover:bg-gray-50 bg-white">
-                                          <td className="p-2 font-medium">{variant.name}</td>
-                                          <td className="p-2 text-gray-600">{variant.sku}</td>
-                                          <td className="p-2 font-medium">
-                                              <span>${variant.price}</span>
-                                          </td>
-                                          <td className="p-2 font-medium text-emerald-600">
-                                              <span>${variant.salePrice || variant.price}</span>
-                                          </td>
-                                          <td className="p-2">
-                                              {variant.stock > 0 ? (
-                                                  <Badge variant="outline" className="text-emerald-600 border-emerald-200 bg-emerald-50">
-                                                      {variant.stock} in stock
-                                                  </Badge>
-                                              ) : (
-                                                  <Badge variant="outline" className="text-red-600 border-red-200 bg-red-50">
-                                                      Out of stock
-                                                  </Badge>
-                                              )}
-                                          </td>
-                                      </tr>
-                                  ))}
-                              </tbody>
-                          </table>
-                      </div>
+                <div className="mt-6 border-t pt-4">
+                  <h4 className="text-lg font-semibold mb-3">Variants</h4>
+                  <div className="rounded-md border overflow-hidden">
+                    <table className="w-full text-sm">
+                      <thead className="bg-gray-50 border-b">
+                        <tr>
+                          <th className="p-2 text-left">Variant</th>
+                          <th className="p-2 text-left">SKU</th>
+                          <th className="p-2 text-left">Product Price</th>
+                          <th className="p-2 text-left">Sale Price</th>
+                          <th className="p-2 text-left">Stock</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {viewingProduct.variants.map((variant) => (
+                          <tr key={variant.id} className="border-b last:border-0 hover:bg-gray-50 bg-white">
+                            <td className="p-2 font-medium">{variant.name}</td>
+                            <td className="p-2 text-gray-600">{variant.sku}</td>
+                            <td className="p-2 font-medium">
+                              <span>${variant.price}</span>
+                            </td>
+                            <td className="p-2 font-medium text-emerald-600">
+                              <span>${variant.salePrice || variant.price}</span>
+                            </td>
+                            <td className="p-2">
+                              {variant.stock > 0 ? (
+                                <Badge variant="outline" className="text-emerald-600 border-emerald-200 bg-emerald-50">
+                                  {variant.stock} in stock
+                                </Badge>
+                              ) : (
+                                <Badge variant="outline" className="text-red-600 border-red-200 bg-red-50">
+                                  Out of stock
+                                </Badge>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
+                </div>
               )}
             </div>
           )}

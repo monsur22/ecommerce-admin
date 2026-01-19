@@ -1,33 +1,310 @@
-[00:00:00.733] Server  LOG      ✓ Ready in 545ms
-[00:00:05.081] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
-[00:00:05.339] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
-[00:00:05.339] Browser LOG     %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {"path":"/dashboard/products","route":"/dashboard/products"}
-[00:00:05.340] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3001/dashboard/products color: rgb(120, 120, 120) color: inherit {"dp":"/dashboard/products","o":"http://localhost:3001/dashboard/products","sdkn":"@vercel/analytics/next","sdkv":"1.3.1","sv":"0.1.3","ts":1768827037932}
-[00:02:35.371] Server  LOG      ✓ Compiled in 133ms
-[00:02:37.305] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3001/dashboard/pos color: rgb(120, 120, 120) color: inherit {"dp":"/dashboard/pos","o":"http://localhost:3001/dashboard/pos","sdkn":"@vercel/analytics/next","sdkv":"1.3.1","sv":"0.1.3","ts":1768827189889}
-[00:02:38.420] Browser WARN    Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
-[00:02:38.420] Browser WARN    Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
-[00:02:47.847] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3001/dashboard color: rgb(120, 120, 120) color: inherit {"dp":"/dashboard","o":"http://localhost:3001/dashboard","sdkn":"@vercel/analytics/next","sdkv":"1.3.1","sv":"0.1.3","ts":1768827200428}
-[00:02:50.737] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3001/dashboard/products color: rgb(120, 120, 120) color: inherit {"dp":"/dashboard/products","o":"http://localhost:3001/dashboard/products","sdkn":"@vercel/analytics/next","sdkv":"1.3.1","sv":"0.1.3","ts":1768827203297}
-[00:02:57.424] Browser WARN    Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
-[00:02:57.424] Browser WARN    Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
-[00:03:30.260] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
-[00:03:30.505] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
-[00:03:30.505] Browser LOG     %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {"path":"/dashboard/products","route":"/dashboard/products"}
-[00:03:30.505] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3001/dashboard/products color: rgb(120, 120, 120) color: inherit {"dp":"/dashboard/products","o":"http://localhost:3001/dashboard/products","sdkn":"@vercel/analytics/next","sdkv":"1.3.1","sv":"0.1.3","ts":1768827243098}
-[00:03:45.162] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3001/dashboard/vendors color: rgb(120, 120, 120) color: inherit {"dp":"/dashboard/vendors","o":"http://localhost:3001/dashboard/vendors","sdkn":"@vercel/analytics/next","sdkv":"1.3.1","sv":"0.1.3","ts":1768827257753}
-[00:03:51.444] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3001/dashboard/vendors/1 color: rgb(120, 120, 120) color: inherit {"dp":"/dashboard/vendors/[id]","o":"http://localhost:3001/dashboard/vendors/1","sdkn":"@vercel/analytics/next","sdkv":"1.3.1","sv":"0.1.3","ts":1768827263985}
-[00:03:51.444] Browser WARN    Image with src "http://localhost:3001/fresh-lettuce.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
-[00:03:58.834] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3001/dashboard/products color: rgb(120, 120, 120) color: inherit {"dp":"/dashboard/products","o":"http://localhost:3001/dashboard/products","sdkn":"@vercel/analytics/next","sdkv":"1.3.1","sv":"0.1.3","ts":1768827271394}
-[00:04:02.416] Browser WARN    Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
-[00:04:02.416] Browser WARN    Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
-[00:04:50.802] Browser WARN    Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
-[00:04:50.802] Browser WARN    Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
-[00:06:06.664] Server  LOG      ✓ Compiled in 119ms
-[00:11:59.198] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3001/dashboard/attributes color: rgb(120, 120, 120) color: inherit {"dp":"/dashboard/attributes","o":"http://localhost:3001/dashboard/attributes","sdkn":"@vercel/analytics/next","sdkv":"1.3.1","sv":"0.1.3","ts":1768827751783}
-[00:12:02.937] Browser WARN    Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
-[00:12:02.937] Browser WARN    Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
-[00:12:05.575] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3001/dashboard/customers color: rgb(120, 120, 120) color: inherit {"dp":"/dashboard/customers","o":"http://localhost:3001/dashboard/customers","sdkn":"@vercel/analytics/next","sdkv":"1.3.1","sv":"0.1.3","ts":1768827758166}
-[00:12:16.532] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3001/dashboard/orders color: rgb(120, 120, 120) color: inherit {"dp":"/dashboard/orders","o":"http://localhost:3001/dashboard/orders","sdkn":"@vercel/analytics/next","sdkv":"1.3.1","sv":"0.1.3","ts":1768827769091}
-[00:12:19.509] Browser WARN    Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
-[00:12:19.509] Browser WARN    Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+[00:00:00.971] Server  LOG      ✓ Ready in 633ms
+[00:00:13.644] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
+[00:00:13.644] Browser LOG     %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {"path":"/","route":"/"}
+[00:00:13.644] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3000/ color: rgb(120, 120, 120) color: inherit {"dp":"/","o":"http://localhost:3000/","r":"","sdkn":"@vercel/analytics/next","sdkv":"1.3.1","sv":"0.1.3","ts":1768842607743}
+[00:00:13.644] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3000/dashboard color: rgb(120, 120, 120) color: inherit {"dp":"/dashboard","o":"http://localhost:3000/dashboard","sdkn":"@vercel/analytics/next","sdkv":"1.3.1","sv":"0.1.3","ts":1768842607926}
+[00:00:23.333] Server  ERROR    ⨯ ./app/dashboard/edit-profile/page.tsx:11:1
+Module not found: Can't resolve 'sweetalert2'
+   9 | import { User, Mail, Lock, Camera, Save } from "lucide-react"
+  10 | import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+> 11 | import Swal from "sweetalert2"
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  12 |
+  13 | export default function EditProfilePage() {
+  14 |   const { userEmail } = useAuth()
+
+
+
+Import traces:
+  Client Component Browser:
+    ./app/dashboard/edit-profile/page.tsx [Client Component Browser]
+    ./app/dashboard/edit-profile/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./app/dashboard/edit-profile/page.tsx [Client Component SSR]
+    ./app/dashboard/edit-profile/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:00:23.450] Browser ERROR   ./app/dashboard/edit-profile/page.tsx:11:1
+Module not found: Can't resolve 'sweetalert2'
+   9 | import { User, Mail, Lock, Camera, Save } from "lucide-react"
+  10 | import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+> 11 | import Swal from "sweetalert2"
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  12 |
+  13 | export default function EditProfilePage() {
+  14 |   const { userEmail } = useAuth()
+
+Import traces:
+  Client Component Browser:
+    ./app/dashboard/edit-profile/page.tsx [Client Component Browser]
+    ./app/dashboard/edit-profile/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./app/dashboard/edit-profile/page.tsx [Client Component SSR]
+    ./app/dashboard/edit-profile/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+[00:00:24.003] Browser ERROR   ./app/dashboard/edit-profile/page.tsx:11:1
+Module not found: Can't resolve 'sweetalert2'
+   9 | import { User, Mail, Lock, Camera, Save } from "lucide-react"
+  10 | import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+> 11 | import Swal from "sweetalert2"
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  12 |
+  13 | export default function EditProfilePage() {
+  14 |   const { userEmail } = useAuth()
+
+Import traces:
+  Client Component Browser:
+    ./app/dashboard/edit-profile/page.tsx [Client Component Browser]
+    ./app/dashboard/edit-profile/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./app/dashboard/edit-profile/page.tsx [Client Component SSR]
+    ./app/dashboard/edit-profile/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+[00:00:24.003] Browser ERROR   ./app/dashboard/edit-profile/page.tsx:11:1
+Module not found: Can't resolve 'sweetalert2'
+   9 | import { User, Mail, Lock, Camera, Save } from "lucide-react"
+  10 | import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+> 11 | import Swal from "sweetalert2"
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  12 |
+  13 | export default function EditProfilePage() {
+  14 |   const { userEmail } = useAuth()
+
+Import traces:
+  Client Component Browser:
+    ./app/dashboard/edit-profile/page.tsx [Client Component Browser]
+    ./app/dashboard/edit-profile/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./app/dashboard/edit-profile/page.tsx [Client Component SSR]
+    ./app/dashboard/edit-profile/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+[00:00:24.205] Browser ERROR   ./app/dashboard/edit-profile/page.tsx:11:1
+Module not found: Can't resolve 'sweetalert2'
+   9 | import { User, Mail, Lock, Camera, Save } from "lucide-react"
+  10 | import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+> 11 | import Swal from "sweetalert2"
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  12 |
+  13 | export default function EditProfilePage() {
+  14 |   const { userEmail } = useAuth()
+
+Import traces:
+  Client Component Browser:
+    ./app/dashboard/edit-profile/page.tsx [Client Component Browser]
+    ./app/dashboard/edit-profile/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./app/dashboard/edit-profile/page.tsx [Client Component SSR]
+    ./app/dashboard/edit-profile/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+[00:00:24.224] Server  ERROR    ⨯ ./app/dashboard/edit-profile/page.tsx:11:1
+Module not found: Can't resolve 'sweetalert2'
+   9 | import { User, Mail, Lock, Camera, Save } from "lucide-react"
+  10 | import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+> 11 | import Swal from "sweetalert2"
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  12 |
+  13 | export default function EditProfilePage() {
+  14 |   const { userEmail } = useAuth()
+
+
+
+Import traces:
+  Client Component Browser:
+    ./app/dashboard/edit-profile/page.tsx [Client Component Browser]
+    ./app/dashboard/edit-profile/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./app/dashboard/edit-profile/page.tsx [Client Component SSR]
+    ./app/dashboard/edit-profile/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:00:24.415] Browser ERROR   uncaughtError: Error: ./app/dashboard/edit-profile/page.tsx:11:1
+Module not found: Can't resolve 'sweetalert2'
+   9 | import { User, Mail, Lock, Camera, Save } from "lucide-react"
+  10 | import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+> 11 | import Swal from "sweetalert2"
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  12 |
+  13 | export default function EditProfilePage() {
+  14 |   const { userEmail } = useAuth()
+
+
+
+Import traces:
+  Client Component Browser:
+    ./app/dashboard/edit-profile/page.tsx [Client Component Browser]
+    ./app/dashboard/edit-profile/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./app/dashboard/edit-profile/page.tsx [Client Component SSR]
+    ./app/dashboard/edit-profile/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:00:24.634] Browser ERROR   ./app/dashboard/edit-profile/page.tsx:11:1
+Module not found: Can't resolve 'sweetalert2'
+   9 | import { User, Mail, Lock, Camera, Save } from "lucide-react"
+  10 | import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+> 11 | import Swal from "sweetalert2"
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  12 |
+  13 | export default function EditProfilePage() {
+  14 |   const { userEmail } = useAuth()
+
+Import traces:
+  Client Component Browser:
+    ./app/dashboard/edit-profile/page.tsx [Client Component Browser]
+    ./app/dashboard/edit-profile/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./app/dashboard/edit-profile/page.tsx [Client Component SSR]
+    ./app/dashboard/edit-profile/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+[00:00:24.634] Browser ERROR   ./app/dashboard/edit-profile/page.tsx:11:1
+Module not found: Can't resolve 'sweetalert2'
+   9 | import { User, Mail, Lock, Camera, Save } from "lucide-react"
+  10 | import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+> 11 | import Swal from "sweetalert2"
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  12 |
+  13 | export default function EditProfilePage() {
+  14 |   const { userEmail } = useAuth()
+
+Import traces:
+  Client Component Browser:
+    ./app/dashboard/edit-profile/page.tsx [Client Component Browser]
+    ./app/dashboard/edit-profile/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./app/dashboard/edit-profile/page.tsx [Client Component SSR]
+    ./app/dashboard/edit-profile/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+[00:01:00.047] Browser ERROR   ./app/dashboard/edit-profile/page.tsx:11:1
+Module not found: Can't resolve 'sweetalert2'
+   9 | import { User, Mail, Lock, Camera, Save } from "lucide-react"
+  10 | import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+> 11 | import Swal from "sweetalert2"
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  12 |
+  13 | export default function EditProfilePage() {
+  14 |   const { userEmail } = useAuth()
+
+Import traces:
+  Client Component Browser:
+    ./app/dashboard/edit-profile/page.tsx [Client Component Browser]
+    ./app/dashboard/edit-profile/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./app/dashboard/edit-profile/page.tsx [Client Component SSR]
+    ./app/dashboard/edit-profile/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+[00:01:00.254] Browser ERROR   ./app/dashboard/edit-profile/page.tsx:11:1
+Module not found: Can't resolve 'sweetalert2'
+   9 | import { User, Mail, Lock, Camera, Save } from "lucide-react"
+  10 | import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+> 11 | import Swal from "sweetalert2"
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  12 |
+  13 | export default function EditProfilePage() {
+  14 |   const { userEmail } = useAuth()
+
+Import traces:
+  Client Component Browser:
+    ./app/dashboard/edit-profile/page.tsx [Client Component Browser]
+    ./app/dashboard/edit-profile/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./app/dashboard/edit-profile/page.tsx [Client Component SSR]
+    ./app/dashboard/edit-profile/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+[00:01:00.284] Server  LOG      ✓ Compiled in 61ms
+[00:01:01.078] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
+[00:01:01.078] Browser LOG     %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {"path":"/dashboard/edit-profile","route":"/dashboard/edit-profile"}
+[00:01:01.078] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3000/dashboard/edit-profile color: rgb(120, 120, 120) color: inherit {"dp":"/dashboard/edit-profile","o":"http://localhost:3000/dashboard/edit-profile","sdkn":"@vercel/analytics/next","sdkv":"1.3.1","sv":"0.1.3","ts":1768842655382}
+[00:01:06.277] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
+[00:01:06.277] Browser LOG     %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {"path":"/dashboard/edit-profile","route":"/dashboard/edit-profile"}
+[00:01:06.277] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3000/dashboard/edit-profile color: rgb(120, 120, 120) color: inherit {"dp":"/dashboard/edit-profile","o":"http://localhost:3000/dashboard/edit-profile","sdkn":"@vercel/analytics/next","sdkv":"1.3.1","sv":"0.1.3","ts":1768842660582}
+[00:01:19.676] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3000/dashboard/products color: rgb(120, 120, 120) color: inherit {"dp":"/dashboard/products","o":"http://localhost:3000/dashboard/products","sdkn":"@vercel/analytics/next","sdkv":"1.3.1","sv":"0.1.3","ts":1768842673923}
+[00:06:57.283] Server  LOG      ✓ Compiled in 200ms
+[00:08:58.372] Browser WARN    Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+[00:08:58.372] Browser WARN    Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+[00:16:56.746] Server  LOG      ✓ Compiled in 98ms
+[00:17:00.390] Server  LOG      ✓ Compiled in 71ms
+[00:17:02.263] Server  LOG      ✓ Compiled in 72ms
+[00:29:07.432] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
+[00:29:07.432] Browser LOG     %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {"path":"/dashboard/products","route":"/dashboard/products"}
+[00:29:07.432] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3000/dashboard/products color: rgb(120, 120, 120) color: inherit {"dp":"/dashboard/products","o":"http://localhost:3000/dashboard/products","sdkn":"@vercel/analytics/next","sdkv":"1.3.1","sv":"0.1.3","ts":1768844341737}
+[00:30:31.178] Browser WARN    Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+[00:30:31.178] Browser WARN    Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+[00:30:36.250] Browser WARN    Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+[00:30:36.250] Browser WARN    Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+[00:32:16.151] Server  LOG      ✓ Compiled in 123ms
+[00:32:40.638] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
+[00:32:40.638] Browser LOG     %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {"path":"/dashboard/products","route":"/dashboard/products"}
+[00:32:40.638] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3000/dashboard/products color: rgb(120, 120, 120) color: inherit {"dp":"/dashboard/products","o":"http://localhost:3000/dashboard/products","sdkn":"@vercel/analytics/next","sdkv":"1.3.1","sv":"0.1.3","ts":1768844554942}
+[00:35:15.423] Server  LOG      ✓ Compiled in 38ms
+[00:35:28.523] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
+[00:35:28.523] Browser LOG     %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {"path":"/dashboard/products","route":"/dashboard/products"}
+[00:35:28.523] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3000/dashboard/products color: rgb(120, 120, 120) color: inherit {"dp":"/dashboard/products","o":"http://localhost:3000/dashboard/products","sdkn":"@vercel/analytics/next","sdkv":"1.3.1","sv":"0.1.3","ts":1768844722828}
+[00:43:39.462] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
+[00:43:39.463] Browser LOG     %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {"path":"/dashboard/products","route":"/dashboard/products"}
+[00:43:39.463] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3000/dashboard/products color: rgb(120, 120, 120) color: inherit {"dp":"/dashboard/products","o":"http://localhost:3000/dashboard/products","sdkn":"@vercel/analytics/next","sdkv":"1.3.1","sv":"0.1.3","ts":1768845213767}
+[00:44:33.070] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
+[00:44:33.070] Browser LOG     %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {"path":"/dashboard/products","route":"/dashboard/products"}
+[00:44:33.070] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3000/dashboard/products color: rgb(120, 120, 120) color: inherit {"dp":"/dashboard/products","o":"http://localhost:3000/dashboard/products","sdkn":"@vercel/analytics/next","sdkv":"1.3.1","sv":"0.1.3","ts":1768845267374}
+[00:47:39.077] Server  LOG      ✓ Compiled in 77ms
+[00:48:57.836] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
+[00:48:57.836] Browser LOG     %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {"path":"/dashboard/products","route":"/dashboard/products"}
+[00:48:57.836] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3000/dashboard/products color: rgb(120, 120, 120) color: inherit {"dp":"/dashboard/products","o":"http://localhost:3000/dashboard/products","sdkn":"@vercel/analytics/next","sdkv":"1.3.1","sv":"0.1.3","ts":1768845532140}
+[00:54:50.338] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
+[00:54:50.338] Browser LOG     %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {"path":"/dashboard/products","route":"/dashboard/products"}
+[00:54:50.338] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3000/dashboard/products color: rgb(120, 120, 120) color: inherit {"dp":"/dashboard/products","o":"http://localhost:3000/dashboard/products","sdkn":"@vercel/analytics/next","sdkv":"1.3.1","sv":"0.1.3","ts":1768845884642}
+[00:55:15.136] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
+[00:55:15.136] Browser LOG     %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {"path":"/dashboard/products","route":"/dashboard/products"}
+[00:55:15.136] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3000/dashboard/products color: rgb(120, 120, 120) color: inherit {"dp":"/dashboard/products","o":"http://localhost:3000/dashboard/products","sdkn":"@vercel/analytics/next","sdkv":"1.3.1","sv":"0.1.3","ts":1768845909441}
+[00:56:50.120] Server  LOG      ✓ Compiled in 71ms
+[01:01:05.853] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
+[01:01:05.853] Browser LOG     %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {"path":"/dashboard/products","route":"/dashboard/products"}
+[01:01:05.853] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3000/dashboard/products color: rgb(120, 120, 120) color: inherit {"dp":"/dashboard/products","o":"http://localhost:3000/dashboard/products","sdkn":"@vercel/analytics/next","sdkv":"1.3.1","sv":"0.1.3","ts":1768846260158}
+[01:01:12.040] Browser ERROR   uncaughtError: TypeError: attrs.filter is not a function
+[01:01:23.140] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
+[01:01:23.140] Browser LOG     %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {"path":"/dashboard/products","route":"/dashboard/products"}
+[01:01:23.140] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3000/dashboard/products color: rgb(120, 120, 120) color: inherit {"dp":"/dashboard/products","o":"http://localhost:3000/dashboard/products","sdkn":"@vercel/analytics/next","sdkv":"1.3.1","sv":"0.1.3","ts":1768846277445}
+[01:01:33.315] Browser ERROR   uncaughtError: TypeError: attrs.filter is not a function
+[01:01:34.331] Browser ERROR   uncaughtError: TypeError: attrs.filter is not a function
+[01:03:37.426] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
+[01:03:37.426] Browser LOG     %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {"path":"/dashboard/products","route":"/dashboard/products"}
+[01:03:37.426] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3000/dashboard/products color: rgb(120, 120, 120) color: inherit {"dp":"/dashboard/products","o":"http://localhost:3000/dashboard/products","sdkn":"@vercel/analytics/next","sdkv":"1.3.1","sv":"0.1.3","ts":1768846411731}
+[01:03:45.074] Browser ERROR   uncaughtError: TypeError: attrs.filter is not a function
+[01:03:49.086] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
+[01:03:49.086] Browser LOG     %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {"path":"/dashboard/products","route":"/dashboard/products"}
+[01:03:49.086] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3000/dashboard/products color: rgb(120, 120, 120) color: inherit {"dp":"/dashboard/products","o":"http://localhost:3000/dashboard/products","sdkn":"@vercel/analytics/next","sdkv":"1.3.1","sv":"0.1.3","ts":1768846423391}
+[01:03:57.409] Browser ERROR   uncaughtError: TypeError: attrs.filter is not a function
+[01:04:13.088] Browser ERROR   uncaughtError: TypeError: attrs.filter is not a function
+[01:04:13.704] Browser ERROR   uncaughtError: TypeError: attrs.filter is not a function
+[01:04:13.936] Browser ERROR   uncaughtError: TypeError: attrs.filter is not a function
+[01:04:19.472] Browser ERROR   uncaughtError: TypeError: attrs.filter is not a function
+[01:04:20.272] Browser ERROR   uncaughtError: TypeError: attrs.filter is not a function
+[01:04:20.488] Browser ERROR   uncaughtError: TypeError: attrs.filter is not a function
+[01:05:31.496] Server  LOG      ✓ Compiled in 63ms
+[01:07:36.413] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
+[01:07:36.413] Browser LOG     %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {"path":"/dashboard/products","route":"/dashboard/products"}
+[01:07:36.413] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3000/dashboard/products color: rgb(120, 120, 120) color: inherit {"dp":"/dashboard/products","o":"http://localhost:3000/dashboard/products","sdkn":"@vercel/analytics/next","sdkv":"1.3.1","sv":"0.1.3","ts":1768846650718}

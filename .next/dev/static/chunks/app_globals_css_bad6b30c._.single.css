@@ -147,7 +147,7 @@
     --container-xl: 36rem;
     --container-2xl: 42rem;
     --container-4xl: 56rem;
-    --container-6xl: 72rem;
+    --container-5xl: 64rem;
     --text-xs: .75rem;
     --text-xs--line-height: calc(1 / .75);
     --text-sm: .875rem;
@@ -1336,10 +1336,6 @@
     max-width: var(--container-4xl);
   }
 
-  .max-w-6xl {
-    max-width: var(--container-6xl);
-  }
-
   .max-w-\[90vw\] {
     max-width: 90vw;
   }
@@ -1675,6 +1671,10 @@
 
   .justify-items-start {
     justify-items: start;
+  }
+
+  .gap-0 {
+    gap: calc(var(--spacing) * 0);
   }
 
   .gap-0\.5 {
@@ -5147,6 +5147,12 @@
   @media (min-width: 40rem) {
     .sm\:max-w-4xl {
       max-width: var(--container-4xl);
+    }
+  }
+
+  @media (min-width: 40rem) {
+    .sm\:max-w-5xl {
+      max-width: var(--container-5xl);
     }
   }
 

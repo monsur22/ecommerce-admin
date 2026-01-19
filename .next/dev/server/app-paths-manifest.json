@@ -1,10 +1,6 @@
 {
-  "/dashboard/attributes/page": "app/dashboard/attributes/page.js",
-  "/dashboard/customers/page": "app/dashboard/customers/page.js",
-  "/dashboard/orders/page": "app/dashboard/orders/page.js",
+  "/dashboard/edit-profile/page": "app/dashboard/edit-profile/page.js",
   "/dashboard/page": "app/dashboard/page.js",
-  "/dashboard/pos/page": "app/dashboard/pos/page.js",
   "/dashboard/products/page": "app/dashboard/products/page.js",
-  "/dashboard/vendors/[id]/page": "app/dashboard/vendors/[id]/page.js",
-  "/dashboard/vendors/page": "app/dashboard/vendors/page.js"
+  "/page": "app/page.js"
 }
