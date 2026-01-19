@@ -20,6 +20,7 @@ interface Order {
   method: string
   amount: number
   status: "Delivered" | "Processing" | "Pending"
+  note?: string
 }
 
 const initialOrders: Order[] = [
@@ -30,6 +31,7 @@ const initialOrders: Order[] = [
     method: "Cash",
     amount: 159.91,
     status: "Delivered",
+    note: "Customer requested expedited delivery."
   },
   {
     invoiceNo: "12309",
@@ -54,6 +56,7 @@ const initialOrders: Order[] = [
     method: "Cash",
     amount: 677.91,
     status: "Delivered",
+    note: "Leave package at the back door."
   },
   {
     invoiceNo: "12336",
@@ -605,75 +608,75 @@ export default function OrdersPage() {
             <tbody>
               {isLoading
                 ? Array.from({ length: 3 }).map((_, index) => (
-                    <tr key={index} className="border-b last:border-0 hover:bg-gray-50">
-                      <td className="py-3 px-4">
-                        <Skeleton className="h-4 w-16" />
-                      </td>
-                      <td className="py-3 px-4">
-                        <Skeleton className="h-4 w-32" />
-                      </td>
-                      <td className="py-3 px-4">
-                        <Skeleton className="h-4 w-24" />
-                      </td>
-                      <td className="py-3 px-4">
-                        <Skeleton className="h-4 w-12" />
-                      </td>
-                      <td className="py-3 px-4">
-                        <Skeleton className="h-4 w-16" />
-                      </td>
-                      <td className="py-3 px-4">
-                        <Skeleton className="h-6 w-20 rounded-full" />
-                      </td>
-                      <td className="py-3 px-4">
-                        <Skeleton className="h-8 w-32" />
-                      </td>
-                      <td className="py-3 px-4">
-                        <div className="flex items-center gap-2">
-                          <Skeleton className="h-8 w-8 rounded" />
-                          <Skeleton className="h-8 w-8 rounded" />
-                        </div>
-                      </td>
-                    </tr>
-                  ))
+                  <tr key={index} className="border-b last:border-0 hover:bg-gray-50">
+                    <td className="py-3 px-4">
+                      <Skeleton className="h-4 w-16" />
+                    </td>
+                    <td className="py-3 px-4">
+                      <Skeleton className="h-4 w-32" />
+                    </td>
+                    <td className="py-3 px-4">
+                      <Skeleton className="h-4 w-24" />
+                    </td>
+                    <td className="py-3 px-4">
+                      <Skeleton className="h-4 w-12" />
+                    </td>
+                    <td className="py-3 px-4">
+                      <Skeleton className="h-4 w-16" />
+                    </td>
+                    <td className="py-3 px-4">
+                      <Skeleton className="h-6 w-20 rounded-full" />
+                    </td>
+                    <td className="py-3 px-4">
+                      <Skeleton className="h-8 w-32" />
+                    </td>
+                    <td className="py-3 px-4">
+                      <div className="flex items-center gap-2">
+                        <Skeleton className="h-8 w-8 rounded" />
+                        <Skeleton className="h-8 w-8 rounded" />
+                      </div>
+                    </td>
+                  </tr>
+                ))
                 : currentOrders.map((order) => (
-                    <tr key={order.invoiceNo} className="border-b last:border-0 hover:bg-gray-50">
-                      <td className="py-3 px-4">
-                        <span className="font-semibold text-gray-900">{order.invoiceNo}</span>
-                      </td>
-                      <td className="py-3 px-4 text-sm text-gray-600">{order.orderTime}</td>
-                      <td className="py-3 px-4 text-sm text-gray-900">{order.customerName}</td>
-                      <td className="py-3 px-4 text-sm text-gray-900">{order.method}</td>
-                      <td className="py-3 px-4 text-sm font-semibold text-gray-900">${order.amount.toFixed(2)}</td>
-                      <td className="py-3 px-4">
-                        <StatusBadge status={order.status} />
-                      </td>
-                      <td className="py-3 px-4">
-                        <Select
-                          value={order.status}
-                          onValueChange={(value) => handleStatusChange(order.invoiceNo, value as Order["status"])}
-                        >
-                          <SelectTrigger className="w-32 h-8 text-xs">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Delivered">Delivered</SelectItem>
-                            <SelectItem value="Processing">Processing</SelectItem>
-                            <SelectItem value="Pending">Pending</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </td>
-                      <td className="py-3 px-4">
-                        <div className="flex items-center gap-2">
-                          <Button variant="ghost" size="sm" onClick={() => handlePrintInvoice(order)} className="p-2 h-8 w-8 hover:bg-emerald-50 hover:text-emerald-600">
-                            <Printer className="w-4 h-4" />
-                          </Button>
-                          <Button variant="ghost" size="sm" onClick={() => handleViewDetails(order)} className="p-2 h-8 w-8 hover:bg-emerald-50 hover:text-emerald-600">
-                            <Eye className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                  <tr key={order.invoiceNo} className="border-b last:border-0 hover:bg-gray-50">
+                    <td className="py-3 px-4">
+                      <span className="font-semibold text-gray-900">{order.invoiceNo}</span>
+                    </td>
+                    <td className="py-3 px-4 text-sm text-gray-600">{order.orderTime}</td>
+                    <td className="py-3 px-4 text-sm text-gray-900">{order.customerName}</td>
+                    <td className="py-3 px-4 text-sm text-gray-900">{order.method}</td>
+                    <td className="py-3 px-4 text-sm font-semibold text-gray-900">${order.amount.toFixed(2)}</td>
+                    <td className="py-3 px-4">
+                      <StatusBadge status={order.status} />
+                    </td>
+                    <td className="py-3 px-4">
+                      <Select
+                        value={order.status}
+                        onValueChange={(value) => handleStatusChange(order.invoiceNo, value as Order["status"])}
+                      >
+                        <SelectTrigger className="w-32 h-8 text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Delivered">Delivered</SelectItem>
+                          <SelectItem value="Processing">Processing</SelectItem>
+                          <SelectItem value="Pending">Pending</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </td>
+                    <td className="py-3 px-4">
+                      <div className="flex items-center gap-2">
+                        <Button variant="ghost" size="sm" onClick={() => handlePrintInvoice(order)} className="p-2 h-8 w-8 hover:bg-emerald-50 hover:text-emerald-600">
+                          <Printer className="w-4 h-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => handleViewDetails(order)} className="p-2 h-8 w-8 hover:bg-emerald-50 hover:text-emerald-600">
+                          <Eye className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
             </tbody>
           </table>
         </div>
@@ -796,6 +799,24 @@ export default function OrdersPage() {
                     <h3 className="text-xs font-semibold text-gray-600 uppercase mb-2">Total Amount</h3>
                     <p className="text-2xl font-bold text-red-600">${selectedOrder.amount.toFixed(2)}</p>
                   </div>
+                </div>
+              </div>
+
+              {/* Order Notes */}
+              <div className="border rounded-lg p-6 space-y-4">
+                <h3 className="text-sm font-semibold text-gray-900 uppercase">Order Note</h3>
+                <div className="flex gap-4">
+                  <Input
+                    placeholder="Add a note to this order..."
+                    value={selectedOrder.note || ""}
+                    onChange={(e) => {
+                      const note = e.target.value
+                      setSelectedOrder({ ...selectedOrder, note })
+                      // Update main orders list as well to persist change locally
+                      setOrders(orders.map(o => o.invoiceNo === selectedOrder.invoiceNo ? { ...o, note } : o))
+                    }}
+                    className="flex-1"
+                  />
                 </div>
               </div>
 

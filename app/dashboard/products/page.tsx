@@ -826,7 +826,18 @@ export default function ProductsPage() {
                     <td className="py-3 px-4 text-sm text-gray-600">{product.category}</td>
                     <td className="py-3 px-4 text-sm font-semibold text-gray-900">${product.price.toFixed(2)}</td>
                     <td className="py-3 px-4 text-sm font-semibold text-gray-900">${product.salePrice.toFixed(2)}</td>
-                    <td className="py-3 px-4 text-sm text-gray-600">{product.stock}</td>
+                    <td className="py-3 px-4">
+                      {product.stock < 5 ? (
+                        <div className="flex flex-col">
+                          <span className="font-semibold text-red-600">{product.stock}</span>
+                          <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-red-100 text-red-600 w-fit">
+                            Low Stock
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-sm text-gray-600">{product.stock}</span>
+                      )}
+                    </td>
                     <td className="py-3 px-4 text-sm text-gray-600">
                       {product.vendorId ? (
                         <Link href={`/dashboard/vendors/${product.vendorId}`} className="text-emerald-600 hover:underline">
@@ -1263,13 +1274,13 @@ export default function ProductsPage() {
       </Dialog>
 
       <Dialog open={!!viewingProduct} onOpenChange={() => setViewingProduct(null)}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
+        <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0 gap-0">
+          <DialogHeader className="p-6 border-b">
             <DialogTitle className="text-2xl">Product Details</DialogTitle>
           </DialogHeader>
 
           {viewingProduct && (
-            <div className="space-y-6 py-4">
+            <div className="space-y-6 p-6 overflow-y-auto flex-1">
               <div className="flex items-start gap-6">
                 <img
                   src={viewingProduct.image || "/placeholder.svg"}
@@ -1368,7 +1379,7 @@ export default function ProductsPage() {
             </div>
           )}
 
-          <DialogFooter>
+          <DialogFooter className="p-6 border-t">
             <Button variant="outline" onClick={() => setViewingProduct(null)}>
               Close
             </Button>
