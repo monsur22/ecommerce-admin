@@ -24,7 +24,7 @@ const modules: Module[] = [
     "Staff",
     "Settings",
     "International",
-    "Online Store",
+    "Store",
     "Pages",
 ]
 

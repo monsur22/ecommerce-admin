@@ -1,228 +1,109 @@
-[00:00:00.684] Server  LOG      ✓ Ready in 409ms
-[00:00:08.013] Server  LOG      ○ Compiling /dashboard/vendors ...
-[00:00:08.902] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
-[00:00:08.902] Browser LOG     %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {"path":"/dashboard/vendors","route":"/dashboard/vendors"}
-[00:00:08.902] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3000/dashboard/vendors color: rgb(120, 120, 120) color: inherit {"dp":"/dashboard/vendors","o":"http://localhost:3000/dashboard/vendors","r":"","sdkn":"@vercel/analytics/next","sdkv":"1.3.1","sv":"0.1.3","ts":1768929236201}
-[00:00:11.204] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3000/dashboard color: rgb(120, 120, 120) color: inherit {"dp":"/dashboard","o":"http://localhost:3000/dashboard","sdkn":"@vercel/analytics/next","sdkv":"1.3.1","sv":"0.1.3","ts":1768929238491}
-[00:10:19.596] Server  LOG      ✓ Compiled in 122ms
-[00:12:19.038] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
-[00:12:19.038] Browser LOG     %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {"path":"/dashboard","route":"/dashboard"}
-[00:12:19.038] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3000/dashboard color: rgb(120, 120, 120) color: inherit {"dp":"/dashboard","o":"http://localhost:3000/dashboard","r":"","sdkn":"@vercel/analytics/next","sdkv":"1.3.1","sv":"0.1.3","ts":1768929966337}
-[00:12:22.206] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3000/dashboard/pos color: rgb(120, 120, 120) color: inherit {"dp":"/dashboard/pos","o":"http://localhost:3000/dashboard/pos","sdkn":"@vercel/analytics/next","sdkv":"1.3.1","sv":"0.1.3","ts":1768929969467}
-[00:12:37.698] Browser WARN    Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
-[00:12:37.698] Browser WARN    Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
-[00:12:41.473] Browser WARN    Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
-[00:12:41.473] Browser WARN    Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
-[00:12:44.339] Browser LOG     Order Placed: {"cart":[{"id":"1-v3","image":"/plain-white-tshirt.png","name":"Premium T-Shirt (Medium / Red)","price":460,"quantity":1,"variantId":"v3","variantName":"Medium / Red"}],"customer":"","method":"cash","total":506,"warehouse":"wh_main"}
-[00:12:44.339] Browser WARN    Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
-[00:12:44.339] Browser WARN    Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
-[00:13:30.516] Browser WARN    Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
-[00:13:30.516] Browser WARN    Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
-[00:13:38.431] Browser WARN    Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
-[00:13:38.431] Browser WARN    Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
-[00:13:40.700] Browser LOG     Order Placed: {"cart":[{"id":"1-v1","image":"/plain-white-tshirt.png","name":"Premium T-Shirt (Small / Red)","price":450,"quantity":1,"variantId":"v1","variantName":"Small / Red"}],"customer":"","method":"cash","total":495,"warehouse":"wh_main"}
-[00:13:40.700] Browser WARN    Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
-[00:13:40.700] Browser WARN    Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
-[00:14:13.664] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3000/dashboard/inventory color: rgb(120, 120, 120) color: inherit {"dp":"/dashboard/inventory","o":"http://localhost:3000/dashboard/inventory","sdkn":"@vercel/analytics/next","sdkv":"1.3.1","sv":"0.1.3","ts":1768930080942}
-[00:14:15.788] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3000/dashboard/inventory/transfer color: rgb(120, 120, 120) color: inherit {"dp":"/dashboard/inventory/transfer","o":"http://localhost:3000/dashboard/inventory/transfer","sdkn":"@vercel/analytics/next","sdkv":"1.3.1","sv":"0.1.3","ts":1768930083045}
-[00:14:19.247] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3000/dashboard/customers color: rgb(120, 120, 120) color: inherit {"dp":"/dashboard/customers","o":"http://localhost:3000/dashboard/customers","sdkn":"@vercel/analytics/next","sdkv":"1.3.1","sv":"0.1.3","ts":1768930086544}
-[00:14:30.392] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3000/dashboard/products color: rgb(120, 120, 120) color: inherit {"dp":"/dashboard/products","o":"http://localhost:3000/dashboard/products","sdkn":"@vercel/analytics/next","sdkv":"1.3.1","sv":"0.1.3","ts":1768930097632}
-[00:14:39.467] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3000/dashboard/vendors/2 color: rgb(120, 120, 120) color: inherit {"dp":"/dashboard/vendors/[id]","o":"http://localhost:3000/dashboard/vendors/2","sdkn":"@vercel/analytics/next","sdkv":"1.3.1","sv":"0.1.3","ts":1768930106763}
-[00:14:54.058] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3000/dashboard/vendors color: rgb(120, 120, 120) color: inherit {"dp":"/dashboard/vendors","o":"http://localhost:3000/dashboard/vendors","sdkn":"@vercel/analytics/next","sdkv":"1.3.1","sv":"0.1.3","ts":1768930121356}
-[00:14:59.812] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3000/dashboard/vendors/1 color: rgb(120, 120, 120) color: inherit {"dp":"/dashboard/vendors/[id]","o":"http://localhost:3000/dashboard/vendors/1","sdkn":"@vercel/analytics/next","sdkv":"1.3.1","sv":"0.1.3","ts":1768930127062}
-[00:14:59.812] Browser WARN    Image with src "http://localhost:3000/fresh-lettuce.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
-[00:15:04.728] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3000/dashboard/vendors color: rgb(120, 120, 120) color: inherit {"dp":"/dashboard/vendors","o":"http://localhost:3000/dashboard/vendors","sdkn":"@vercel/analytics/next","sdkv":"1.3.1","sv":"0.1.3","ts":1768930132027}
-[00:15:09.231] Browser WARN    Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
-[00:15:09.231] Browser WARN    Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
-[00:15:20.481] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3000/dashboard/vendors/1 color: rgb(120, 120, 120) color: inherit {"dp":"/dashboard/vendors/[id]","o":"http://localhost:3000/dashboard/vendors/1","sdkn":"@vercel/analytics/next","sdkv":"1.3.1","sv":"0.1.3","ts":1768930147780}
-[00:15:29.509] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
-[00:15:29.509] Browser LOG     %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {"path":"/dashboard/vendors/1","route":"/dashboard/vendors/[id]"}
-[00:15:29.509] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3000/dashboard/vendors/1 color: rgb(120, 120, 120) color: inherit {"dp":"/dashboard/vendors/[id]","o":"http://localhost:3000/dashboard/vendors/1","r":"","sdkn":"@vercel/analytics/next","sdkv":"1.3.1","sv":"0.1.3","ts":1768930156780}
-[00:15:29.509] Browser WARN    Image with src "http://localhost:3000/fresh-lettuce.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
-[00:15:38.806] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3000/dashboard color: rgb(120, 120, 120) color: inherit {"dp":"/dashboard","o":"http://localhost:3000/dashboard","sdkn":"@vercel/analytics/next","sdkv":"1.3.1","sv":"0.1.3","ts":1768930166088}
-[00:15:46.793] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3000/dashboard/store color: rgb(120, 120, 120) color: inherit {"dp":"/dashboard/store","o":"http://localhost:3000/dashboard/store","sdkn":"@vercel/analytics/next","sdkv":"1.3.1","sv":"0.1.3","ts":1768930174091}
-[00:15:58.374] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3000/dashboard/store/locations color: rgb(120, 120, 120) color: inherit {"dp":"/dashboard/store/locations","o":"http://localhost:3000/dashboard/store/locations","sdkn":"@vercel/analytics/next","sdkv":"1.3.1","sv":"0.1.3","ts":1768930185671}
-[00:16:08.488] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3000/dashboard/store color: rgb(120, 120, 120) color: inherit {"dp":"/dashboard/store","o":"http://localhost:3000/dashboard/store","sdkn":"@vercel/analytics/next","sdkv":"1.3.1","sv":"0.1.3","ts":1768930195784}
-[00:16:15.256] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3000/dashboard/store/locations color: rgb(120, 120, 120) color: inherit {"dp":"/dashboard/store/locations","o":"http://localhost:3000/dashboard/store/locations","sdkn":"@vercel/analytics/next","sdkv":"1.3.1","sv":"0.1.3","ts":1768930202552}
-[00:16:36.068] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3000/dashboard/vendors color: rgb(120, 120, 120) color: inherit {"dp":"/dashboard/vendors","o":"http://localhost:3000/dashboard/vendors","sdkn":"@vercel/analytics/next","sdkv":"1.3.1","sv":"0.1.3","ts":1768930223366}
-[00:17:50.956] Server  LOG      ✓ Compiled in 154ms
-[00:20:00.959] Server  LOG      ✓ Compiled in 458ms
-[00:20:02.193] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
-[00:20:02.193] Browser LOG     %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {"path":"/dashboard/vendors","route":"/dashboard/vendors"}
-[00:20:02.193] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3000/dashboard/vendors color: rgb(120, 120, 120) color: inherit {"dp":"/dashboard/vendors","o":"http://localhost:3000/dashboard/vendors","sdkn":"@vercel/analytics/next","sdkv":"1.3.1","sv":"0.1.3","ts":1768930429219}
-[00:23:24.380] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
-[00:23:24.380] Browser LOG     %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {"path":"/dashboard/vendors","route":"/dashboard/vendors"}
-[00:23:24.380] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3000/dashboard/vendors color: rgb(120, 120, 120) color: inherit {"dp":"/dashboard/vendors","o":"http://localhost:3000/dashboard/vendors","sdkn":"@vercel/analytics/next","sdkv":"1.3.1","sv":"0.1.3","ts":1768930631680}
-[00:23:54.518] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
-[00:23:54.518] Browser LOG     %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {"path":"/dashboard/vendors","route":"/dashboard/vendors"}
-[00:23:54.519] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3000/dashboard/vendors color: rgb(120, 120, 120) color: inherit {"dp":"/dashboard/vendors","o":"http://localhost:3000/dashboard/vendors","sdkn":"@vercel/analytics/next","sdkv":"1.3.1","sv":"0.1.3","ts":1768930661818}
-[00:24:03.692] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3000/dashboard/products color: rgb(120, 120, 120) color: inherit {"dp":"/dashboard/products","o":"http://localhost:3000/dashboard/products","sdkn":"@vercel/analytics/next","sdkv":"1.3.1","sv":"0.1.3","ts":1768930670925}
-[00:25:39.455] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3000/dashboard/categories color: rgb(120, 120, 120) color: inherit {"dp":"/dashboard/categories","o":"http://localhost:3000/dashboard/categories","sdkn":"@vercel/analytics/next","sdkv":"1.3.1","sv":"0.1.3","ts":1768930766742}
-[00:25:54.547] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3000/dashboard/customers color: rgb(120, 120, 120) color: inherit {"dp":"/dashboard/customers","o":"http://localhost:3000/dashboard/customers","sdkn":"@vercel/analytics/next","sdkv":"1.3.1","sv":"0.1.3","ts":1768930781843}
-[00:29:57.296] Server  LOG      ✓ Compiled in 168ms
-[00:30:46.960] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
-[00:30:46.960] Browser LOG     %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {"path":"/dashboard/customers","route":"/dashboard/customers"}
-[00:30:46.960] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3000/dashboard/customers color: rgb(120, 120, 120) color: inherit {"dp":"/dashboard/customers","o":"http://localhost:3000/dashboard/customers","sdkn":"@vercel/analytics/next","sdkv":"1.3.1","sv":"0.1.3","ts":1768931074259}
-[00:30:51.937] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3000/dashboard/products color: rgb(120, 120, 120) color: inherit {"dp":"/dashboard/products","o":"http://localhost:3000/dashboard/products","sdkn":"@vercel/analytics/next","sdkv":"1.3.1","sv":"0.1.3","ts":1768931079174}
-[00:30:53.570] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3000/dashboard/categories color: rgb(120, 120, 120) color: inherit {"dp":"/dashboard/categories","o":"http://localhost:3000/dashboard/categories","sdkn":"@vercel/analytics/next","sdkv":"1.3.1","sv":"0.1.3","ts":1768931080855}
-[00:30:54.586] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3000/dashboard/attributes color: rgb(120, 120, 120) color: inherit {"dp":"/dashboard/attributes","o":"http://localhost:3000/dashboard/attributes","sdkn":"@vercel/analytics/next","sdkv":"1.3.1","sv":"0.1.3","ts":1768931081873}
-[00:30:55.307] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3000/dashboard/coupons color: rgb(120, 120, 120) color: inherit {"dp":"/dashboard/coupons","o":"http://localhost:3000/dashboard/coupons","sdkn":"@vercel/analytics/next","sdkv":"1.3.1","sv":"0.1.3","ts":1768931082603}
-[00:32:54.123] Server  LOG      ✓ Compiled in 171ms
-[00:33:43.059] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
-[00:33:43.059] Browser LOG     %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {"path":"/dashboard/coupons","route":"/dashboard/coupons"}
-[00:33:43.059] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3000/dashboard/coupons color: rgb(120, 120, 120) color: inherit {"dp":"/dashboard/coupons","o":"http://localhost:3000/dashboard/coupons","sdkn":"@vercel/analytics/next","sdkv":"1.3.1","sv":"0.1.3","ts":1768931250358}
-[00:34:08.585] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3000/dashboard/customers color: rgb(120, 120, 120) color: inherit {"dp":"/dashboard/customers","o":"http://localhost:3000/dashboard/customers","sdkn":"@vercel/analytics/next","sdkv":"1.3.1","sv":"0.1.3","ts":1768931275880}
-[00:34:09.476] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3000/dashboard/orders color: rgb(120, 120, 120) color: inherit {"dp":"/dashboard/orders","o":"http://localhost:3000/dashboard/orders","sdkn":"@vercel/analytics/next","sdkv":"1.3.1","sv":"0.1.3","ts":1768931276728}
-[00:34:11.844] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3000/dashboard/vendors color: rgb(120, 120, 120) color: inherit {"dp":"/dashboard/vendors","o":"http://localhost:3000/dashboard/vendors","sdkn":"@vercel/analytics/next","sdkv":"1.3.1","sv":"0.1.3","ts":1768931279139}
-[00:34:14.916] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3000/dashboard/pos color: rgb(120, 120, 120) color: inherit {"dp":"/dashboard/pos","o":"http://localhost:3000/dashboard/pos","sdkn":"@vercel/analytics/next","sdkv":"1.3.1","sv":"0.1.3","ts":1768931282179}
-[00:34:47.252] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3000/dashboard/vendors color: rgb(120, 120, 120) color: inherit {"dp":"/dashboard/vendors","o":"http://localhost:3000/dashboard/vendors","sdkn":"@vercel/analytics/next","sdkv":"1.3.1","sv":"0.1.3","ts":1768931314547}
-[00:38:14.266] Server  LOG      ✓ Compiled in 213ms
-[00:38:14.369] Browser ERROR   ./components/app-sidebar.tsx:46:5
-Ecmascript file had an error
-  44 |     CollapsibleTrigger,
-  45 |     Collapsible,
-> 46 |     CollapsibleContent,
-     |     ^^^^^^^^^^^^^^^^^^
-  47 |     CollapsibleTrigger,
-  48 | } from "@/components/ui/collapsible"
-  49 | import {
+[00:00:00.680] Server  LOG      ✓ Ready in 490ms
+[00:00:03.462] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:00:04.175] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
+[00:00:04.175] Browser LOG     %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {"path":"/dashboard/returns/vendor","route":"/dashboard/returns/vendor"}
+[00:00:04.175] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3001/dashboard/returns/vendor color: rgb(120, 120, 120) color: inherit {"dp":"/dashboard/returns/vendor","o":"http://localhost:3001/dashboard/returns/vendor","sdkn":"@vercel/analytics/next","sdkv":"1.3.1","sv":"0.1.3","ts":1768988129699}
+[00:01:17.431] Server  LOG      ✓ Compiled in 126ms
+[00:01:20.606] Server  LOG      ✓ Compiled in 38ms
+[00:01:22.635] Server  LOG      ✓ Compiled in 42ms
+[00:01:33.251] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:01:33.902] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
+[00:01:33.902] Browser LOG     %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {"path":"/dashboard/returns/vendor","route":"/dashboard/returns/vendor"}
+[00:01:33.902] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3001/dashboard/returns/vendor color: rgb(120, 120, 120) color: inherit {"dp":"/dashboard/returns/vendor","o":"http://localhost:3001/dashboard/returns/vendor","sdkn":"@vercel/analytics/next","sdkv":"1.3.1","sv":"0.1.3","ts":1768988219426}
+[00:03:02.500] Server  LOG      ✓ Compiled in 49ms
+[00:03:06.251] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:03:06.933] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
+[00:03:06.934] Browser LOG     %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {"path":"/dashboard/returns/vendor","route":"/dashboard/returns/vendor"}
+[00:03:06.934] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3001/dashboard/returns/vendor color: rgb(120, 120, 120) color: inherit {"dp":"/dashboard/returns/vendor","o":"http://localhost:3001/dashboard/returns/vendor","sdkn":"@vercel/analytics/next","sdkv":"1.3.1","sv":"0.1.3","ts":1768988312457}
+[00:03:18.212] Server  LOG      ✓ Compiled in 80ms
+[00:06:31.427] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:06:32.239] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
+[00:06:32.239] Browser LOG     %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {"path":"/dashboard/returns/vendor","route":"/dashboard/returns/vendor"}
+[00:06:32.239] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3001/dashboard/returns/vendor color: rgb(120, 120, 120) color: inherit {"dp":"/dashboard/returns/vendor","o":"http://localhost:3001/dashboard/returns/vendor","sdkn":"@vercel/analytics/next","sdkv":"1.3.1","sv":"0.1.3","ts":1768988517762}
+[00:06:35.856] Server  LOG      ✓ Compiled in 64ms
+[00:06:35.960] Browser ERROR   ./app/dashboard/returns/vendor/page.tsx:726:25
+Parsing ecmascript source code failed
+  724 |             </Button>
+  725 |           </DialogFooter>
+> 726 |         </DialogContent>
+      |                         ^
+> 727 |       </Dialog>
+      | ^^^^^^^
+  728 |     </div>
+  729 |   )
+  730 | }
 
-the name `CollapsibleContent` is defined multiple times
+Expected '</', got 'jsx text (
+      )'
 
 Import traces:
   Client Component Browser:
-    ./components/app-sidebar.tsx [Client Component Browser]
-    ./app/dashboard/layout.tsx [Client Component Browser]
-    ./app/dashboard/layout.tsx [Server Component]
+    ./app/dashboard/returns/vendor/page.tsx [Client Component Browser]
+    ./app/dashboard/returns/vendor/page.tsx [Server Component]
 
   Client Component SSR:
-    ./components/app-sidebar.tsx [Client Component SSR]
-    ./app/dashboard/layout.tsx [Client Component SSR]
-    ./app/dashboard/layout.tsx [Server Component]
-[00:38:14.369] Browser ERROR   ./components/app-sidebar.tsx:47:5
-Ecmascript file had an error
-  45 |     Collapsible,
-  46 |     CollapsibleContent,
-> 47 |     CollapsibleTrigger,
-     |     ^^^^^^^^^^^^^^^^^^
-  48 | } from "@/components/ui/collapsible"
-  49 | import {
-  50 |     DropdownMenu,
+    ./app/dashboard/returns/vendor/page.tsx [Client Component SSR]
+    ./app/dashboard/returns/vendor/page.tsx [Server Component]
+[00:06:37.936] Server  LOG      ✓ Compiled in 42ms
+[00:06:51.287] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3001/dashboard/products color: rgb(120, 120, 120) color: inherit {"dp":"/dashboard/products","o":"http://localhost:3001/dashboard/products","sdkn":"@vercel/analytics/next","sdkv":"1.3.1","sv":"0.1.3","ts":1768988536669}
+[00:07:49.399] Server  LOG      ✓ Compiled in 41ms
+[00:07:49.700] Browser ERROR   ./app/dashboard/returns/vendor/page.tsx:728:16
+Parsing ecmascript source code failed
+  726 |           </DialogFooter>
+  727 |         </DialogContent>
+> 728 |       </Dialog>
+      |                ^
+> 729 |     </div>
+      | ^^^^^
+  730 |   )
+  731 | }
+  732 |
 
-the name `CollapsibleTrigger` is defined multiple times
+Expected '</', got 'jsx text (
+    )'
 
 Import traces:
   Client Component Browser:
-    ./components/app-sidebar.tsx [Client Component Browser]
-    ./app/dashboard/layout.tsx [Client Component Browser]
-    ./app/dashboard/layout.tsx [Server Component]
+    ./app/dashboard/returns/vendor/page.tsx [Client Component Browser]
+    ./app/dashboard/returns/vendor/page.tsx [Server Component]
 
   Client Component SSR:
-    ./components/app-sidebar.tsx [Client Component SSR]
-    ./app/dashboard/layout.tsx [Client Component SSR]
-    ./app/dashboard/layout.tsx [Server Component]
-[00:38:14.369] Browser ERROR   ./components/app-sidebar.tsx:45:5
-Ecmascript file had an error
-  43 |     CollapsibleContent,
-  44 |     CollapsibleTrigger,
-> 45 |     Collapsible,
-     |     ^^^^^^^^^^^
-  46 |     CollapsibleContent,
-  47 |     CollapsibleTrigger,
-  48 | } from "@/components/ui/collapsible"
+    ./app/dashboard/returns/vendor/page.tsx [Client Component SSR]
+    ./app/dashboard/returns/vendor/page.tsx [Server Component]
+[00:07:51.615] Server  LOG      ✓ Compiled in 58ms
+[00:07:57.323] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:07:58.193] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
+[00:07:58.193] Browser LOG     %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {"path":"/dashboard/products","route":"/dashboard/products"}
+[00:07:58.193] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3001/dashboard/products color: rgb(120, 120, 120) color: inherit {"dp":"/dashboard/products","o":"http://localhost:3001/dashboard/products","sdkn":"@vercel/analytics/next","sdkv":"1.3.1","sv":"0.1.3","ts":1768988603718}
+[00:08:03.456] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3001/dashboard/returns/vendor color: rgb(120, 120, 120) color: inherit {"dp":"/dashboard/returns/vendor","o":"http://localhost:3001/dashboard/returns/vendor","sdkn":"@vercel/analytics/next","sdkv":"1.3.1","sv":"0.1.3","ts":1768988608891}
+[00:08:24.240] Server  LOG      ✓ Compiled in 57ms
+[00:08:25.385] Server  LOG      ✓ Compiled in 45ms
+[00:08:26.871] Server  LOG      ✓ Compiled in 56ms
+[00:08:26.974] Browser ERROR   ./app/dashboard/returns/vendor/page.tsx:730:16
+Parsing ecmascript source code failed
+  728 |           </DialogFooter>
+  729 |         </DialogContent>
+> 730 |       </Dialog>
+      |                ^
+> 731 |     </div>
+      | ^^^^^
+  732 |   )
+  733 | }
+  734 |
 
-the name `Collapsible` is defined multiple times
+Expected '</', got 'jsx text (
+    )'
 
 Import traces:
   Client Component Browser:
-    ./components/app-sidebar.tsx [Client Component Browser]
-    ./app/dashboard/layout.tsx [Client Component Browser]
-    ./app/dashboard/layout.tsx [Server Component]
+    ./app/dashboard/returns/vendor/page.tsx [Client Component Browser]
+    ./app/dashboard/returns/vendor/page.tsx [Server Component]
 
   Client Component SSR:
-    ./components/app-sidebar.tsx [Client Component SSR]
-    ./app/dashboard/layout.tsx [Client Component SSR]
-    ./app/dashboard/layout.tsx [Server Component]
-[00:38:49.803] Server  LOG      ✓ Compiled in 196ms
-[00:38:50.190] Browser ERROR   ./components/app-sidebar.tsx:46:5
-Ecmascript file had an error
-  44 |     CollapsibleTrigger,
-  45 |     Collapsible,
-> 46 |     CollapsibleContent,
-     |     ^^^^^^^^^^^^^^^^^^
-  47 |     CollapsibleTrigger,
-  48 | } from "@/components/ui/collapsible"
-  49 | import {
-
-the name `CollapsibleContent` is defined multiple times
-
-Import traces:
-  Client Component Browser:
-    ./components/app-sidebar.tsx [Client Component Browser]
-    ./app/dashboard/layout.tsx [Client Component Browser]
-    ./app/dashboard/layout.tsx [Server Component]
-
-  Client Component SSR:
-    ./components/app-sidebar.tsx [Client Component SSR]
-    ./app/dashboard/layout.tsx [Client Component SSR]
-    ./app/dashboard/layout.tsx [Server Component]
-[00:38:50.190] Browser ERROR   ./components/app-sidebar.tsx:47:5
-Ecmascript file had an error
-  45 |     Collapsible,
-  46 |     CollapsibleContent,
-> 47 |     CollapsibleTrigger,
-     |     ^^^^^^^^^^^^^^^^^^
-  48 | } from "@/components/ui/collapsible"
-  49 | import {
-  50 |     DropdownMenu,
-
-the name `CollapsibleTrigger` is defined multiple times
-
-Import traces:
-  Client Component Browser:
-    ./components/app-sidebar.tsx [Client Component Browser]
-    ./app/dashboard/layout.tsx [Client Component Browser]
-    ./app/dashboard/layout.tsx [Server Component]
-
-  Client Component SSR:
-    ./components/app-sidebar.tsx [Client Component SSR]
-    ./app/dashboard/layout.tsx [Client Component SSR]
-    ./app/dashboard/layout.tsx [Server Component]
-[00:38:50.190] Browser ERROR   ./components/app-sidebar.tsx:45:5
-Ecmascript file had an error
-  43 |     CollapsibleContent,
-  44 |     CollapsibleTrigger,
-> 45 |     Collapsible,
-     |     ^^^^^^^^^^^
-  46 |     CollapsibleContent,
-  47 |     CollapsibleTrigger,
-  48 | } from "@/components/ui/collapsible"
-
-the name `Collapsible` is defined multiple times
-
-Import traces:
-  Client Component Browser:
-    ./components/app-sidebar.tsx [Client Component Browser]
-    ./app/dashboard/layout.tsx [Client Component Browser]
-    ./app/dashboard/layout.tsx [Server Component]
-
-  Client Component SSR:
-    ./components/app-sidebar.tsx [Client Component SSR]
-    ./app/dashboard/layout.tsx [Client Component SSR]
-    ./app/dashboard/layout.tsx [Server Component]
-[00:49:04.590] Server  LOG      ✓ Compiled in 102ms
-[00:49:05.190] Browser ERROR   uncaughtError: ReferenceError: Collapsible is not defined
-[00:49:39.980] Server  WARN     ⚠ Fast Refresh had to perform a full reload due to a runtime error.
-[00:49:40.139] Server  LOG      ✓ Compiled in 84ms
-[00:49:40.311] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3000/dashboard/vendors color: rgb(120, 120, 120) color: inherit {"dp":"/dashboard/vendors","o":"http://localhost:3000/dashboard/vendors","sdkn":"@vercel/analytics/next","sdkv":"1.3.1","sv":"0.1.3","ts":1768932207386}
-[00:49:41.061] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
-[00:49:41.061] Browser LOG     %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {"path":"/dashboard/vendors","route":"/dashboard/vendors"}
-[00:49:41.061] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3000/dashboard/vendors color: rgb(120, 120, 120) color: inherit {"dp":"/dashboard/vendors","o":"http://localhost:3000/dashboard/vendors","sdkn":"@vercel/analytics/next","sdkv":"1.3.1","sv":"0.1.3","ts":1768932208360}
-[00:50:18.276] Browser WARN    Image with src "/placeholder.svg?height=40&width=40" was detected as the Largest Contentful Paint (LCP). Please add the `loading="eager"` property if this image is above the fold.
-Read more: https://nextjs.org/docs/app/api-reference/components/image#loading
-[00:50:21.667] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
-[00:50:21.667] Browser LOG     %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {"path":"/dashboard/vendors","route":"/dashboard/vendors"}
-[00:50:21.667] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3000/dashboard/vendors color: rgb(120, 120, 120) color: inherit {"dp":"/dashboard/vendors","o":"http://localhost:3000/dashboard/vendors","sdkn":"@vercel/analytics/next","sdkv":"1.3.1","sv":"0.1.3","ts":1768932248966}
-[00:50:50.735] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3000/dashboard/attributes color: rgb(120, 120, 120) color: inherit {"dp":"/dashboard/attributes","o":"http://localhost:3000/dashboard/attributes","sdkn":"@vercel/analytics/next","sdkv":"1.3.1","sv":"0.1.3","ts":1768932278014}
-[00:50:59.819] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3000/dashboard/sells color: rgb(120, 120, 120) color: inherit {"dp":"/dashboard/sells","o":"http://localhost:3000/dashboard/sells","sdkn":"@vercel/analytics/next","sdkv":"1.3.1","sv":"0.1.3","ts":1768932287075}
-[00:51:06.035] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3000/dashboard/settings color: rgb(120, 120, 120) color: inherit {"dp":"/dashboard/settings","o":"http://localhost:3000/dashboard/settings","sdkn":"@vercel/analytics/next","sdkv":"1.3.1","sv":"0.1.3","ts":1768932293320}
+    ./app/dashboard/returns/vendor/page.tsx [Client Component SSR]
+    ./app/dashboard/returns/vendor/page.tsx [Server Component]
+[00:08:34.008] Server  LOG      ✓ Compiled in 63ms
+[00:08:39.056] Server  LOG      ✓ Compiled in 55ms
+[00:09:35.980] Server  LOG      ✓ Compiled in 45ms
+[00:09:46.427] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3001/dashboard/returns/customer color: rgb(120, 120, 120) color: inherit {"dp":"/dashboard/returns/customer","o":"http://localhost:3001/dashboard/returns/customer","sdkn":"@vercel/analytics/next","sdkv":"1.3.1","sv":"0.1.3","ts":1768988711895}
+[00:10:15.623] Server  LOG      ✓ Compiled in 43ms

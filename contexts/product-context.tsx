@@ -40,6 +40,7 @@ export interface Variant {
     salePrice: number
     stock: number
     sku: string
+    barcode?: string
     inventory?: {
         warehouseId: string
         quantity: number

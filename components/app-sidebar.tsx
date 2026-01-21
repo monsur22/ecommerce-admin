@@ -19,6 +19,7 @@ import {
     FileText,
     ShieldCheck,
     ChevronRight,
+    RotateCcw,
 } from "lucide-react"
 
 import {
@@ -79,6 +80,14 @@ const navigation = [
     },
     { name: "Sells", href: "/dashboard/sells", icon: ShoppingBag },
     {
+        name: "Returns",
+        icon: RotateCcw,
+        items: [
+            { name: "Customer Returns", href: "/dashboard/returns/customer" },
+            { name: "Vendor Returns", href: "/dashboard/returns/vendor" },
+        ],
+    },
+    {
         name: "Staff",
         icon: UserPlus,
         items: [
@@ -89,7 +98,7 @@ const navigation = [
     },
     { name: "Settings", href: "/dashboard/settings", icon: Settings },
     { name: "International", href: "/dashboard/international", icon: Globe },
-    { name: "Online Store", href: "/dashboard/store", icon: Store },
+    { name: "Store", href: "/dashboard/store", icon: Store },
     { name: "Pages", href: "/dashboard/pages", icon: FileText },
 ]
 

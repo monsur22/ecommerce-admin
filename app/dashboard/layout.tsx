@@ -12,6 +12,8 @@ import { ProductProvider } from "@/contexts/product-context"
 import { AttributeProvider } from "@/contexts/attribute-context"
 import { WarehouseProvider } from "@/contexts/warehouse-context"
 import { TransferProvider } from "@/contexts/transfer-context"
+import { CustomerReturnProvider } from "@/contexts/customer-return-context"
+import { VendorReturnProvider } from "@/contexts/vendor-return-context"
 import {
   LayoutDashboard,
   ShoppingCart,
@@ -85,7 +87,7 @@ const navigation = [
   },
   { name: "Settings", href: "/dashboard/settings", icon: Settings },
   { name: "International", href: "/dashboard/international", icon: Globe, hasArrow: true },
-  { name: "Online Store", href: "/dashboard/store", icon: Store, hasArrow: true },
+  { name: "Store", href: "/dashboard/store", icon: Store, hasArrow: true },
   { name: "Pages", href: "/dashboard/pages", icon: FileText, hasArrow: true },
 ]
 
@@ -153,7 +155,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <TransferProvider>
             <ProductProvider>
               <StaffProvider>
-                <Suspense fallback={null}>
+                <CustomerReturnProvider>
+                  <VendorReturnProvider>
+                    <Suspense fallback={null}>
                   <SidebarProvider>
                     <AppSidebar />
                     <SidebarInset>
@@ -266,7 +270,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                       </main>
                     </SidebarInset>
                   </SidebarProvider>
-                </Suspense>
+                    </Suspense>
+                  </VendorReturnProvider>
+                </CustomerReturnProvider>
               </StaffProvider>
             </ProductProvider>
           </TransferProvider>

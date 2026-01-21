@@ -15,7 +15,7 @@ export type Module =
     | "Staff"
     | "Settings"
     | "International"
-    | "Online Store"
+    | "Store"
     | "Pages"
 
 export type Action = "read" | "write" | "delete"
