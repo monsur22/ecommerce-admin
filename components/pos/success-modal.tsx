@@ -118,7 +118,7 @@ export function SuccessModal({ open, onOpenChange, onClose, orderDetails }: Succ
         </head>
         <body>
           <div class="header">
-            <div class="store-name">KACHA BAZAR</div>
+            <div class="store-name">Admin</div>
             <div class="meta">59 Station Rd, Dhaka</div>
             <div class="meta">Tel: 019579034</div>
             <div class="meta">Date: ${new Date().toLocaleString()}</div>

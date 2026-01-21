@@ -380,7 +380,7 @@ export default function OrdersPage() {
                 <div class="company-info">
                   <div class="logo">
                     <div class="logo-icon">🛒</div>
-                    <span>KACHA BAZAR</span>
+                    <span>Admin</span>
                   </div>
                   <p>59 Station Rd, Purls Bridge, United Kingdom</p>
                   <p>019579034</p>
@@ -719,7 +719,7 @@ export default function OrdersPage() {
                     <div className="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center">
                       <ShoppingBag className="w-5 h-5 text-white" />
                     </div>
-                    <span className="text-2xl font-bold text-emerald-600">KACHA BAZAR</span>
+                    <span className="text-2xl font-bold text-emerald-600">Admin</span>
                   </div>
                   <p className="text-sm text-gray-600">59 Station Rd, Purls Bridge, United Kingdom</p>
                   <p className="text-sm text-gray-600">019579034</p>
