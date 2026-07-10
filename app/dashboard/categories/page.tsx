@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Switch } from "@/components/ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -16,9 +15,15 @@ import { exportToCSV, parseCSV } from "@/lib/export-import-utils"
 import { usePagination } from "@/hooks/use-pagination"
 import { PaginationControl } from "@/components/ui/pagination-control"
 import { useCategory, type Category } from "@/contexts/category-context"
+import { useToast } from "@/hooks/use-toast"
+import { useSaasAuth } from "@/contexts/saas-auth-context"
+import { AccessDenied } from "@/components/ui/access-denied"
+import { useModuleGuard } from "@/hooks/use-module-guard"
 
 export default function CategoriesPage() {
+  const { canRead } = useSaasAuth()
   const { categories: rootCategories, getAllCategoriesFlat, addCategory, updateCategory, deleteCategory } = useCategory()
+  const { toast } = useToast()
   const [isLoading, setIsLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedIds, setSelectedIds] = useState<string[]>([])
@@ -30,9 +35,7 @@ export default function CategoriesPage() {
   const flatCategories = getAllCategoriesFlat()
 
   const [formData, setFormData] = useState({
-    icon: "",
     name: "",
-    description: "",
     parent_id: "none",
     published: true,
   })
@@ -47,13 +50,16 @@ export default function CategoriesPage() {
     return () => clearTimeout(timer)
   }, [])
 
+  const blocked = useModuleGuard('Categories')
+  if (blocked) return blocked
+
   // Filter Logic
   // If "Parents Only" is checked, we only search/filter ROOT categories.
   // Otherwise, we search/filter ALL categories (flat list).
   const sourceList = parentsOnly ? rootCategories : flatCategories
 
   const filteredCategories = sourceList.filter((category) =>
-    category.category_name.toLowerCase().includes(searchQuery.toLowerCase()),
+    (category.category_name || "").toLowerCase().includes(searchQuery.toLowerCase()),
   )
 
   const {
@@ -90,72 +96,120 @@ export default function CategoriesPage() {
     updateCategory(category.id, { status: !category.status })
   }
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (!formData.name) return
 
-    addCategory({
-      category_name: formData.name,
-      icon: formData.icon || "📦",
-      description: formData.description,
-      status: formData.published,
-      parent_id: formData.parent_id === "none" ? null : formData.parent_id,
-    })
+    try {
+      await addCategory({
+        category_name: formData.name.replace(/\b\w/g, (c) => c.toUpperCase()),
+        status: formData.published,
+        parent_id: formData.parent_id === "none" ? null : formData.parent_id,
+      })
 
-    closeDialog()
+      toast({
+        title: "Success",
+        description: "Category created successfully",
+      })
+      closeDialog()
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message || 'Failed to create category',
+      })
+    }
   }
 
   const handleEdit = (category: Category) => {
     setEditingCategory(category)
     setFormData({
-      icon: category.icon || "📦",
       name: category.category_name,
-      description: category.description || "",
       parent_id: category.parent_id || "none",
       published: category.status,
     })
     setIsDialogOpen(true)
   }
 
-  const handleUpdate = () => {
+  const handleUpdate = async () => {
     if (!editingCategory || !formData.name) return
 
-    updateCategory(editingCategory.id, {
-      category_name: formData.name,
-      icon: formData.icon,
-      description: formData.description,
-      status: formData.published,
-      // Note: Changing parent_id logic in Context is complex (need to move from old parent's children to new parent's children).
-      // For now, assuming context handles it or we might need to enhance context update logic.
-      // Current context update simply merges fields. IF moving parents is required, context needs 'moveCategory' or refined update.
-      // Based on context code: updateRecursive updates fields. It doesn't move nodes in the tree.
-      // LIMITATION: Changing parent might not reflect in hierarchy structure with current context implementation.
-      // For this task, we will just update the field, but fully proper tree manipulation might need more context work.
-    })
+    try {
+      await updateCategory(editingCategory.id, {
+        category_name: formData.name.replace(/\b\w/g, (c) => c.toUpperCase()),
+        status: formData.published,
+        parent_id: formData.parent_id === "none" ? null : formData.parent_id,
+      })
 
-    closeDialog()
+      toast({
+        title: "Success",
+        description: "Category updated successfully",
+      })
+      closeDialog()
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message || 'Failed to update category',
+      })
+    }
   }
 
-  const handleDelete = (id: string) => {
-    deleteCategory(id)
-    setSelectedIds(selectedIds.filter((selectedId) => selectedId !== id))
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteCategory(id)
+      setSelectedIds(selectedIds.filter((selectedId) => selectedId !== id))
+      toast({
+        title: "Success",
+        description: "Category deleted successfully",
+      })
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message || 'Failed to delete category',
+      })
+    }
   }
 
-  const handleBulkDelete = () => {
-    selectedIds.forEach(id => deleteCategory(id))
+  const handleBulkDelete = async () => {
+    const errors: string[] = []
+    let successCount = 0
+
+    for (const id of selectedIds) {
+      try {
+        await deleteCategory(id)
+        successCount++
+      } catch (error: any) {
+        const category = flatCategories.find(c => c.id === id)
+        const categoryName = category ? category.category_name : id.substring(0, 8)
+        errors.push(`${categoryName}: ${error.message}`)
+      }
+    }
     setSelectedIds([])
+
+    if (errors.length > 0) {
+      toast({
+        variant: "destructive",
+        title: `${successCount} deleted, ${errors.length} failed`,
+        description: errors.join(', '),
+      })
+    } else {
+      toast({
+        title: "Success",
+        description: `${successCount} categories deleted successfully`,
+      })
+    }
   }
 
   const handleExport = () => {
     const exportData = filteredCategories.map((category) => ({
       id: category.id,
-      icon: category.icon,
       name: category.category_name,
       parent_id: category.parent_id || "None",
-      description: category.description,
       published: category.status ? "Yes" : "No",
     }))
 
-    const headers = ["ID", "Icon", "Name", "Parent ID", "Description", "Published"]
+    const headers = ["ID", "Name", "Parent ID", "Published"]
     exportToCSV(exportData, "categories", headers)
   }
 
@@ -172,8 +226,6 @@ export default function CategoriesPage() {
          if(item.name) {
              addCategory({
                  category_name: item.name,
-                 icon: item.icon || "📦",
-                 description: item.description || "",
                  status: item.published === "Yes",
                  parent_id: item.parent_id === "None" ? null : item.parent_id
              })
@@ -204,7 +256,7 @@ export default function CategoriesPage() {
   const closeDialog = () => {
     setIsDialogOpen(false)
     setEditingCategory(null)
-    setFormData({ icon: "", name: "", description: "", parent_id: "none", published: true })
+    setFormData({ name: "", parent_id: "none", published: true })
   }
   
   // Helper to get parent name
@@ -275,23 +327,16 @@ export default function CategoriesPage() {
             />
           </div>
           
-          <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-end">
-              <Button variant="outline" onClick={() => {
-                setSearchQuery("")
-                setParentsOnly(false)
+          <div className="flex items-center gap-2 border px-3 py-2 rounded-md bg-gray-50">
+            <Switch
+              checked={parentsOnly}
+              onCheckedChange={(checked) => {
+                setParentsOnly(checked)
                 handleFilterChange()
-              }}>Reset</Button>
-              <div className="flex items-center gap-2 border px-3 py-2 rounded-md bg-gray-50">
-                <Switch
-                  checked={parentsOnly}
-                  onCheckedChange={(checked) => {
-                    setParentsOnly(checked)
-                    handleFilterChange()
-                  }}
-                  className="data-[state=checked]:bg-emerald-500"
-                />
-                <span className="text-sm font-medium">Parents Only</span>
-              </div>
+              }}
+              className="data-[state=checked]:bg-emerald-500"
+            />
+            <span className="text-sm font-medium">Parents Only</span>
           </div>
         </div>
 
@@ -307,11 +352,8 @@ export default function CategoriesPage() {
                     className="rounded border-gray-300"
                   />
                 </th>
-                <th className="text-left py-3 px-4 text-xs font-semibold text-gray-700 uppercase tracking-wider">ID</th>
-                <th className="text-left py-3 px-4 text-xs font-semibold text-gray-700 uppercase tracking-wider">ICON</th>
                 <th className="text-left py-3 px-4 text-xs font-semibold text-gray-700 uppercase tracking-wider">NAME</th>
                  {!parentsOnly && <th className="text-left py-3 px-4 text-xs font-semibold text-gray-700 uppercase tracking-wider">PARENT</th>}
-                <th className="text-left py-3 px-4 text-xs font-semibold text-gray-700 uppercase tracking-wider">DESCRIPTION</th>
                 <th className="text-left py-3 px-4 text-xs font-semibold text-gray-700 uppercase tracking-wider">PUBLISHED</th>
                 <th className="text-left py-3 px-4 text-xs font-semibold text-gray-700 uppercase tracking-wider">ACTIONS</th>
               </tr>
@@ -321,11 +363,8 @@ export default function CategoriesPage() {
                 ? Array.from({ length: 5 }).map((_, index) => (
                     <tr key={index} className="border-b hover:bg-gray-50">
                       <td className="py-3 px-4"><Skeleton className="h-4 w-4 rounded" /></td>
-                      <td className="py-3 px-4"><Skeleton className="h-4 w-12" /></td>
-                      <td className="py-3 px-4"><Skeleton className="h-8 w-8 rounded" /></td>
                       <td className="py-3 px-4"><Skeleton className="h-4 w-32" /></td>
                        {!parentsOnly && <td className="py-3 px-4"><Skeleton className="h-4 w-24" /></td>}
-                      <td className="py-3 px-4"><Skeleton className="h-4 w-48" /></td>
                       <td className="py-3 px-4"><Skeleton className="h-6 w-11 rounded-full" /></td>
                       <td className="py-3 px-4"><Skeleton className="h-5 w-20" /></td>
                     </tr>
@@ -340,17 +379,12 @@ export default function CategoriesPage() {
                           className="rounded border-gray-300"
                         />
                       </td>
-                      <td className="py-3 px-4 text-gray-600 text-xs">{category.id.substring(0, 6)}...</td>
-                      <td className="py-3 px-4">
-                        <div className="w-8 h-8 flex items-center justify-center text-xl bg-gray-100 rounded-md">{category.icon}</div>
-                      </td>
                       <td className="py-3 px-4 text-gray-900 font-medium">{category.category_name}</td>
                       {!parentsOnly && (
                           <td className="py-3 px-4 text-gray-500 text-sm">
                               {getParentName(category.parent_id)}
                           </td>
                       )}
-                      <td className="py-3 px-4 text-gray-600 text-sm truncate max-w-xs">{category.description}</td>
                       <td className="py-3 px-4">
                         <Switch
                           checked={category.status}
@@ -398,18 +432,9 @@ export default function CategoriesPage() {
             <DialogTitle>{editingCategory ? "Edit Category" : "Add New Category"}</DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="icon">Icon (Emoji) *</Label>
-              <Input
-                id="icon"
-                value={formData.icon}
-                onChange={(e) => setFormData({ ...formData, icon: e.target.value })}
-                placeholder="Enter emoji icon (e.g., 🍎)"
-                maxLength={2}
-              />
-            </div>
 
+
+          <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="name">Category Name *</Label>
               <Input
@@ -426,14 +451,14 @@ export default function CategoriesPage() {
                     value={formData.parent_id || "none"} 
                     onValueChange={(val) => setFormData({...formData, parent_id: val})}
                 >
-                    <SelectTrigger>
+                    <SelectTrigger className="w-full">
                         <SelectValue placeholder="Select Parent Category" />
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem value="none">None (Top Level)</SelectItem>
-                         {/* Filter out self to avoid circular dependency when editing */}
+                         {/* Filter: only active categories and exclude self when editing */}
                         {flatCategories
-                           .filter(c => !editingCategory || c.id !== editingCategory.id)
+                           .filter(c => c.status === true && (!editingCategory || c.id !== editingCategory.id))
                            .map(cat => (
                             <SelectItem key={cat.id} value={cat.id}>
                                 {cat.category_name}
@@ -441,17 +466,6 @@ export default function CategoriesPage() {
                         ))}
                     </SelectContent>
                 </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Enter category description"
-                rows={3}
-              />
             </div>
 
             <div className="flex items-center gap-2">
@@ -488,7 +502,7 @@ export default function CategoriesPage() {
               <Label>CSV File</Label>
               <Input type="file" accept=".csv" onChange={handleImport} />
               <p className="text-sm text-gray-500">
-                Upload a CSV file with columns: Name, Icon, Description, Status, Parent ID
+                Upload a CSV file with columns: Name, Status, Parent ID
               </p>
             </div>
           </div>

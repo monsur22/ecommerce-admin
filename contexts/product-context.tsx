@@ -1,24 +1,40 @@
 "use client"
 
-import React, { createContext, useContext, useState } from "react"
-import { generateId } from "@/lib/export-import-utils"
+import React, { createContext, useContext, useState, useEffect } from "react"
+import { productApi, type ProductResponse } from "@/lib/productApi"
 
 export interface Product {
     id: string
     name: string
     description: string
-    category: string
+    category: string        // display name
+    categoryId?: string     // backend id
     price: number
     salePrice: number
+    offerPrice?: number | null
+    offerType?: string | null
+    costPrice?: number
+    profitMargin?: number
+    marginType?: string
     stock: number
     status: "Selling" | "Out of Stock" | "Discontinued"
     published: boolean
+    isHotDeal?: boolean
+    isBestSeller?: boolean
+    isFeatured?: boolean
+    dealLabel?: string
     image: string
+    images?: File[]         // for upload
+    delete_images?: boolean
+    keep_images?: string[]  // existing paths to keep on update
     sku: string
     barcode: string
     createdAt?: string
     updatedAt?: string
     vendorId?: string
+    vendorName?: string
+    locationId?: string     // backend location/warehouse id
+    locationName?: string   // display name
     receiptNumber?: string
     attributes?: {
         id: string
@@ -27,7 +43,21 @@ export interface Product {
     }[]
     variants?: Variant[]
     inventory?: {
+        inventoryId?: number
         warehouseId: string
+        quantity: number
+    }[]
+    reorderPoint?: number
+    trackingType?: "none" | "serial" | "batch"
+    isBundle?: boolean
+    bundlePriceOverride?: number
+    bundleItems?: {
+        id?: number
+        productId: number
+        productName?: string
+        productSku?: string
+        variantId?: number
+        variantName?: string
         quantity: number
     }[]
 }
@@ -38,10 +68,16 @@ export interface Variant {
     attributes: { [key: string]: string }
     price: number
     salePrice: number
+    offerPrice?: number | null
+    offerType?: string | null
+    costPrice?: number
+    profitMargin?: number
+    marginType?: string
     stock: number
     sku: string
     barcode?: string
     inventory?: {
+        inventoryId?: number
         warehouseId: string
         quantity: number
     }[]
@@ -49,138 +85,277 @@ export interface Variant {
 
 interface ProductContextType {
     products: Product[]
-    addProduct: (product: Product) => void
-    updateProduct: (product: Product) => void
-    deleteProduct: (id: string) => void
+    isLoading: boolean
+    error: string | null
+    addProduct: (product: Omit<Product, 'id'>) => Promise<void>
+    updateProduct: (product: Product) => Promise<void>
+    deleteProduct: (id: string) => Promise<void>
     getProductsByVendor: (vendorId: string) => Product[]
     deductStock: (cartItems: { productId: string; variantId?: string; quantity: number }[], warehouseId: string) => void
+    refreshProducts: () => Promise<void>
 }
 
 const ProductContext = createContext<ProductContextType | undefined>(undefined)
 
-const initialProducts: Product[] = [
-    {
-        id: "1",
-        name: "Premium T-Shirt",
-        description: "High-quality cotton t-shirt with premium fabric",
-        category: "Men",
-        price: 450.0,
-        salePrice: 450.0,
-        stock: 30, // Sum of variant stocks
-        status: "Selling",
-        published: true,
-        image: "/plain-white-tshirt.png",
-        sku: "TSH-001",
-        barcode: "1234567890123",
-        createdAt: "2023-11-20T10:00:00Z",
-        updatedAt: "2023-11-21T10:00:00Z",
-        vendorId: "1",
-        attributes: [
-            { id: "81B6", name: "Size", value: ["Small", "Medium", "Large"] },
-            { id: "81B2", name: "Color", value: ["Red", "Blue"] }
-        ],
-        variants: [
-            { id: "v1", name: "Small / Red", attributes: { "Size": "Small", "Color": "Red" }, price: 450, salePrice: 450, stock: 5, sku: "TSH-001-S-RE", inventory: [{ warehouseId: "wh_main", quantity: 5 }] },
-            { id: "v2", name: "Small / Blue", attributes: { "Size": "Small", "Color": "Blue" }, price: 450, salePrice: 450, stock: 5, sku: "TSH-001-S-BL", inventory: [{ warehouseId: "wh_main", quantity: 5 }] },
-            { id: "v3", name: "Medium / Red", attributes: { "Size": "Medium", "Color": "Red" }, price: 460, salePrice: 460, stock: 5, sku: "TSH-001-M-RE", inventory: [{ warehouseId: "wh_main", quantity: 5 }] },
-            { id: "v4", name: "Medium / Blue", attributes: { "Size": "Medium", "Color": "Blue" }, price: 460, salePrice: 460, stock: 5, sku: "TSH-001-M-BL", inventory: [{ warehouseId: "wh_main", quantity: 5 }] },
-            { id: "v5", name: "Large / Red", attributes: { "Size": "Large", "Color": "Red" }, price: 470, salePrice: 470, stock: 5, sku: "TSH-001-L-RE", inventory: [{ warehouseId: "wh_main", quantity: 5 }] },
-            { id: "v6", name: "Large / Blue", attributes: { "Size": "Large", "Color": "Blue" }, price: 470, salePrice: 470, stock: 5, sku: "TSH-001-L-BL", inventory: [{ warehouseId: "wh_main", quantity: 5 }] }
-        ],
-        inventory: [
-            { warehouseId: "wh_main", quantity: 30 }
-        ]
-    },
-    {
-        id: "2",
-        name: "Himalaya Powder",
-        description: "A luxurious powder for skin care",
-        category: "Skin Care",
-        price: 174.97,
-        salePrice: 160.0,
-        stock: 5471,
-        status: "Selling",
-        published: true,
-        image: "/powder.jpg",
-        sku: "SKC-002",
-        barcode: "2345678901234",
-        vendorId: "2", // Best Electronics (Powder? Data mismatch, effectively random for now)
-        inventory: [
-            { warehouseId: "wh_main", quantity: 5471 },
-            { warehouseId: "wh_downtown", quantity: 100 } /* Demo data: Downtown has some stock */
-        ]
-    },
-    // ... Adding a few more from the original list for completeness or relying on user adding them.
-    // I will include the full list from the original file to ensure no data loss during migration.
-    {
-        id: "3",
-        name: "Green Leaf Lettuce",
-        description: "Fresh and crisp lettuce",
-        category: "Fresh Vegetable",
-        price: 112.72,
-        salePrice: 112.72,
-        stock: 463,
-        status: "Selling",
-        published: true,
-        image: "/fresh-lettuce.png",
-        sku: "FVL-003",
-        barcode: "3456789012345",
-        vendorId: "1",
-        inventory: [
-            { warehouseId: "wh_main", quantity: 463 }
-        ]
-    },
-    {
-        id: "4",
-        name: "Rainbow Chard",
-        description: "Colorful and nutritious chard",
-        category: "Fresh Vegetable",
-        price: 7.07,
-        salePrice: 7.07,
-        stock: 472,
-        status: "Selling",
-        published: true,
-        image: "/chard.jpg",
-        sku: "FVL-004",
-        barcode: "4567890123456",
-        vendorId: "1",
-        inventory: [
-            { warehouseId: "wh_main", quantity: 472 }
-        ]
-    },
-    {
-        id: "5",
-        name: "Clementine",
-        description: "Juicy and sweet clementine",
-        category: "Fresh Fruits",
-        price: 48.12,
-        salePrice: 48.12,
-        stock: 443,
-        status: "Selling",
-        published: true,
-        image: "/single-clementine.png",
-        sku: "FFR-005",
-        barcode: "5678901234567",
-        vendorId: "1",
-        inventory: [
-            { warehouseId: "wh_main", quantity: 443 }
-        ]
-    },
-]
+function convertToProduct(p: ProductResponse): Product {
+    const categoryObj = typeof p.category === "object" && p.category !== null ? p.category : null
+    // DTO returns camelCase IDs
+    const categoryId = categoryObj ? String(categoryObj.id) : ((p as any).categoryId ? String((p as any).categoryId) : undefined)
+    const categoryName = (p as any).categoryName || (categoryObj ? categoryObj.category_name : (p.category as string || ""))
+    const vendorId = (p as any).vendorId ? String((p as any).vendorId) : (p.vendor_id ? String(p.vendor_id) : undefined)
+    const vendorName = (p as any).vendorName ?? undefined
+    const locationId = (p as any).locationId ? String((p as any).locationId) : (p.location_id ? String(p.location_id) : undefined)
+    return {
+        id: String(p.id),
+        name: p.name,
+        description: p.description || "",
+        category: categoryName,
+        categoryId,
+        price: p.price,
+        salePrice: p.salePrice ?? p.sale_price,
+        offerPrice: (p as any).offerPrice ?? (p as any).offer_price ?? undefined,
+        offerType: (p as any).offerType ?? (p as any).offer_type ?? undefined,
+        costPrice: (p as any).costPrice ?? p.cost_price,
+        profitMargin: (p as any).profitMargin ?? p.profit_margin,
+        marginType: (p as any).marginType ?? p.margin_type,
+        stock: p.stock,
+        status: (p.status as Product["status"]) || (p.stock > 0 ? "Selling" : "Out of Stock"),
+        published: p.published ?? true,
+        isHotDeal: (p as any).isHotDeal ?? (p as any).is_hot_deal ?? false,
+        isBestSeller: (p as any).isBestSeller ?? (p as any).is_best_seller ?? false,
+        isFeatured: (p as any).isFeatured ?? (p as any).is_featured ?? false,
+        dealLabel: (p as any).dealLabel ?? (p as any).deal_label ?? undefined,
+        image: (() => {
+            try {
+                // Try images array first (from backend relationship)
+                if (Array.isArray(p.images) && p.images.length > 0) {
+                    const primaryImage = p.images.find((i: any) => i.isPrimary === true || i.is_primary === true)
+                    const imagePath = primaryImage?.path || p.images[0]?.path
+                    if (imagePath && typeof imagePath === 'string' && imagePath.trim()) {
+                        if (imagePath.startsWith("/api/proxy/") || imagePath.startsWith("http")) return imagePath
+                        return `/api/proxy/uploads/${imagePath}`
+                    }
+                }
+                // Fallback to image field
+                if (p.image && typeof p.image === 'string' && p.image.trim()) {
+                    if (p.image.startsWith("/api/proxy/") || p.image.startsWith("http")) return p.image
+                    return `/api/proxy/uploads/${p.image}`
+                }
+            } catch (e) {
+                console.error("Error processing image for product", p.id, "error:", e, "p.images:", p.images, "p.image:", p.image)
+            }
+            return "/placeholder.svg"
+        })(),
+        sku: p.sku || "",
+        barcode: p.barcode || "",
+        createdAt: p.created_at,
+        updatedAt: p.updated_at,
+        vendorId,
+        vendorName,
+        locationId,
+        locationName: p.location?.name,
+        receiptNumber: (p as any).receiptNumber || p.receipt_number || undefined,
+        attributes: p.attributes?.map(a => ({
+            id: String(a.id),
+            name: a.name,
+            value: [] as string[], // selected values are reconstructed from variants in the edit dialog
+        })) || [],
+        variants: p.variants?.map(v => ({
+            id: String(v.id),
+            name: v.name,
+            attributes: (() => {
+                const raw = (v as any).attributes
+                if (!raw) return {}
+                if (typeof raw === 'string') { try { return JSON.parse(raw) } catch { return {} } }
+                return raw
+            })(),
+            price: v.price,
+            salePrice: (v as any).salePrice ?? v.sale_price,
+            offerPrice: (v as any).offerPrice ?? (v as any).offer_price ?? undefined,
+            offerType: (v as any).offerType ?? (v as any).offer_type ?? undefined,
+            costPrice: (v as any).costPrice ?? v.cost_price,
+            profitMargin: (v as any).profitMargin ?? v.profit_margin,
+            marginType: (v as any).marginType ?? v.margin_type,
+            stock: v.stock,
+            sku: v.sku || "",
+            barcode: v.barcode,
+        })) || [],
+        inventory: p.inventory?.map(i => ({
+            warehouseId: String(i.warehouse_id),
+            quantity: i.quantity,
+        })) || [],
+        reorderPoint: (p as any).reorderPoint ?? (p as any).reorder_point ?? undefined,
+        trackingType: (p as any).trackingType ?? (p as any).tracking_type ?? "none",
+        isBundle: (p as any).isBundle ?? (p as any).is_bundle ?? false,
+        bundlePriceOverride: (p as any).bundlePriceOverride ?? (p as any).bundle_price_override ?? undefined,
+        bundleItems: ((p as any).bundleItems ?? []).map((bi: any) => ({
+            id: bi.id,
+            productId: bi.productId,
+            productName: bi.productName || "",
+            productSku: bi.productSku || "",
+            variantId: bi.variantId,
+            variantName: bi.variantName,
+            quantity: bi.quantity || 1,
+        })),
+    }
+}
 
 export function ProductProvider({ children }: { children: React.ReactNode }) {
-    const [products, setProducts] = useState<Product[]>(initialProducts)
+    const [products, setProducts] = useState<Product[]>([])
+    const [isLoading, setIsLoading] = useState(true)
+    const [error, setError] = useState<string | null>(null)
 
-    const addProduct = (product: Product) => {
-        setProducts((prev) => [...prev, product])
+    const refreshProducts = async () => {
+        try {
+            setIsLoading(true)
+            setError(null)
+            const res = await productApi.getAll({ limit: 200 })
+            setProducts((res.data ?? []).map(convertToProduct))
+        } catch (err: any) {
+            if (err.response?.status !== 403) {
+                console.error("Failed to fetch products:", err)
+                setError(err.response?.data?.error || "Failed to fetch products")
+            }
+        } finally {
+            setIsLoading(false)
+        }
     }
 
-    const updateProduct = (product: Product) => {
-        setProducts((prev) => prev.map((p) => (p.id === product.id ? product : p)))
+    useEffect(() => {
+        refreshProducts()
+    }, [])
+
+    const addProduct = async (product: Omit<Product, 'id'>) => {
+        if (!product.categoryId || !product.locationId) {
+            throw new Error("Category and location are required")
+        }
+        try {
+            await productApi.create({
+                name: product.name,
+                description: product.description,
+                category_id: parseInt(product.categoryId),
+                location_id: parseInt(product.locationId),
+                price: product.price,
+                sale_price: product.salePrice,
+                offer_price: product.offerPrice,
+                offer_type: product.offerType,
+                cost_price: product.costPrice,
+                profit_margin: product.profitMargin,
+                margin_type: product.marginType,
+                stock: product.stock,
+                published: product.published,
+                sku: product.sku,
+                barcode: product.barcode,
+                vendor_id: product.vendorId ? parseInt(product.vendorId) : undefined,
+                receipt_number: product.receiptNumber,
+                is_hot_deal: product.isHotDeal,
+                is_best_seller: product.isBestSeller,
+                is_featured: product.isFeatured,
+                deal_label: product.dealLabel,
+                attributes: product.attributes,
+                variants: product.variants?.map(v => ({
+                    name: v.name,
+                    sku: v.sku,
+                    barcode: v.barcode,
+                    price: v.price,
+                    sale_price: v.salePrice,
+                    offer_price: v.offerPrice,
+                    offer_type: v.offerType,
+                    cost_price: v.costPrice,
+                    profit_margin: v.profitMargin,
+                    margin_type: v.marginType,
+                    stock: v.stock,
+                    attributes: v.attributes,
+                })),
+                images: product.images,
+                reorder_point: (product as any).reorderPoint,
+                tracking_type: (product as any).trackingType,
+                is_bundle: (product as any).isBundle,
+                bundle_price_override: (product as any).bundlePriceOverride,
+                bundle_items: (product as any).bundleItems?.map((bi: any) => ({
+                    productId: bi.productId,
+                    variantId: bi.variantId,
+                    quantity: bi.quantity,
+                })),
+            })
+            await refreshProducts()
+        } catch (err: any) {
+            console.error("Failed to create product:", err)
+            throw new Error(err.response?.data?.message || err.response?.data?.error || err.message || "Failed to create product")
+        }
     }
 
-    const deleteProduct = (id: string) => {
-        setProducts((prev) => prev.filter((p) => p.id !== id))
+    const updateProduct = async (product: Product) => {
+        try {
+            await productApi.update(parseInt(product.id), {
+                name: product.name,
+                description: product.description,
+                category_id: product.categoryId ? parseInt(product.categoryId) : undefined,
+                location_id: product.locationId ? parseInt(product.locationId) : undefined,
+                price: product.price,
+                sale_price: product.salePrice,
+                offer_price: product.offerPrice,
+                offer_type: product.offerType,
+                cost_price: product.costPrice,
+                profit_margin: product.profitMargin,
+                margin_type: product.marginType,
+                stock: product.stock,
+                published: product.published,
+                sku: product.sku,
+                barcode: product.barcode,
+                vendor_id: product.vendorId ? parseInt(product.vendorId) : undefined,
+                receipt_number: product.receiptNumber,
+                is_hot_deal: product.isHotDeal,
+                is_best_seller: product.isBestSeller,
+                is_featured: product.isFeatured,
+                deal_label: product.dealLabel,
+                attributes: product.attributes,
+                variants: product.variants?.map(v => {
+                    const numericId = parseInt(v.id)
+                    return {
+                        ...(isNaN(numericId) ? {} : { id: numericId }),
+                        name: v.name,
+                        sku: v.sku,
+                        barcode: v.barcode,
+                        price: v.price,
+                        sale_price: v.salePrice,
+                        offer_price: v.offerPrice,
+                        offer_type: v.offerType,
+                        cost_price: v.costPrice,
+                        profit_margin: v.profitMargin,
+                        margin_type: v.marginType,
+                        stock: v.stock,
+                        attributes: v.attributes,
+                    }
+                }),
+                images: product.images,
+                delete_images: product.delete_images,
+                keep_images: product.keep_images,
+                reorder_point: (product as any).reorderPoint,
+                tracking_type: (product as any).trackingType,
+                is_bundle: (product as any).isBundle,
+                bundle_price_override: (product as any).bundlePriceOverride,
+                bundle_items: (product as any).bundleItems?.map((bi: any) => ({
+                    productId: bi.productId,
+                    variantId: bi.variantId,
+                    quantity: bi.quantity,
+                })),
+            })
+            await refreshProducts()
+        } catch (err: any) {
+            console.error("Failed to update product:", err)
+            throw new Error(err.response?.data?.message || err.response?.data?.error || err.message || "Failed to update product")
+        }
+    }
+
+    const deleteProduct = async (id: string) => {
+        try {
+            await productApi.delete(parseInt(id))
+            setProducts(prev => prev.filter(p => p.id !== id))
+        } catch (err: any) {
+            console.error("Failed to delete product:", err)
+            throw new Error(err.response?.data?.error || "Failed to delete product")
+        }
     }
 
     const getProductsByVendor = (vendorId: string) => {
@@ -188,78 +363,57 @@ export function ProductProvider({ children }: { children: React.ReactNode }) {
     }
 
     const deductStock = (cartItems: { productId: string; variantId?: string; quantity: number }[], warehouseId: string) => {
-        setProducts(prevProducts => {
-            return prevProducts.map(product => {
-                const cartItem = cartItems.find(item => item.productId === product.id);
+        setProducts(prevProducts =>
+            prevProducts.map(product => {
+                const cartItem = cartItems.find(item => item.productId === product.id)
+                if (!cartItem) return product
 
-                if (!cartItem) return product;
-
-                // Handle Variant Deduction
                 if (cartItem.variantId && product.variants) {
                     const updatedVariants = product.variants.map(variant => {
-                        if (variant.id !== cartItem.variantId) return variant;
-
-                        const inventory = variant.inventory || [];
-                        const whIndex = inventory.findIndex(i => i.warehouseId === warehouseId);
-
-                        let newInventory = [...inventory];
+                        if (variant.id !== cartItem.variantId) return variant
+                        const inventory = variant.inventory || []
+                        const whIndex = inventory.findIndex(i => i.warehouseId === warehouseId)
+                        let newInventory = [...inventory]
                         if (whIndex > -1) {
                             newInventory[whIndex] = {
                                 ...newInventory[whIndex],
-                                quantity: Math.max(0, newInventory[whIndex].quantity - cartItem.quantity)
-                            };
-                        } else {
-                            // If no record exists for this warehouse, assume 0 start or just don't go negative?
-                            // Ideally we shouldn't have been able to add to cart if 0.
-                            // For safety, let's just initialize if needed or do nothing.
+                                quantity: Math.max(0, newInventory[whIndex].quantity - cartItem.quantity),
+                            }
                         }
-
-                        // Recalculate total stock for variant
-                        const totalStock = newInventory.reduce((acc, curr) => acc + curr.quantity, 0);
-
-                        return {
-                            ...variant,
-                            inventory: newInventory,
-                            stock: totalStock
-                        };
-                    });
-
-                    // Also update main product total stock
-                    const productTotalStock = updatedVariants.reduce((acc, v) => acc + v.stock, 0);
-
-                    return { ...product, variants: updatedVariants, stock: productTotalStock };
-                }
-
-                // Handle Simple Product Deduction
-                else {
-                    const inventory = product.inventory || [];
-                    const whIndex = inventory.findIndex(i => i.warehouseId === warehouseId);
-
-                    let newInventory = [...inventory];
+                        const totalStock = newInventory.reduce((acc, curr) => acc + curr.quantity, 0)
+                        return { ...variant, inventory: newInventory, stock: totalStock }
+                    })
+                    const productTotalStock = updatedVariants.reduce((acc, v) => acc + v.stock, 0)
+                    return { ...product, variants: updatedVariants, stock: productTotalStock }
+                } else {
+                    const inventory = product.inventory || []
+                    const whIndex = inventory.findIndex(i => i.warehouseId === warehouseId)
+                    let newInventory = [...inventory]
                     if (whIndex > -1) {
                         newInventory[whIndex] = {
                             ...newInventory[whIndex],
-                            quantity: Math.max(0, newInventory[whIndex].quantity - cartItem.quantity)
-                        };
+                            quantity: Math.max(0, newInventory[whIndex].quantity - cartItem.quantity),
+                        }
                     }
-
-                    const totalStock = newInventory.reduce((acc, curr) => acc + curr.quantity, 0);
-
-                    return { ...product, inventory: newInventory, stock: totalStock };
+                    const totalStock = newInventory.reduce((acc, curr) => acc + curr.quantity, 0)
+                    return { ...product, inventory: newInventory, stock: totalStock }
                 }
-            });
-        });
+            })
+        )
     }
 
     return (
         <ProductContext.Provider
             value={{
                 products,
+                isLoading,
+                error,
                 addProduct,
                 updateProduct,
                 deleteProduct,
                 getProductsByVendor,
                 deductStock,
+                refreshProducts,
             }}
         >
             {children}

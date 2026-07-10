@@ -1,0 +1,415 @@
+/**
+ * Product API Service
+ * Proxied through Next.js API route to avoid browser TLS issues with self-signed certs
+ * Uses multipart/form-data for create/update (backend expects form-data with file uploads)
+ * Auto-injects company_id from auth context for multi-tenant support
+ */
+
+import axios from 'axios';
+import { getCompanyId } from './utils/apiInterceptor';
+
+const API_URL = '/api/proxy';
+
+const api = axios.create({
+  baseURL: API_URL,
+  withCredentials: true,
+});
+
+api.interceptors.request.use(
+  (config) => {
+    if (typeof window !== 'undefined') {
+      const token = localStorage.getItem('token');
+      if (token) config.headers.Authorization = `Bearer ${token}`;
+
+      // Add company_id to params for multi-tenant support
+      const companyId = getCompanyId();
+      if (companyId) {
+        if (!config.params) config.params = {};
+        config.params.company_id = companyId;
+      }
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401 && typeof window !== 'undefined') {
+      localStorage.removeItem('token');
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
+
+export interface ProductVariantResponse {
+  id: number;
+  product_id: number;
+  name: string;
+  sku: string;
+  barcode?: string;
+  price: number;
+  sale_price: number;
+  cost_price?: number;
+  profit_margin?: number;
+  margin_type?: string;
+  stock: number;
+  attributes?: { [key: string]: string };
+}
+
+export interface ProductInventoryResponse {
+  warehouse_id: number;
+  quantity: number;
+}
+
+export interface ProductCategoryResponse {
+  id: number;
+  category_name: string;
+  parent_id: number | null;
+  status: boolean;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+}
+
+export interface ProductLocationResponse {
+  id: number;
+  name: string;
+  address: string;
+  contact_person: string;
+  is_default: boolean;
+}
+
+export interface ProductImageResponse {
+  id: number;
+  product_id: number;
+  path: string;
+  position: number;
+  is_primary: boolean;
+}
+
+export interface ProductAttributeResponse {
+  id: number;
+  name: string;
+  display_name: string;
+  option_type: string;
+  values: string; // comma-separated e.g. "red,green,blue"
+  description: string;
+  is_required: boolean;
+  status: boolean;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+}
+
+export interface ProductResponse {
+  id: number;
+  name: string;
+  description: string;
+  category: string | ProductCategoryResponse;
+  categoryId?: number;
+  categoryName?: string;
+  location_id?: number;
+  location?: ProductLocationResponse;
+  price: number;
+  sale_price: number;
+  salePrice: number;
+  offer_price?: number;
+  offerPrice?: number;
+  offer_type?: string;
+  offerType?: string;
+  cost_price?: number;
+  costPrice?: number;
+  profit_margin?: number;
+  profitMargin?: number;
+  margin_type?: string;
+  marginType?: string;
+  stock: number;
+  status: string;
+  published: boolean;
+  image: string;
+  images?: ProductImageResponse[];
+  sku: string;
+  barcode: string;
+  vendor_id?: number;
+  receipt_number?: string;
+  attributes?: ProductAttributeResponse[];
+  variants?: ProductVariantResponse[];
+  inventory?: ProductInventoryResponse[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ProductListResponse {
+  message: string;
+  data: ProductResponse[];
+  pagination?: {
+    total: number;
+    page: number;
+    limit: number;
+    total_pages: number;
+    has_next: boolean;
+    has_previous: boolean;
+  };
+}
+
+export interface ProductReviewReplyResponse {
+  body: string;
+  author_name: string;
+  replied_at: string | null;
+}
+
+export interface ProductReviewItemResponse {
+  id: number;
+  product_id: number;
+  customer_id: number | null;
+  customer_name: string;
+  rating: number;
+  comment: string;
+  verified_purchase: boolean;
+  created_at: string | null;
+  reply: ProductReviewReplyResponse | null;
+}
+
+export interface ProductReviewDistributionResponse {
+  stars: number;
+  count: number;
+  percent: number;
+}
+
+export interface ProductReviewSummaryResponse {
+  average_rating: number;
+  review_count: number;
+  distribution: ProductReviewDistributionResponse[];
+}
+
+export interface ProductReviewListResponse {
+  success: boolean;
+  data: {
+    summary: ProductReviewSummaryResponse;
+    reviews: ProductReviewItemResponse[];
+  };
+  meta: {
+    current_page: number;
+    last_page: number;
+    per_page: number;
+    total: number;
+  };
+}
+
+export interface CreateProductData {
+  name: string;
+  description?: string;
+  category_id: number;
+  location_id: number;
+  price: number;
+  sale_price: number;
+  offer_price?: number | null;
+  offer_type?: string | null;
+  cost_price?: number;
+  profit_margin?: number;
+  margin_type?: string;
+  stock: number;
+  published?: boolean;
+  is_hot_deal?: boolean;
+  is_best_seller?: boolean;
+  is_featured?: boolean;
+  deal_label?: string;
+  sku?: string;
+  barcode?: string;
+  vendor_id?: number;
+  receipt_number?: string;
+  attributes?: { id: string; name: string; value: string | string[] }[];
+  variants?: {
+    id?: number;
+    name: string;
+    sku: string;
+    barcode?: string;
+    price: number;
+    sale_price: number;
+    cost_price?: number;
+    profit_margin?: number;
+    margin_type?: string;
+    stock: number;
+    attributes?: { [key: string]: string };
+  }[];
+  images?: File[];
+  delete_images?: boolean;
+  keep_images?: string[]; // existing image paths to keep e.g. ["products/abc.jpg"]
+  reorder_point?: number;
+  tracking_type?: "none" | "serial" | "batch";
+  is_bundle?: boolean;
+  bundle_price_override?: number;
+  bundle_items?: { productId: number; variantId?: number; quantity: number }[];
+}
+
+export interface UpdateProductData extends Partial<CreateProductData> {}
+
+function buildFormData(data: CreateProductData | UpdateProductData): FormData {
+  const fd = new FormData();
+
+  if (data.name !== undefined) fd.append('name', data.name);
+  if (data.description !== undefined) fd.append('description', data.description);
+  if (data.category_id !== undefined) fd.append('category_id', String(data.category_id));
+  if (data.vendor_id !== undefined && !isNaN(data.vendor_id)) fd.append('vendor_id', String(data.vendor_id));
+  if (data.location_id !== undefined) fd.append('location_id', String(data.location_id));
+  if (data.price !== undefined) fd.append('price', String(data.price));
+  if (data.sale_price !== undefined) fd.append('sale_price', String(data.sale_price));
+  if (data.offer_price !== undefined) fd.append('offer_price', data.offer_price !== null ? String(data.offer_price) : '');
+  if (data.offer_type !== undefined) fd.append('offer_type', data.offer_type !== null ? data.offer_type : '');
+  if (data.cost_price !== undefined) fd.append('cost_price', String(data.cost_price));
+  if (data.profit_margin !== undefined) fd.append('profit_margin', String(data.profit_margin));
+  if (data.margin_type !== undefined) fd.append('margin_type', data.margin_type);
+  if (data.stock !== undefined) fd.append('stock', String(data.stock));
+  if (data.sku !== undefined && data.sku !== '') fd.append('sku', data.sku);
+  if (data.barcode !== undefined && data.barcode !== '') fd.append('barcode', data.barcode);
+  if (data.published !== undefined) fd.append('published', data.published ? 'true' : 'false');
+  if (data.is_hot_deal !== undefined) fd.append('is_hot_deal', data.is_hot_deal ? '1' : '0');
+  if (data.is_best_seller !== undefined) fd.append('is_best_seller', data.is_best_seller ? '1' : '0');
+  if (data.is_featured !== undefined) fd.append('is_featured', data.is_featured ? '1' : '0');
+  if (data.deal_label !== undefined) fd.append('deal_label', data.deal_label ?? '');
+  if (data.receipt_number !== undefined && data.receipt_number !== '') fd.append('receipt_number', data.receipt_number);
+
+  if (data.attributes !== undefined) {
+    const attrIds = data.attributes.map(a => parseInt(a.id));
+    fd.append('attributes', JSON.stringify(attrIds));
+  }
+
+  if (data.variants !== undefined) {
+    fd.append('variants', JSON.stringify(data.variants));
+  }
+
+  if (data.images && data.images.length > 0) {
+    data.images.forEach((file, i) => fd.append(`image[${i}]`, file));
+  }
+
+  if (data.delete_images) {
+    fd.append('delete_images', '1');
+  }
+
+  if (data.keep_images !== undefined) {
+    data.keep_images.forEach(path => fd.append('keep_images[]', path));
+  }
+
+  if (data.reorder_point !== undefined) fd.append('reorderPoint', String(data.reorder_point));
+  if ((data as any).tracking_type !== undefined) fd.append('trackingType', (data as any).tracking_type);
+  if (data.is_bundle !== undefined) fd.append('isBundle', data.is_bundle ? '1' : '0');
+  if (data.bundle_price_override !== undefined && data.bundle_price_override !== null) {
+    fd.append('bundlePriceOverride', String(data.bundle_price_override));
+  }
+  if (data.bundle_items !== undefined) {
+    fd.append('bundleItems', JSON.stringify(data.bundle_items));
+  }
+
+  return fd;
+}
+
+async function fetchFormData(method: string, url: string, fd: FormData): Promise<any> {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+  const companyId = typeof window !== 'undefined' ? localStorage.getItem('company_id') : null;
+  const fullUrl = `${url}${companyId ? `?company_id=${companyId}` : ''}`;
+
+  const res = await fetch(fullUrl, {
+    method,
+    headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+    body: fd,
+  });
+
+  const json = await res.json();
+  if (!res.ok) {
+    const err: any = new Error(json.message || 'Request failed');
+    err.response = { status: res.status, data: json };
+    throw err;
+  }
+  return json;
+}
+
+export const productApi = {
+  getAll: async (params?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    status?: string;
+    category?: string;
+    category_id?: number;
+    location_id?: number;
+    vendor_id?: number;
+  }): Promise<ProductListResponse> => {
+    const response = await api.get('/products', { params });
+    // Laravel returns paginated response: { success, message, data: { data: [...], total, per_page, current_page } }
+    const laravelData = response.data.data || {};
+    return {
+      message: response.data.message || '',
+      data: laravelData.data || [],
+      pagination: {
+        total: laravelData.total || 0,
+        page: laravelData.current_page || 1,
+        limit: laravelData.per_page || 10,
+        total_pages: Math.ceil((laravelData.total || 0) / (laravelData.per_page || 10)),
+        has_next: laravelData.current_page < Math.ceil((laravelData.total || 0) / (laravelData.per_page || 10)),
+        has_previous: laravelData.current_page > 1,
+      },
+    };
+  },
+
+  getById: async (id: number): Promise<{ message: string; data: ProductResponse }> => {
+    const response = await api.get(`/products/${id}`);
+    return response.data;
+  },
+
+  getReviews: async (id: number, params?: {
+    per_page?: number;
+  }): Promise<ProductReviewListResponse> => {
+    const response = await api.get(`/store/products/${id}/reviews`, { params });
+    return response.data;
+  },
+
+  replyToReview: async (
+    productId: number,
+    reviewId: number,
+    reply: string,
+  ): Promise<{ message: string; data: { id: number; reply: ProductReviewReplyResponse } }> => {
+    const response = await api.post(
+      `/products/${productId}/reviews/${reviewId}/reply`,
+      { reply },
+      { headers: { "Content-Type": "application/json" } },
+    );
+    return response.data;
+  },
+
+  create: async (data: CreateProductData): Promise<{ message: string; data: ProductResponse }> => {
+    const fd = buildFormData(data);
+    return fetchFormData('POST', '/api/proxy/products', fd);
+  },
+
+  update: async (id: number, data: UpdateProductData): Promise<{ message: string; data: ProductResponse }> => {
+    const fd = buildFormData(data);
+    return fetchFormData('PUT', `/api/proxy/products/${id}`, fd);
+  },
+
+  updateStatus: async (id: number, status: string): Promise<{ message: string; data: ProductResponse }> => {
+    const response = await api.patch(`/products/${id}/status`, { status }, {
+      headers: { 'Content-Type': 'application/json' },
+    });
+    return response.data;
+  },
+
+  delete: async (id: number): Promise<{ message: string }> => {
+    const response = await api.delete(`/products/${id}`);
+    return response.data;
+  },
+
+  getStats: async (): Promise<{
+    total: number;
+    published: number;
+    unpublished: number;
+  }> => {
+    const response = await api.get('/products/stats');
+    return response.data.data;
+  },
+};
+
+export default productApi;

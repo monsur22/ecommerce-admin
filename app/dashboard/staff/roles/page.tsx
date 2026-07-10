@@ -2,73 +2,92 @@
 
 import type React from "react"
 import { useState, useEffect } from "react"
-import { Plus, Edit, Trash2, Search, Filter } from "lucide-react"
+import { Plus, Edit, Trash2, Search } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Skeleton } from "@/components/ui/skeleton"
-import { useStaff, type Role, type Module, type Permission } from "@/contexts/staff-context"
+import { useStaff, PERMISSION_MODULES, type Role, type Module, type Permission } from "@/contexts/staff-context"
+import { staffRoleApi } from "@/lib/staffApi"
+import { useSaasAuth } from "@/contexts/saas-auth-context"
+import { AccessDenied } from "@/components/ui/access-denied"
+import { useModuleGuard } from "@/hooks/use-module-guard"
 
-const modules: Module[] = [
-    "Dashboard",
-    "Products",
-    "Categories",
-    "Attributes",
-    "Coupons",
-    "Customers",
-    "Orders",
-    "POS",
-    "Sells",
-    "Staff",
-    "Settings",
-    "International",
-    "Store",
-    "Pages",
-]
+interface BackendPermission {
+    id: number
+    name: string
+}
 
 export default function RolesPage() {
-    const { roles, addRole, updateRole, deleteRole } = useStaff()
+    const { canRead } = useSaasAuth()
+    const { roles, rolesLoading, addRole, updateRole, deleteRole } = useStaff()
     const [searchQuery, setSearchQuery] = useState("")
     const [isDialogOpen, setIsDialogOpen] = useState(false)
     const [editingRole, setEditingRole] = useState<Role | null>(null)
-    const [isLoading, setIsLoading] = useState(true)
-
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            setIsLoading(false)
-        }, 2000)
-        return () => clearTimeout(timer)
-    }, [])
 
     // Form State
     const [roleName, setRoleName] = useState("")
     const [permissions, setPermissions] = useState<Permission[]>([])
+    const [backendPermissions, setBackendPermissions] = useState<BackendPermission[]>([])
+    const [loadingPermissions, setLoadingPermissions] = useState(false)
+
+    // Load backend permissions when component mounts
+    useEffect(() => {
+        const loadPermissions = async () => {
+            try {
+                setLoadingPermissions(true)
+                const perms = await staffRoleApi.getPermissions()
+                setBackendPermissions(perms || [])
+            } catch (err) {
+                console.error('Failed to load permissions:', err)
+            } finally {
+                setLoadingPermissions(false)
+            }
+        }
+        loadPermissions()
+    }, [])
+
+    const blocked = useModuleGuard('Role & Permission')
+  if (blocked) return blocked
 
     const filteredRoles = roles.filter((role) =>
         role.name.toLowerCase().includes(searchQuery.toLowerCase())
     )
 
+    const buildPermissionRows = (rolePermissions: Permission[] = []) => {
+        const permissionMap = new Map(rolePermissions.map((permission) => [permission.name, permission]))
+
+        const backendSorted = [...backendPermissions].sort((a, b) => {
+            const indexA = PERMISSION_MODULES.indexOf(a.name as Module)
+            const indexB = PERMISSION_MODULES.indexOf(b.name as Module)
+            const normalizedA = indexA === -1 ? Number.MAX_SAFE_INTEGER : indexA
+            const normalizedB = indexB === -1 ? Number.MAX_SAFE_INTEGER : indexB
+            if (normalizedA !== normalizedB) return normalizedA - normalizedB
+            return a.name.localeCompare(b.name)
+        })
+
+        return backendSorted.map((backendPerm) => {
+            const existing = permissionMap.get(backendPerm.name as Module)
+            return {
+                name: backendPerm.name as Module,
+                read: existing?.read || false,
+                write: existing?.write || false,
+                delete: existing?.delete || false,
+            }
+        })
+    }
+
     const handleOpenDialog = (role?: Role) => {
         if (role) {
             setEditingRole(role)
             setRoleName(role.name)
-            // Ensure all modules are present in permissions, defaulting to false if missing
-            const rolePermissions = modules.map(moduleName => {
-                const existing = role.permissions.find(p => p.name === moduleName)
-                return existing || { name: moduleName, read: false, write: false, delete: false }
-            })
-            setPermissions(rolePermissions)
+            setPermissions(buildPermissionRows(role.permissions))
         } else {
             setEditingRole(null)
             setRoleName("")
-            setPermissions(modules.map(moduleName => ({
-                name: moduleName,
-                read: false,
-                write: false,
-                delete: false
-            })))
+            setPermissions(buildPermissionRows())
         }
         setIsDialogOpen(true)
     }
@@ -82,28 +101,45 @@ export default function RolesPage() {
         }))
     }
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSelectAll = (type: "read" | "write" | "delete") => {
+        const allChecked = permissions.every(p => p[type])
+        setPermissions(prev => prev.map(p => ({ ...p, [type]: !allChecked })))
+    }
+
+    const handleSelectAllForModule = (moduleName: Module) => {
+        const module = permissions.find(p => p.name === moduleName)
+        if (module) {
+            const allChecked = module.read && module.write && module.delete
+            setPermissions(prev => prev.map(p => {
+                if (p.name === moduleName) {
+                    return { ...p, read: !allChecked, write: !allChecked, delete: !allChecked }
+                }
+                return p
+            }))
+        }
+    }
+
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
 
         if (editingRole) {
-            updateRole({
+            await updateRole({
                 ...editingRole,
                 name: roleName,
-                permissions: permissions
+                permissions,
             })
         } else {
-            addRole({
-                id: Date.now().toString(),
+            await addRole({
                 name: roleName,
-                permissions: permissions
+                permissions,
             })
         }
         setIsDialogOpen(false)
     }
 
-    const handleDelete = (id: string) => {
+    const handleDelete = async (id: string) => {
         if (confirm("Are you sure you want to delete this role?")) {
-            deleteRole(id)
+            await deleteRole(id)
         }
     }
 
@@ -143,7 +179,7 @@ export default function RolesPage() {
                             </tr>
                         </thead>
                         <tbody className="divide-y">
-                            {isLoading
+                            {rolesLoading
                                 ? Array.from({ length: 3 }).map((_, index) => (
                                     <tr key={index} className="hover:bg-gray-50">
                                         <td className="py-3 px-4">
@@ -172,7 +208,7 @@ export default function RolesPage() {
                                         </td>
                                     </tr>
                                 ))}
-                            {filteredRoles.length === 0 && (
+                            {!rolesLoading && filteredRoles.length === 0 && (
                                 <tr>
                                     <td colSpan={2} className="py-8 text-center text-gray-500">No roles found</td>
                                 </tr>
@@ -202,43 +238,85 @@ export default function RolesPage() {
 
                         <div>
                             <h3 className="font-semibold mb-3">Permissions</h3>
-                            <div className="border rounded-lg overflow-hidden">
-                                <table className="w-full">
-                                    <thead className="bg-gray-50 border-b">
-                                        <tr>
-                                            <th className="text-left py-2 px-4 text-sm font-medium text-gray-700">Module</th>
-                                            <th className="text-center py-2 px-4 text-sm font-medium text-gray-700">Read</th>
-                                            <th className="text-center py-2 px-4 text-sm font-medium text-gray-700">Write</th>
-                                            <th className="text-center py-2 px-4 text-sm font-medium text-gray-700">Delete</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y">
-                                        {permissions.map((permission) => (
-                                            <tr key={permission.name} className="hover:bg-gray-50">
-                                                <td className="py-2 px-4 text-sm font-medium text-gray-900">{permission.name}</td>
-                                                <td className="py-2 px-4 text-center">
-                                                    <Checkbox
-                                                        checked={permission.read}
-                                                        onCheckedChange={(checked) => handlePermissionChange(permission.name, "read", checked as boolean)}
-                                                    />
-                                                </td>
-                                                <td className="py-2 px-4 text-center">
-                                                    <Checkbox
-                                                        checked={permission.write}
-                                                        onCheckedChange={(checked) => handlePermissionChange(permission.name, "write", checked as boolean)}
-                                                    />
-                                                </td>
-                                                <td className="py-2 px-4 text-center">
-                                                    <Checkbox
-                                                        checked={permission.delete}
-                                                        onCheckedChange={(checked) => handlePermissionChange(permission.name, "delete", checked as boolean)}
-                                                    />
-                                                </td>
+                            {loadingPermissions ? (
+                                <div className="space-y-2">
+                                    <Skeleton className="h-10 w-full" />
+                                    <Skeleton className="h-10 w-full" />
+                                    <Skeleton className="h-10 w-full" />
+                                </div>
+                            ) : (
+                                <div className="border rounded-lg overflow-hidden">
+                                    <table className="w-full">
+                                        <thead className="bg-gray-50 border-b">
+                                            <tr>
+                                                <th className="text-left py-2 px-4 text-sm font-medium text-gray-700">Module</th>
+                                                <th className="text-center py-2 px-4 text-sm font-medium text-gray-700">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleSelectAll("read")}
+                                                        className="px-2 py-1 rounded text-xs bg-blue-100 hover:bg-blue-200 text-blue-700 font-semibold"
+                                                    >
+                                                        Read
+                                                    </button>
+                                                </th>
+                                                <th className="text-center py-2 px-4 text-sm font-medium text-gray-700">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleSelectAll("write")}
+                                                        className="px-2 py-1 rounded text-xs bg-green-100 hover:bg-green-200 text-green-700 font-semibold"
+                                                    >
+                                                        Write
+                                                    </button>
+                                                </th>
+                                                <th className="text-center py-2 px-4 text-sm font-medium text-gray-700">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleSelectAll("delete")}
+                                                        className="px-2 py-1 rounded text-xs bg-red-100 hover:bg-red-200 text-red-700 font-semibold"
+                                                    >
+                                                        Delete
+                                                    </button>
+                                                </th>
+                                                <th className="text-center py-2 px-4 text-sm font-medium text-gray-700">All</th>
                                             </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
+                                        </thead>
+                                        <tbody className="divide-y">
+                                            {permissions.map((permission) => (
+                                                <tr key={permission.name} className="hover:bg-gray-50">
+                                                    <td className="py-2 px-4 text-sm font-medium text-gray-900">{permission.name}</td>
+                                                    <td className="py-2 px-4 text-center">
+                                                        <Checkbox
+                                                            checked={permission.read}
+                                                            onCheckedChange={(checked) => handlePermissionChange(permission.name, "read", checked as boolean)}
+                                                        />
+                                                    </td>
+                                                    <td className="py-2 px-4 text-center">
+                                                        <Checkbox
+                                                            checked={permission.write}
+                                                            onCheckedChange={(checked) => handlePermissionChange(permission.name, "write", checked as boolean)}
+                                                        />
+                                                    </td>
+                                                    <td className="py-2 px-4 text-center">
+                                                        <Checkbox
+                                                            checked={permission.delete}
+                                                            onCheckedChange={(checked) => handlePermissionChange(permission.name, "delete", checked as boolean)}
+                                                        />
+                                                    </td>
+                                                    <td className="py-2 px-4 text-center">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleSelectAllForModule(permission.name)}
+                                                            className="px-2 py-1 rounded text-xs bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold"
+                                                        >
+                                                            All
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
                         </div>
 
                         <div className="flex justify-end gap-2 pt-4 border-t">

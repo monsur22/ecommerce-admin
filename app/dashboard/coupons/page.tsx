@@ -1,104 +1,113 @@
 "use client"
 
 import type React from "react"
-
-import { useState, useEffect } from "react"
-import { Search, Upload, Download, Edit2, Trash2, FilePen } from "lucide-react"
+import { useState, useEffect, useRef } from "react"
+import { Search, Download, Edit2, Trash2, FilePen, ImagePlus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { exportToCSV, parseCSV, generateId } from "@/lib/export-import-utils"
+import { exportToCSV } from "@/lib/export-import-utils"
 import { usePagination } from "@/hooks/use-pagination"
 import { PaginationControl } from "@/components/ui/pagination-control"
-import { StatusBadge } from "@/components/ui/status-badge"
+import { couponApi, type CouponResponse } from "@/lib/couponApi"
+import { useCompanySettings } from "@/contexts/company-settings-context"
+import { useSaasAuth } from "@/contexts/saas-auth-context"
+import { AccessDenied } from "@/components/ui/access-denied"
+import { useModuleGuard } from "@/hooks/use-module-guard"
+import { toast } from "sonner"
 
-type Coupon = {
-  id: string
-  campaignName: string
+type FormData = {
+  campaign_name: string
   code: string
   discount: string
-  published: boolean
-  startDate: string
-  endDate: string
-  status: "Active" | "Expired"
-  image: string
+  type: "percentage" | "fixed" | "free_shipping"
+  start_date: string
+  end_date: string
+  status: boolean
+  image: File | null
 }
 
-const initialCoupons: Coupon[] = [
-  {
-    id: "1",
-    campaignName: "August Gift Voucher",
-    code: "AUGUST24",
-    discount: "50%",
-    published: true,
-    startDate: "1 Jan, 2026",
-    endDate: "31 Oct, 2024",
-    status: "Expired",
-    image: "/gift-box-august.jpg",
-  },
-  {
-    id: "2",
-    campaignName: "Summer Gift Voucher",
-    code: "SUMMER24",
-    discount: "10%",
-    published: true,
-    startDate: "1 Jan, 2026",
-    endDate: "20 Dec, 2024",
-    status: "Expired",
-    image: "/gift-box-summer.jpg",
-  },
-  {
-    id: "3",
-    campaignName: "Winter Gift Voucher",
-    code: "WINTER25",
-    discount: "$100",
-    published: true,
-    startDate: "1 Jan, 2026",
-    endDate: "3 Jan, 2026",
-    status: "Active",
-    image: "/gift-box-winter.jpg",
-  },
-  {
-    id: "4",
-    campaignName: "Summer Gift Voucher",
-    code: "SUMMER26",
-    discount: "10%",
-    published: true,
-    startDate: "1 Jan, 2026",
-    endDate: "19 Oct, 2026",
-    status: "Active",
-    image: "/gift-box-summer2.jpg",
-  },
-]
+const emptyForm: FormData = {
+  campaign_name: "",
+  code: "",
+  discount: "",
+  type: "percentage",
+  start_date: "",
+  end_date: "",
+  status: true,
+  image: null,
+}
+
+function isExpired(endDate: string): boolean {
+  if (!endDate) return false
+  return new Date(endDate) < new Date()
+}
+
+function formatDiscount(coupon: CouponResponse, fmt: (n: number) => string): string {
+  const val = coupon.discount ?? 0
+  return coupon.type === "percentage" ? `${val}%` : fmt(val)
+}
+
+function formatDate(dateStr: string): string {
+  if (!dateStr) return ""
+  try {
+    return new Date(dateStr).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })
+  } catch {
+    return dateStr
+  }
+}
+
+function toInputDate(dateStr: string): string {
+  if (!dateStr) return ""
+  try {
+    return new Date(dateStr).toISOString().split("T")[0]
+  } catch {
+    return ""
+  }
+}
 
 export default function CouponsPage() {
-  const [coupons, setCoupons] = useState<Coupon[]>(initialCoupons)
+  const { canRead } = useSaasAuth()
+  const { formatCurrency } = useCompanySettings()
+  const [coupons, setCoupons] = useState<CouponResponse[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedCoupons, setSelectedCoupons] = useState<string[]>([])
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [isBulkActionDialogOpen, setIsBulkActionDialogOpen] = useState(false)
-  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false)
   const [bulkAction, setBulkAction] = useState("")
-  const [currentCoupon, setCurrentCoupon] = useState<Coupon | null>(null)
-  const [formData, setFormData] = useState({
-    campaignName: "",
-    code: "",
-    discount: "",
-    discountType: "percentage",
-    startDate: "",
-    endDate: "",
-    published: true,
-  })
+  const [currentCoupon, setCurrentCoupon] = useState<CouponResponse | null>(null)
+  const [formData, setFormData] = useState<FormData>(emptyForm)
+  const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const refreshCoupons = async () => {
+    try {
+      setIsLoading(true)
+      const response = await couponApi.getAll({ limit: 100 })
+      setCoupons(response.data ?? [])
+    } catch (err) {
+      console.error("Error fetching coupons:", err)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    refreshCoupons()
+  }, [])
+
+  const blocked = useModuleGuard('Coupons')
+  if (blocked) return blocked
 
   const filteredCoupons = coupons.filter(
     (coupon) =>
-      coupon.campaignName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      coupon.code.toLowerCase().includes(searchQuery.toLowerCase()),
+      (coupon.campaignName ?? "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (coupon.code ?? "").toLowerCase().includes(searchQuery.toLowerCase()),
   )
 
   const {
@@ -106,126 +115,157 @@ export default function CouponsPage() {
     currentPage,
     totalPages,
     itemsPerPage,
-    goToPage,
     setCurrentPage,
     handleItemsPerPageChange,
   } = usePagination(filteredCoupons, 10)
 
-  const handleFilterChange = () => {
-    setCurrentPage(1)
-  }
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false)
-    }, 2000)
-    return () => clearTimeout(timer)
-  }, [])
+  const handleFilterChange = () => setCurrentPage(1)
 
   const handleSelectAll = (checked: boolean) => {
-    if (checked) {
-      setSelectedCoupons(filteredCoupons.map((c) => c.id))
-    } else {
-      setSelectedCoupons([])
-    }
+    setSelectedCoupons(checked ? filteredCoupons.map((c) => c.id.toString()) : [])
   }
 
   const handleSelectCoupon = (id: string, checked: boolean) => {
-    if (checked) {
-      setSelectedCoupons([...selectedCoupons, id])
-    } else {
-      setSelectedCoupons(selectedCoupons.filter((cid) => cid !== id))
-    }
+    setSelectedCoupons(checked ? [...selectedCoupons, id] : selectedCoupons.filter((cid) => cid !== id))
   }
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: number) => {
     if (confirm("Are you sure you want to delete this coupon?")) {
-      setCoupons(coupons.filter((c) => c.id !== id))
-      setSelectedCoupons(selectedCoupons.filter((cid) => cid !== id))
+      try {
+        await couponApi.delete(id)
+        setSelectedCoupons(selectedCoupons.filter((cid) => cid !== id.toString()))
+        await refreshCoupons()
+      } catch (err: any) {
+        console.error('Error deleting coupon:', err)
+        toast.error(err.message || 'Failed to delete coupon')
+      }
     }
   }
 
-  const handleBulkDelete = () => {
+  const handleBulkDelete = async () => {
     if (selectedCoupons.length === 0) {
-      alert("Please select coupons to delete")
+      toast.error("Please select coupons to delete")
       return
     }
     if (confirm(`Delete ${selectedCoupons.length} selected coupon(s)?`)) {
-      setCoupons(coupons.filter((c) => !selectedCoupons.includes(c.id)))
-      setSelectedCoupons([])
+      try {
+        await Promise.all(selectedCoupons.map((id) => couponApi.delete(parseInt(id))))
+        setSelectedCoupons([])
+        await refreshCoupons()
+      } catch (err: any) {
+        console.error('Error deleting coupons:', err)
+        toast.error(err.message || 'Failed to delete coupons')
+      }
     }
   }
 
-  const handleTogglePublished = (id: string) => {
-    setCoupons(coupons.map((c) => (c.id === id ? { ...c, published: !c.published } : c)))
+  const handleToggleStatus = async (coupon: CouponResponse) => {
+    await couponApi.update(coupon.id, { status: !coupon.status })
+    await refreshCoupons()
   }
 
-  const handleEdit = (coupon: Coupon) => {
+  const handleEdit = (coupon: CouponResponse) => {
     setCurrentCoupon(coupon)
-    const discountValue = coupon.discount.replace(/[$%]/g, "")
-    const discountType = coupon.discount.includes("%") ? "percentage" : "fixed"
     setFormData({
-      campaignName: coupon.campaignName,
-      code: coupon.code.toUpperCase(),
-      discount: discountValue,
-      discountType,
-      startDate: coupon.startDate,
-      endDate: coupon.endDate,
-      published: coupon.published,
+      campaign_name: coupon.campaignName ?? "",
+      code: coupon.code ?? "",
+      discount: (coupon.discount ?? "").toString(),
+      type: coupon.type ?? "percentage",
+      start_date: toInputDate(coupon.startDate),
+      end_date: toInputDate(coupon.endDate),
+      status: coupon.status ?? true,
+      image: null,
     })
+    // Show current image as preview (read-only in edit mode)
+    setImagePreview(coupon.image ? `http://localhost:8005/storage/${coupon.image}` : null)
     setIsEditDialogOpen(true)
   }
 
-  const handleAddCoupon = () => {
-    const discount = formData.discountType === "percentage" ? `${formData.discount}%` : `$${formData.discount}`
-
-    const newCoupon: Coupon = {
-      id: Date.now().toString(),
-      campaignName: formData.campaignName,
-      code: formData.code.toUpperCase(),
-      discount,
-      published: formData.published,
-      startDate: formData.startDate,
-      endDate: formData.endDate,
-      status: "Active",
-      image: "/gift-box-default.jpg",
-    }
-
-    setCoupons([...coupons, newCoupon])
-    setIsAddDialogOpen(false)
-    setFormData({
-      campaignName: "",
-      code: "",
-      discount: "",
-      discountType: "percentage",
-      startDate: "",
-      endDate: "",
-      published: true,
-    })
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setFormData((prev) => ({ ...prev, image: file }))
+    setImagePreview(URL.createObjectURL(file))
   }
 
-  const handleUpdateCoupon = () => {
+const handleAddCoupon = async () => {
+    try {
+      if (!formData.start_date || !formData.end_date) {
+        toast.error('Start Date and End Date are required')
+        return
+      }
+
+      const payload: any = {
+        campaign_name: formData.campaign_name,
+        code: formData.code.toUpperCase(),
+        type: formData.type,
+        discount: parseFloat(formData.discount) || 0,
+        status: formData.status,
+        start_date: formData.start_date, // Y-m-d format from date input
+        end_date: formData.end_date,
+      }
+
+      if (formData.image) {
+        console.log('Creating coupon with image...')
+        await couponApi.createWithImage({ ...payload, image: formData.image })
+      } else {
+        console.log('Creating coupon without image...')
+        await couponApi.create(payload)
+      }
+
+      setIsAddDialogOpen(false)
+      setFormData(emptyForm)
+      setImagePreview(null)
+      await refreshCoupons()
+      toast.success('Coupon created successfully')
+    } catch (err: any) {
+      console.error('Error adding coupon:', err)
+      toast.error(err.message || 'Failed to add coupon')
+    }
+  }
+
+  const handleUpdateCoupon = async () => {
     if (!currentCoupon) return
 
-    const discount = formData.discountType === "percentage" ? `${formData.discount}%` : `$${formData.discount}`
+    try {
+      if (!formData.start_date || !formData.end_date) {
+        toast.error('Start Date and End Date are required')
+        return
+      }
 
-    setCoupons(
-      coupons.map((c) =>
-        c.id === currentCoupon.id
-          ? {
-            ...c,
-            campaignName: formData.campaignName,
-            code: formData.code.toUpperCase(),
-            discount,
-            published: formData.published,
-            startDate: formData.startDate,
-            endDate: formData.endDate,
-          }
-          : c,
-      ),
-    )
-    setIsEditDialogOpen(false)
-    setCurrentCoupon(null)
+      const payload: any = {
+        campaign_name: formData.campaign_name,
+        code: formData.code.toUpperCase(),
+        type: formData.type,
+        discount: parseFloat(formData.discount) || 0,
+        status: formData.status,
+        start_date: formData.start_date, // Y-m-d format from date input
+        end_date: formData.end_date,
+      }
+
+      console.log('Updating coupon:', currentCoupon.id, payload)
+
+      if (formData.image) {
+        console.log('Updating with new image...')
+        console.log('Payload being sent with image:', payload)
+        // Only send fields that have values to FormData
+        const imagePayload: any = { ...payload, image: formData.image }
+        await couponApi.updateWithImage(currentCoupon.id, imagePayload)
+      } else {
+        console.log('Updating without image change...')
+        await couponApi.update(currentCoupon.id, payload)
+      }
+
+      console.log('Coupon updated successfully')
+      setIsEditDialogOpen(false)
+      setCurrentCoupon(null)
+      setImagePreview(null)
+      await refreshCoupons()
+      toast.success('Coupon updated successfully')
+    } catch (err: any) {
+      console.error('Error updating coupon:', err)
+      toast.error(err.message || 'Failed to update coupon')
+    }
   }
 
   const handleExport = () => {
@@ -233,60 +273,139 @@ export default function CouponsPage() {
       id: coupon.id,
       campaign_name: coupon.campaignName,
       code: coupon.code,
-      discount: coupon.discount,
-      published: coupon.published ? "Yes" : "No",
-      start_date: coupon.startDate,
-      end_date: coupon.endDate,
-      status: coupon.status,
+      discount: formatDiscount(coupon, formatCurrency),
+      status: coupon.status ? "Active" : "Inactive",
+      start_date: formatDate(coupon.startDate),
+      end_date: formatDate(coupon.endDate),
     }))
-
-    const headers = ["ID", "Campaign Name", "Code", "Discount", "Published", "Start Date", "End Date", "Status"]
+    const headers = ["ID", "Campaign Name", "Code", "Discount", "Status", "Start Date", "End Date"]
     exportToCSV(exportData, "coupons", headers)
   }
 
-  const handleImport = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (!file) return
-
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      const text = e.target?.result as string
-      const importedData = parseCSV(text)
-
-      const newCoupons = importedData.map((item) => ({
-        id: item.id || generateId(),
-        campaignName: item.campaign_name,
-        code: item.code,
-        discount: item.discount,
-        published: item.published === "Yes",
-        startDate: item.start_date,
-        endDate: item.end_date,
-        status: item.status || "Active",
-        image: "/gift-box-default.jpg",
-      }))
-
-      setCoupons([...coupons, ...newCoupons])
-      setIsImportDialogOpen(false)
-    }
-    reader.readAsText(file)
-  }
-
-  const handleBulkActionSubmit = () => {
+  const handleBulkActionSubmit = async () => {
     if (!bulkAction || selectedCoupons.length === 0) return
 
-    if (bulkAction === "delete") {
-      handleBulkDelete()
-    } else if (bulkAction === "publish") {
-      setCoupons(coupons.map((c) => (selectedCoupons.includes(c.id) ? { ...c, published: true } : c)))
-      setSelectedCoupons([])
-    } else if (bulkAction === "unpublish") {
-      setCoupons(coupons.map((c) => (selectedCoupons.includes(c.id) ? { ...c, published: false } : c)))
-      setSelectedCoupons([])
-    }
+    try {
+      if (bulkAction === "delete") {
+        await handleBulkDelete()
+      } else {
+        const status = bulkAction === "activate"
+        await Promise.all(selectedCoupons.map((id) => couponApi.update(parseInt(id), { status })))
+        setSelectedCoupons([])
+        await refreshCoupons()
+      }
 
-    setIsBulkActionDialogOpen(false)
-    setBulkAction("")
+      setIsBulkActionDialogOpen(false)
+      setBulkAction("")
+    } catch (err: any) {
+      console.error('Error in bulk action:', err)
+      toast.error(err.message || 'Failed to perform bulk action')
+    }
   }
+
+  const renderCouponForm = () => (
+    <div className="space-y-4">
+      <div>
+        <Label>Campaign Name</Label>
+        <Input
+          value={formData.campaign_name}
+          onChange={(e) => setFormData({ ...formData, campaign_name: e.target.value })}
+          placeholder="Enter campaign name"
+        />
+      </div>
+      <div>
+        <Label>Coupon Code</Label>
+        <Input
+          value={formData.code}
+          onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
+          placeholder="SUMMER2026"
+        />
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label>Discount Value</Label>
+          <Input
+            type="number"
+            min="0"
+            step="0.01"
+            value={formData.discount}
+            onChange={(e) => setFormData({ ...formData, discount: e.target.value })}
+            placeholder="10"
+          />
+        </div>
+        <div>
+          <Label>Type</Label>
+          <Select
+            value={formData.type}
+            onValueChange={(value) => setFormData({ ...formData, type: value as "percentage" | "fixed" })}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="percentage">Percentage (%)</SelectItem>
+              <SelectItem value="fixed">Fixed ($)</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label>Start Date <span className="text-red-500">*</span></Label>
+          <Input
+            type="date"
+            value={formData.start_date}
+            onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
+            required
+          />
+        </div>
+        <div>
+          <Label>End Date <span className="text-red-500">*</span></Label>
+          <Input
+            type="date"
+            value={formData.end_date}
+            onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
+            required
+          />
+        </div>
+      </div>
+      <div>
+        <Label>Image (optional)</Label>
+        <div className="mt-1 flex items-center gap-3">
+          {imagePreview && (
+            <img src={imagePreview} alt="preview" className="w-16 h-16 rounded object-cover border" />
+          )}
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="flex items-center gap-2 px-3 py-2 border rounded-lg text-sm text-gray-600 hover:bg-gray-50"
+          >
+            <ImagePlus className="w-4 h-4" />
+            {imagePreview ? "Change Image" : "Upload Image"}
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleImageChange}
+          />
+        </div>
+      </div>
+      <div className="flex items-center gap-2">
+        <input
+          type="checkbox"
+          id="form-status"
+          checked={formData.status}
+          onChange={(e) => setFormData({ ...formData, status: e.target.checked })}
+          className="rounded border-gray-300"
+        />
+        <Label htmlFor="form-status" className="cursor-pointer">
+          Active
+        </Label>
+      </div>
+    </div>
+  )
 
   return (
     <div>
@@ -296,10 +415,6 @@ export default function CouponsPage() {
           <Button variant="outline" size="sm" onClick={handleExport}>
             <Download className="w-4 h-4 mr-2" />
             Export
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => setIsImportDialogOpen(true)}>
-            <Upload className="w-4 h-4 mr-2" />
-            Import
           </Button>
           <Button
             variant="outline"
@@ -320,7 +435,15 @@ export default function CouponsPage() {
             <Trash2 className="w-4 h-4 mr-2" />
             Delete
           </Button>
-          <Button size="sm" className="bg-emerald-500 hover:bg-emerald-600" onClick={() => setIsAddDialogOpen(true)}>
+          <Button
+            size="sm"
+            className="bg-emerald-500 hover:bg-emerald-600"
+            onClick={() => {
+              setFormData(emptyForm)
+              setImagePreview(null)
+              setIsAddDialogOpen(true)
+            }}
+          >
             + Add Coupon
           </Button>
         </div>
@@ -364,10 +487,10 @@ export default function CouponsPage() {
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Campaign Name</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Code</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Discount</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Published</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Active</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Expiry</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Start Date</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">End Date</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Status</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
@@ -375,33 +498,19 @@ export default function CouponsPage() {
               {isLoading
                 ? Array.from({ length: 3 }).map((_, index) => (
                     <tr key={index} className="hover:bg-gray-50">
-                      <td className="px-4 py-3">
-                        <Skeleton className="h-4 w-4 rounded" />
-                      </td>
+                      <td className="px-4 py-3"><Skeleton className="h-4 w-4 rounded" /></td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
                           <Skeleton className="w-10 h-10 rounded" />
                           <Skeleton className="h-4 w-32" />
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-gray-700">
-                        <Skeleton className="h-4 w-24" />
-                      </td>
-                      <td className="px-4 py-3 font-semibold text-gray-900">
-                        <Skeleton className="h-4 w-16" />
-                      </td>
-                      <td className="px-4 py-3">
-                        <Skeleton className="h-6 w-11 rounded-full" />
-                      </td>
-                      <td className="px-4 py-3 text-gray-700">
-                        <Skeleton className="h-4 w-24" />
-                      </td>
-                      <td className="px-4 py-3 text-gray-700">
-                        <Skeleton className="h-4 w-24" />
-                      </td>
-                      <td className="px-4 py-3">
-                        <Skeleton className="h-6 w-16 rounded-full" />
-                      </td>
+                      <td className="px-4 py-3"><Skeleton className="h-4 w-24" /></td>
+                      <td className="px-4 py-3"><Skeleton className="h-4 w-16" /></td>
+                      <td className="px-4 py-3"><Skeleton className="h-6 w-11 rounded-full" /></td>
+                      <td className="px-4 py-3"><Skeleton className="h-6 w-16 rounded-full" /></td>
+                      <td className="px-4 py-3"><Skeleton className="h-4 w-24" /></td>
+                      <td className="px-4 py-3"><Skeleton className="h-4 w-24" /></td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
                           <Skeleton className="h-6 w-6 rounded" />
@@ -415,39 +524,41 @@ export default function CouponsPage() {
                       <td className="px-4 py-3">
                         <input
                           type="checkbox"
-                          checked={selectedCoupons.includes(coupon.id)}
-                          onChange={(e) => handleSelectCoupon(coupon.id, e.target.checked)}
+                          checked={selectedCoupons.includes(coupon.id.toString())}
+                          onChange={(e) => handleSelectCoupon(coupon.id.toString(), e.target.checked)}
                           className="rounded border-gray-300"
                         />
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
                           <img
-                            src={coupon.image || "/placeholder.svg"}
+                            src={coupon.image ? `http://localhost:8005/storage/${coupon.image}` : "/placeholder.svg"}
                             alt={coupon.campaignName}
                             className="w-10 h-10 rounded object-cover"
+                            onError={(e) => { (e.target as HTMLImageElement).src = "/placeholder.svg" }}
                           />
                           <span className="font-medium text-gray-900">{coupon.campaignName}</span>
                         </div>
                       </td>
                       <td className="px-4 py-3 text-gray-700">{coupon.code}</td>
-                      <td className="px-4 py-3 font-semibold text-gray-900">{coupon.discount}</td>
+                      <td className="px-4 py-3 font-semibold text-gray-900">{formatDiscount(coupon, formatCurrency)}</td>
                       <td className="px-4 py-3">
-                        <label className="relative inline-flex items-center cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={coupon.published}
-                            onChange={() => handleTogglePublished(coupon.id)}
-                            className="sr-only peer"
-                          />
-                          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
-                        </label>
+                        <button
+                          onClick={() => handleToggleStatus(coupon)}
+                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${coupon.status ? "bg-emerald-500" : "bg-gray-200"}`}
+                        >
+                          <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${coupon.status ? "translate-x-6" : "translate-x-1"}`} />
+                        </button>
                       </td>
-                      <td className="px-4 py-3 text-gray-700">{coupon.startDate}</td>
-                      <td className="px-4 py-3 text-gray-700">{coupon.endDate}</td>
                       <td className="px-4 py-3">
-                        <StatusBadge status={coupon.status} />
+                        {isExpired(coupon.endDate) ? (
+                          <span className="px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700">Expired</span>
+                        ) : (
+                          <span className="px-2 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">Valid</span>
+                        )}
                       </td>
+                      <td className="px-4 py-3 text-gray-700">{formatDate(coupon.startDate)}</td>
+                      <td className="px-4 py-3 text-gray-700">{formatDate(coupon.endDate)}</td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
                           <button onClick={() => handleEdit(coupon)} className="p-1 hover:bg-gray-100 rounded">
@@ -481,92 +592,10 @@ export default function CouponsPage() {
           <DialogHeader>
             <DialogTitle>Add Coupon</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="campaignName">Campaign Name</Label>
-              <Input
-                id="campaignName"
-                value={formData.campaignName}
-                onChange={(e) => setFormData({ ...formData, campaignName: e.target.value })}
-                placeholder="Enter campaign name"
-              />
-            </div>
-            <div>
-              <Label htmlFor="code">Coupon Code</Label>
-              <Input
-                id="code"
-                value={formData.code}
-                onChange={(e) => setFormData({ ...formData, code: e.target.value })}
-                placeholder="SUMMER2024"
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="discount">Discount</Label>
-                <Input
-                  id="discount"
-                  type="number"
-                  value={formData.discount}
-                  onChange={(e) => setFormData({ ...formData, discount: e.target.value })}
-                  placeholder="10"
-                />
-              </div>
-              <div>
-                <Label htmlFor="discountType">Type</Label>
-                <Select
-                  value={formData.discountType}
-                  onValueChange={(value) => setFormData({ ...formData, discountType: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="percentage">Percentage (%)</SelectItem>
-                    <SelectItem value="fixed">Fixed ($)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="startDate">Start Date</Label>
-                <Input
-                  id="startDate"
-                  value={formData.startDate}
-                  onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-                  placeholder="1 Jan, 2026"
-                />
-              </div>
-              <div>
-                <Label htmlFor="endDate">End Date</Label>
-                <Input
-                  id="endDate"
-                  value={formData.endDate}
-                  onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-                  placeholder="31 Dec, 2026"
-                />
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                id="published"
-                checked={formData.published}
-                onChange={(e) => setFormData({ ...formData, published: e.target.checked })}
-                className="rounded border-gray-300"
-              />
-              <Label htmlFor="published" className="cursor-pointer">
-                Published
-              </Label>
-            </div>
-          </div>
+          {renderCouponForm()}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleAddCoupon} className="bg-emerald-500 hover:bg-emerald-600">
-              Add Coupon
-            </Button>
+            <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleAddCoupon} className="bg-emerald-500 hover:bg-emerald-600">Add Coupon</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -577,115 +606,10 @@ export default function CouponsPage() {
           <DialogHeader>
             <DialogTitle>Edit Coupon</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="edit-campaignName">Campaign Name</Label>
-              <Input
-                id="edit-campaignName"
-                value={formData.campaignName}
-                onChange={(e) => setFormData({ ...formData, campaignName: e.target.value })}
-                placeholder="Enter campaign name"
-              />
-            </div>
-            <div>
-              <Label htmlFor="edit-code">Coupon Code</Label>
-              <Input
-                id="edit-code"
-                value={formData.code}
-                onChange={(e) => setFormData({ ...formData, code: e.target.value })}
-                placeholder="SUMMER2024"
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="edit-discount">Discount</Label>
-                <Input
-                  id="edit-discount"
-                  type="number"
-                  value={formData.discount}
-                  onChange={(e) => setFormData({ ...formData, discount: e.target.value })}
-                  placeholder="10"
-                />
-              </div>
-              <div>
-                <Label htmlFor="edit-discountType">Type</Label>
-                <Select
-                  value={formData.discountType}
-                  onValueChange={(value) => setFormData({ ...formData, discountType: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="percentage">Percentage (%)</SelectItem>
-                    <SelectItem value="fixed">Fixed ($)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="edit-startDate">Start Date</Label>
-                <Input
-                  id="edit-startDate"
-                  value={formData.startDate}
-                  onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-                  placeholder="1 Jan, 2026"
-                />
-              </div>
-              <div>
-                <Label htmlFor="edit-endDate">End Date</Label>
-                <Input
-                  id="edit-endDate"
-                  value={formData.endDate}
-                  onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-                  placeholder="31 Dec, 2026"
-                />
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                id="edit-published"
-                checked={formData.published}
-                onChange={(e) => setFormData({ ...formData, published: e.target.checked })}
-                className="rounded border-gray-300"
-              />
-              <Label htmlFor="edit-published" className="cursor-pointer">
-                Published
-              </Label>
-            </div>
-          </div>
+          {renderCouponForm()}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleUpdateCoupon} className="bg-emerald-500 hover:bg-emerald-600">
-              Update Coupon
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Import Dialog */}
-      <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Import Coupons</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label>CSV File</Label>
-              <Input type="file" accept=".csv" onChange={handleImport} />
-              <p className="text-sm text-gray-500">
-                Upload a CSV file with columns: Campaign Name, Code, Discount, Published, Start Date, End Date, Status
-              </p>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsImportDialogOpen(false)}>
-              Cancel
-            </Button>
+            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleUpdateCoupon} className="bg-emerald-500 hover:bg-emerald-600">Update Coupon</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -700,26 +624,20 @@ export default function CouponsPage() {
             <div className="space-y-2">
               <Label>Action Type</Label>
               <Select value={bulkAction} onValueChange={setBulkAction}>
-                <SelectTrigger>
+                <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select action" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="publish">Publish</SelectItem>
-                  <SelectItem value="unpublish">Unpublish</SelectItem>
+                  <SelectItem value="activate">Activate</SelectItem>
+                  <SelectItem value="deactivate">Deactivate</SelectItem>
                   <SelectItem value="delete">Delete</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsBulkActionDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button
-              onClick={handleBulkActionSubmit}
-              className="bg-emerald-600 hover:bg-emerald-700"
-              disabled={!bulkAction}
-            >
+            <Button variant="outline" onClick={() => setIsBulkActionDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleBulkActionSubmit} className="bg-emerald-600 hover:bg-emerald-700" disabled={!bulkAction}>
               Apply Action
             </Button>
           </DialogFooter>
