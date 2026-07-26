@@ -55,6 +55,7 @@ export interface GeneralSettings {
   storePhone: string;
   storeAddress: string;
   storeDescription: string;
+  freeShippingThreshold?: number | null;
   primaryColor?: string;
   accentColor?: string;
   backgroundColor?: string;

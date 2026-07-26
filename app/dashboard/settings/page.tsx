@@ -80,6 +80,7 @@ export default function SettingsPage() {
   const [storePhone, setStorePhone] = useState(DEFAULT_GENERAL_SETTINGS.storePhone)
   const [storeAddress, setStoreAddress] = useState(DEFAULT_GENERAL_SETTINGS.storeAddress)
   const [storeDescription, setStoreDescription] = useState(DEFAULT_GENERAL_SETTINGS.storeDescription)
+  const [freeShippingThreshold, setFreeShippingThreshold] = useState("")
   const [primaryColor, setPrimaryColor] = useState("#6B1A2A")
   const [accentColor, setAccentColor] = useState("#B8963E")
   const [backgroundColor, setBackgroundColor] = useState("#F0EBE3")
@@ -158,6 +159,7 @@ export default function SettingsPage() {
       setStorePhone(general.storePhone ?? DEFAULT_GENERAL_SETTINGS.storePhone)
       setStoreAddress(general.storeAddress ?? DEFAULT_GENERAL_SETTINGS.storeAddress)
       setStoreDescription(general.storeDescription ?? DEFAULT_GENERAL_SETTINGS.storeDescription)
+      setFreeShippingThreshold(general.freeShippingThreshold != null ? String(general.freeShippingThreshold) : "")
       if (general.primaryColor) setPrimaryColor(general.primaryColor)
       if (general.accentColor) setAccentColor(general.accentColor)
       if (general.backgroundColor) setBackgroundColor(general.backgroundColor)
@@ -233,6 +235,7 @@ export default function SettingsPage() {
         storePhone,
         storeAddress,
         storeDescription,
+        freeShippingThreshold: freeShippingThreshold.trim() === "" ? null : Number(freeShippingThreshold),
         primaryColor,
         accentColor,
         backgroundColor,
@@ -668,6 +671,20 @@ export default function SettingsPage() {
               onChange={(e) => setStoreDescription(e.target.value)}
               rows={3}
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="freeShippingThreshold">Free Shipping Threshold</Label>
+            <Input
+              id="freeShippingThreshold"
+              type="number"
+              min="0"
+              step="0.01"
+              placeholder="Leave empty to disable"
+              value={freeShippingThreshold}
+              onChange={(e) => setFreeShippingThreshold(e.target.value)}
+            />
+            <p className="text-xs text-gray-500">Order amount for free shipping. Empty hides the storefront banner.</p>
           </div>
 
           {/* Brand Colors */}
