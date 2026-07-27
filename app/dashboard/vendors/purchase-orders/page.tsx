@@ -17,6 +17,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from "@/components/ui/select"
 import { useModuleGuard } from "@/hooks/use-module-guard"
+import { useCompanySettings } from "@/contexts/company-settings-context"
 import { useWarehouse } from "@/contexts/warehouse-context"
 import purchaseOrderApi, { type PurchaseOrder, type PurchaseOrderItem } from "@/lib/purchaseOrderApi"
 import vendorApi from "@/lib/vendorApi"
@@ -52,6 +53,7 @@ const emptyItem = (): FormItem => ({
 })
 
 export default function PurchaseOrdersPage() {
+  const { formatCurrency } = useCompanySettings()
   const blocked = useModuleGuard("Vendors")
   if (blocked) return blocked
 
@@ -306,7 +308,7 @@ export default function PurchaseOrdersPage() {
                     <td className="p-4 text-gray-500">{po.locationName ?? "—"}</td>
                     <td className="p-4"><StatusBadge status={po.status} /></td>
                     <td className="p-4 text-gray-500">{po.expectedDate ?? "—"}</td>
-                    <td className="p-4 text-right font-medium">${po.totalAmount.toFixed(2)}</td>
+                    <td className="p-4 text-right font-medium">{formatCurrency(po.totalAmount)}</td>
                     <td className="p-4">
                       <div className="flex items-center justify-center gap-1">
                         <Button variant="ghost" size="sm" onClick={() => { setViewPo(po); setViewOpen(true) }} title="View">
@@ -453,7 +455,7 @@ export default function PurchaseOrdersPage() {
                     <tr>
                       <td colSpan={3} className="p-2 text-right font-medium text-gray-600">Total:</td>
                       <td className="p-2 font-bold">
-                        ${formItems.reduce((s, i) => s + i.quantityOrdered * i.unitCost, 0).toFixed(2)}
+                        {formatCurrency(formItems.reduce((s, i) => s + i.quantityOrdered * i.unitCost, 0))}
                       </td>
                       <td></td>
                     </tr>
@@ -487,7 +489,7 @@ export default function PurchaseOrdersPage() {
                 <div><span className="text-gray-500">Vendor:</span> <strong>{viewPo.vendorName}</strong></div>
                 <div><span className="text-gray-500">Location:</span> <strong>{viewPo.locationName ?? "—"}</strong></div>
                 <div><span className="text-gray-500">Expected:</span> <strong>{viewPo.expectedDate ?? "—"}</strong></div>
-                <div><span className="text-gray-500">Total:</span> <strong>${viewPo.totalAmount.toFixed(2)}</strong></div>
+                <div><span className="text-gray-500">Total:</span> <strong>{formatCurrency(viewPo.totalAmount)}</strong></div>
                 {viewPo.notes && <div className="col-span-2"><span className="text-gray-500">Notes:</span> {viewPo.notes}</div>}
               </div>
               <table className="w-full text-sm border rounded-lg overflow-hidden">
@@ -514,8 +516,8 @@ export default function PurchaseOrdersPage() {
                           {item.quantityReceived}
                         </span>
                       </td>
-                      <td className="p-3 text-right">${item.unitCost.toFixed(2)}</td>
-                      <td className="p-3 text-right font-medium">${item.subtotal.toFixed(2)}</td>
+                      <td className="p-3 text-right">{formatCurrency(item.unitCost)}</td>
+                      <td className="p-3 text-right font-medium">{formatCurrency(item.subtotal)}</td>
                     </tr>
                   ))}
                 </tbody>

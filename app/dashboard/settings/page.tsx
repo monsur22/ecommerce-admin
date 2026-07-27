@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
-import { Building2, Mail, Phone, MapPin, Bell, Clock, Upload, Loader2, CreditCard, Copy, Check, ExternalLink } from "lucide-react"
+import { Building2, Mail, Phone, Bell, Clock, Upload, Loader2, CreditCard, Copy, Check, ExternalLink } from "lucide-react"
 import { settingsApi, type StoreHours, type SSLCommerzConfig, type PortWalletConfig, type StripeConfig, type PayPalConfig, type BkashConfig, type NagadConfig, type CodShippingDepositConfig } from "@/lib/settingsApi"
 import { toast } from "sonner"
 import { useSaasAuth } from "@/contexts/saas-auth-context"
@@ -20,7 +20,6 @@ const DEFAULT_GENERAL_SETTINGS = {
   storeName: "Dashtar Store",
   storeEmail: "store@dashtar.com",
   storePhone: "+1 (555) 123-4567",
-  storeAddress: "123 Business St, New York, NY 10001",
   storeDescription: "Your one-stop shop for all your electronic and accessory needs.",
 }
 
@@ -28,7 +27,6 @@ const DEFAULT_BUSINESS_SETTINGS = {
   businessName: "Dashtar Store",
   businessType: "Retail",
   registrationNumber: "REG-2026-001",
-  gstNumber: "GST-123456789",
   website: "https://dashtar.com",
   socialLinks: {
     facebook: "https://facebook.com/dashtar",
@@ -78,7 +76,6 @@ export default function SettingsPage() {
   const [storeName, setStoreName] = useState(DEFAULT_GENERAL_SETTINGS.storeName)
   const [storeEmail, setStoreEmail] = useState(DEFAULT_GENERAL_SETTINGS.storeEmail)
   const [storePhone, setStorePhone] = useState(DEFAULT_GENERAL_SETTINGS.storePhone)
-  const [storeAddress, setStoreAddress] = useState(DEFAULT_GENERAL_SETTINGS.storeAddress)
   const [storeDescription, setStoreDescription] = useState(DEFAULT_GENERAL_SETTINGS.storeDescription)
   const [freeShippingThreshold, setFreeShippingThreshold] = useState("")
   const [primaryColor, setPrimaryColor] = useState("#6B1A2A")
@@ -89,7 +86,6 @@ export default function SettingsPage() {
   const [businessName, setBusinessName] = useState(DEFAULT_BUSINESS_SETTINGS.businessName)
   const [businessType, setBusinessType] = useState(DEFAULT_BUSINESS_SETTINGS.businessType)
   const [registrationNumber, setRegistrationNumber] = useState(DEFAULT_BUSINESS_SETTINGS.registrationNumber)
-  const [gstNumber, setGstNumber] = useState(DEFAULT_BUSINESS_SETTINGS.gstNumber)
   const [website, setWebsite] = useState(DEFAULT_BUSINESS_SETTINGS.website)
   const [facebook, setFacebook] = useState(DEFAULT_BUSINESS_SETTINGS.socialLinks.facebook)
   const [instagram, setInstagram] = useState(DEFAULT_BUSINESS_SETTINGS.socialLinks.instagram)
@@ -157,7 +153,6 @@ export default function SettingsPage() {
       setStoreName(general.storeName ?? DEFAULT_GENERAL_SETTINGS.storeName)
       setStoreEmail(general.storeEmail ?? DEFAULT_GENERAL_SETTINGS.storeEmail)
       setStorePhone(general.storePhone ?? DEFAULT_GENERAL_SETTINGS.storePhone)
-      setStoreAddress(general.storeAddress ?? DEFAULT_GENERAL_SETTINGS.storeAddress)
       setStoreDescription(general.storeDescription ?? DEFAULT_GENERAL_SETTINGS.storeDescription)
       setFreeShippingThreshold(general.freeShippingThreshold != null ? String(general.freeShippingThreshold) : "")
       if (general.primaryColor) setPrimaryColor(general.primaryColor)
@@ -169,7 +164,6 @@ export default function SettingsPage() {
       setBusinessName(business.businessName ?? DEFAULT_BUSINESS_SETTINGS.businessName)
       setBusinessType(business.businessType ?? DEFAULT_BUSINESS_SETTINGS.businessType)
       setRegistrationNumber(business.registrationNumber ?? "")
-      setGstNumber(business.gstNumber ?? DEFAULT_BUSINESS_SETTINGS.gstNumber)
       setWebsite(business.website ?? DEFAULT_BUSINESS_SETTINGS.website)
       setFacebook(socialLinks.facebook ?? DEFAULT_BUSINESS_SETTINGS.socialLinks.facebook)
       setInstagram(socialLinks.instagram ?? DEFAULT_BUSINESS_SETTINGS.socialLinks.instagram)
@@ -233,7 +227,6 @@ export default function SettingsPage() {
         storeName,
         storeEmail,
         storePhone,
-        storeAddress,
         storeDescription,
         freeShippingThreshold: freeShippingThreshold.trim() === "" ? null : Number(freeShippingThreshold),
         primaryColor,
@@ -255,7 +248,6 @@ export default function SettingsPage() {
         businessName,
         businessType,
         registrationNumber,
-        gstNumber,
         website,
         socialLinks: { facebook, instagram, twitter },
         promoBanner: {
@@ -475,23 +467,13 @@ export default function SettingsPage() {
               </select>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-2 md:col-span-2">
               <Label htmlFor="registrationNumber">Registration Number</Label>
               <Input
                 id="registrationNumber"
                 value={registrationNumber}
                 onChange={(e) => setRegistrationNumber(e.target.value)}
                 placeholder="Business registration number"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="gstNumber">GST/Tax ID</Label>
-              <Input
-                id="gstNumber"
-                value={gstNumber}
-                onChange={(e) => setGstNumber(e.target.value)}
-                placeholder="GST or Tax identification number"
               />
             </div>
 
@@ -649,18 +631,6 @@ export default function SettingsPage() {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="storeAddress">Store Address</Label>
-              <div className="relative">
-                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <Input
-                  id="storeAddress"
-                  value={storeAddress}
-                  onChange={(e) => setStoreAddress(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </div>
           </div>
 
           <div className="space-y-2">

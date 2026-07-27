@@ -157,7 +157,7 @@ export default function VendorDetailsPage() {
             <div className="p-2 bg-purple-100 rounded-lg"><DollarSign className="w-5 h-5 text-purple-600" /></div>
             <div>
               <p className="text-xs text-gray-500">Inventory Value</p>
-              <p className="text-xl font-bold text-gray-900">${inventoryValue.toFixed(2)}</p>
+              <p className="text-xl font-bold text-gray-900">{formatCurrency(inventoryValue)}</p>
             </div>
           </div>
         </Card>
@@ -166,7 +166,7 @@ export default function VendorDetailsPage() {
             <div className="p-2 bg-emerald-100 rounded-lg"><CreditCard className="w-5 h-5 text-emerald-600" /></div>
             <div>
               <p className="text-xs text-gray-500">Total Paid</p>
-              <p className="text-xl font-bold text-gray-900">${vendor.totalPaid.toFixed(2)}</p>
+              <p className="text-xl font-bold text-gray-900">{formatCurrency(vendor.totalPaid)}</p>
             </div>
           </div>
         </Card>

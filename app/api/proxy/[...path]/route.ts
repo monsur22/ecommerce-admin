@@ -67,21 +67,27 @@ async function proxyRequest(req: NextRequest, params: Params) {
   const headers: Record<string, string> = {};
   const auth = req.headers.get('authorization');
   if (auth) headers['Authorization'] = auth;
-  const cookie = req.headers.get('cookie');
-  if (cookie) headers['Cookie'] = cookie;
+  // Do NOT forward the browser Cookie header. The Laravel backend authenticates
+  // via the Bearer token, not cookies, and forwarding the (often large) cookie
+  // jar risks tripping upstream header-size limits (nginx 400 "Header Or Cookie
+  // Too Large"). Auth cookies here are for the Next.js middleware only.
   const contentType = req.headers.get('content-type');
   if (contentType) headers['Content-Type'] = contentType;
+  // NOTE: do NOT forward the original Content-Length. For non-multipart
+  // requests we re-parse and re-serialize the JSON body below, which changes
+  // its byte length. A stale Content-Length makes the backend read a truncated
+  // body -> validation fails (e.g. login 400). Let axios recompute it.
   const contentLength = req.headers.get('content-length');
-  if (contentLength) headers['Content-Length'] = contentLength;
 
   // Stream multipart uploads directly. PHP/Laravel relies on the exact multipart
   // framing and upload metadata, and buffering/re-wrapping the body can make
   // UploadedFile invalid even when the form field exists.
   const isMultipart = contentType?.includes('multipart/form-data');
   if (isMultipart) {
+    // Multipart streams through unchanged, so its original length is valid.
     const fetchRes = await fetch(`${BACKEND_URL}${cleanPath}${search}`, {
       method: req.method,
-      headers,
+      headers: contentLength ? { ...headers, 'Content-Length': contentLength } : headers,
       body: req.body,
       // @ts-ignore — duplex required for streaming body in Node fetch
       duplex: 'half',

@@ -379,7 +379,7 @@ export default function PrintBarcodePage() {
                           <p className="text-xs text-gray-500">{product.sku}</p>
                         </div>
                         <div className="text-right">
-                          <p className="text-sm font-semibold text-emerald-600">${getPrice(product).toFixed(2)}</p>
+                          <p className="text-sm font-semibold text-emerald-600">{formatCurrency(getPrice(product))}</p>
                         </div>
                       </button>
                     ))}

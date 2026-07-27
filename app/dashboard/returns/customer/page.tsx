@@ -430,7 +430,7 @@ export default function CustomerReturnsPage() {
                     <td className="py-3 px-4 font-medium text-gray-900">{ret.returnNumber ?? `#${ret.id}`}</td>
                     <td className="py-3 px-4 text-sm text-gray-900">{ret.customerName ?? ret.customerId}</td>
                     <td className="py-3 px-4 text-sm text-gray-600">{ret.orderNumber ?? "N/A"}</td>
-                    <td className="py-3 px-4 text-right font-semibold text-gray-900">${fmt(ret.totalAmount)}</td>
+                    <td className="py-3 px-4 text-right font-semibold text-gray-900">{formatCurrency(Number(fmt(ret.totalAmount)))}</td>
                     <td className="py-3 px-4 text-center"><ReturnStatusBadge status={ret.status} /></td>
                     <td className="py-3 px-4 text-sm text-gray-600">{formatDate(ret.createdAt)}</td>
                     <td className="py-3 px-4">
@@ -526,8 +526,8 @@ export default function CustomerReturnsPage() {
                               {item.variantName && <p className="text-xs text-gray-500">{item.variantName}</p>}
                             </td>
                             <td className="py-2 px-3 text-center text-sm">{item.quantity}</td>
-                            <td className="py-2 px-3 text-right text-sm font-medium">${fmt(item.price)}</td>
-                            <td className="py-2 px-3 text-right text-sm font-medium">${fmt((item.price ?? 0) * item.quantity)}</td>
+                            <td className="py-2 px-3 text-right text-sm font-medium">{formatCurrency(Number(fmt(item.price)))}</td>
+                            <td className="py-2 px-3 text-right text-sm font-medium">{formatCurrency(Number(fmt((item.price ?? 0) * item.quantity)))}</td>
                             <td className="py-2 px-3 text-sm text-gray-600">{item.reason}</td>
                           </tr>
                         ))}
@@ -540,7 +540,7 @@ export default function CustomerReturnsPage() {
               <div className="flex justify-end">
                 <div className="text-right">
                   <p className="text-sm text-gray-600">Total Refund Amount</p>
-                  <p className="text-2xl font-bold text-gray-900">${fmt(selectedReturn.totalAmount)}</p>
+                  <p className="text-2xl font-bold text-gray-900">{formatCurrency(Number(fmt(selectedReturn.totalAmount)))}</p>
                 </div>
               </div>
 
@@ -566,7 +566,7 @@ export default function CustomerReturnsPage() {
             <div className="bg-gray-50 p-4 rounded-lg space-y-2">
               <p className="text-sm"><span className="font-medium">Return:</span> {selectedReturn.returnNumber ?? `#${selectedReturn.id}`}</p>
               <p className="text-sm"><span className="font-medium">Customer:</span> {selectedReturn.customerName ?? selectedReturn.customerId}</p>
-              <p className="text-sm"><span className="font-medium">Amount:</span> ${fmt(selectedReturn.totalAmount)}</p>
+              <p className="text-sm"><span className="font-medium">Amount:</span> {formatCurrency(Number(fmt(selectedReturn.totalAmount)))}</p>
             </div>
           )}
           <DialogFooter>
@@ -650,7 +650,7 @@ export default function CustomerReturnsPage() {
                 <div className="grid grid-cols-3 gap-3 text-sm">
                   <div><p className="text-xs text-gray-500">Customer</p><p className="font-medium text-gray-900">{loadedOrder.customerName}</p></div>
                   <div><p className="text-xs text-gray-500">Order Date</p><p className="font-medium text-gray-900">{formatDate(loadedOrder.orderTime || loadedOrder.createdAt)}</p></div>
-                  <div><p className="text-xs text-gray-500">Order Total</p><p className="font-medium text-gray-900">${fmt(loadedOrder.amount)}</p></div>
+                  <div><p className="text-xs text-gray-500">Order Total</p><p className="font-medium text-gray-900">{formatCurrency(Number(fmt(loadedOrder.amount)))}</p></div>
                 </div>
               </div>
             )}

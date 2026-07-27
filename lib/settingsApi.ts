@@ -53,7 +53,8 @@ export interface GeneralSettings {
   storeName: string;
   storeEmail: string;
   storePhone: string;
-  storeAddress: string;
+  /** Deprecated — store address lives in Company Settings now. Kept optional for backend compatibility. */
+  storeAddress?: string;
   storeDescription: string;
   freeShippingThreshold?: number | null;
   primaryColor?: string;
@@ -160,7 +161,8 @@ export interface BusinessSettings {
   businessName: string;
   businessType: string;
   registrationNumber?: string;
-  gstNumber: string;
+  /** Deprecated — tax ID lives in Company Settings now. Optional for compatibility. */
+  gstNumber?: string;
   logoUrl?: string;
   bannerUrl?: string;
   website?: string;
