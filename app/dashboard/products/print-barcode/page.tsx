@@ -502,7 +502,7 @@ export default function PrintBarcodePage() {
             <Card className="p-6">
               <h2 className="text-lg font-semibold text-gray-900 mb-4">Paper / Label Size</h2>
               <Select value={selectedPaperSizeId} onValueChange={setSelectedPaperSizeId}>
-                <SelectTrigger>
+                <SelectTrigger className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>

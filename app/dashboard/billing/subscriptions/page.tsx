@@ -419,7 +419,7 @@ export default function SubscriptionsPage() {
                 Reason for cancellation (optional)
               </label>
               <Select value={cancelReason} onValueChange={setCancelReason}>
-                <SelectTrigger>
+                <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select a reason" />
                 </SelectTrigger>
                 <SelectContent>

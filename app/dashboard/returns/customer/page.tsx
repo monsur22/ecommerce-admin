@@ -85,6 +85,7 @@ type ReturnFormItem = {
 
 const defaultFormData = {
   customerId: "",
+  customerName: "", // filled from the loaded order — supports guest (no account) orders
   orderNumber: "",
   sellId: undefined as number | undefined,
   refundMethod: "original_payment",
@@ -245,6 +246,10 @@ export default function CustomerReturnsPage() {
   }
 
   const handleCreateReturn = async () => {
+    if (!formData.customerId && !formData.customerName.trim()) {
+      toast({ title: "Select a customer or enter a name", variant: "destructive" })
+      return
+    }
     if (formData.items.some((item) => !item.productId || !item.quantity || !item.reason)) {
       toast({ title: "Please fill in all item details", variant: "destructive" })
       return
@@ -259,6 +264,9 @@ export default function CustomerReturnsPage() {
     try {
       await customerReturnsApi.create({
         ...(formData.customerId ? { customerId: Number(formData.customerId) } : {}),
+        // For guest orders there's no account — carry the name from the order so
+        // the return still records who returned it.
+        ...(formData.customerName ? { customerName: formData.customerName } : {}),
         sellId: formData.sellId,
         orderNumber: formData.orderNumber || undefined,
         refundMethod: formData.refundMethod,
@@ -305,7 +313,8 @@ export default function CustomerReturnsPage() {
       setLoadedOrder(order)
       setFormData((prev) => ({
         ...prev,
-        customerId: order.customerId ? String(order.customerId) : prev.customerId,
+        customerId: order.customerId ? String(order.customerId) : "",
+        customerName: order.customerName || prev.customerName,
         sellId: order.id,
         orderNumber: order.invoiceNo || order.invoice_no || orderNumber,
         items: returnItems.length > 0 ? returnItems : prev.items,
@@ -659,19 +668,35 @@ export default function CustomerReturnsPage() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label>Customer *</Label>
-                <Select value={formData.customerId} onValueChange={(v) => setFormData({ ...formData, customerId: v })}>
-                  <SelectTrigger className="mt-1"><SelectValue placeholder="Select customer" /></SelectTrigger>
-                  <SelectContent>
-                    {customers.map((c) => (
-                      <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                {loadedOrder && !formData.customerId ? (
+                  // Guest order (no linked account): use the name from the order.
+                  <>
+                    <Input
+                      className="mt-1"
+                      value={formData.customerName}
+                      onChange={(e) => setFormData({ ...formData, customerName: e.target.value })}
+                      placeholder="Customer name"
+                    />
+                    <p className="text-xs text-amber-600 mt-1">Guest order — no linked account. Return is recorded against this name.</p>
+                  </>
+                ) : (
+                  <Select value={formData.customerId} onValueChange={(v) => {
+                    const c = customers.find((x) => String(x.id) === v)
+                    setFormData({ ...formData, customerId: v, customerName: c?.name ?? formData.customerName })
+                  }}>
+                    <SelectTrigger className="mt-1 w-full"><SelectValue placeholder="Select customer" /></SelectTrigger>
+                    <SelectContent>
+                      {customers.map((c) => (
+                        <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
               <div>
                 <Label>Refund Method *</Label>
                 <Select value={formData.refundMethod} onValueChange={(v) => setFormData({ ...formData, refundMethod: v })}>
-                  <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="mt-1 w-full"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="original_payment">Original Payment</SelectItem>
                     <SelectItem value="cash">Cash</SelectItem>
@@ -740,7 +765,7 @@ export default function CustomerReturnsPage() {
                       <div className="col-span-3">
                         <Label className="text-xs">Reason *</Label>
                         <Select value={item.reason} onValueChange={(v) => handleItemChange(index, "reason", v)}>
-                          <SelectTrigger className="mt-1"><SelectValue placeholder="Select reason" /></SelectTrigger>
+                          <SelectTrigger className="mt-1 w-full"><SelectValue placeholder="Select reason" /></SelectTrigger>
                           <SelectContent>
                             {RETURN_REASONS.map((r) => (
                               <SelectItem key={r} value={r}>{r}</SelectItem>

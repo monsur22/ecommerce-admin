@@ -875,7 +875,7 @@ export function ProductFormDialog({ open, editingProduct, onClose }: ProductForm
                     value={formData.locationId || String(warehouses[0]?.id || "")}
                     onValueChange={(val) => set("locationId", val)}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="w-full">
                       <SelectValue placeholder="Location" />
                     </SelectTrigger>
                     <SelectContent>

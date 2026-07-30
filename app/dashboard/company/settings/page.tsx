@@ -11,6 +11,7 @@ import { AccessDenied } from "@/components/ui/access-denied"
 import { useModuleGuard } from "@/hooks/use-module-guard"
 import { AlertCircle, Loader, Save, Building2, Globe, DollarSign, Clock, Palette } from "lucide-react"
 import { AccentPicker } from "@/components/accent-picker"
+import { StorefrontBrandColors } from "@/components/storefront-brand-colors"
 
 export default function CompanySettingsPage() {
   const router = useRouter()
@@ -212,6 +213,11 @@ export default function CompanySettingsPage() {
           <h2 className="text-xl font-bold text-foreground">Appearance</h2>
         </div>
         <AccentPicker />
+
+        <div className="mt-8 pt-6 border-t border-border">
+          <h3 className="text-sm font-semibold text-foreground mb-1">Storefront brand colors</h3>
+          <StorefrontBrandColors />
+        </div>
       </Card>
 
       {/* Company Profile */}

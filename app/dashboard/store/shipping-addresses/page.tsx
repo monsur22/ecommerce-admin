@@ -578,7 +578,7 @@ export default function ShippingAddressesPage() {
                   setFormData({ ...formData, addressType: value })
                 }
               >
-                <SelectTrigger>
+                <SelectTrigger className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>

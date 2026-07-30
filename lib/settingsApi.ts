@@ -371,7 +371,7 @@ export const settingsApi = {
   },
 
   // Update specific sections
-  updateGeneral: async (data: GeneralSettings): Promise<{ message: string; data: GeneralSettings }> => {
+  updateGeneral: async (data: Partial<GeneralSettings>): Promise<{ message: string; data: GeneralSettings }> => {
     const response = await api.put('/settings/general', data);
     return response.data;
   },

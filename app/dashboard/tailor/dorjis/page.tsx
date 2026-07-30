@@ -322,7 +322,7 @@ export default function TailorDorjisPage() {
               <div>
                 <Label className="text-xs text-gray-600 mb-1 block">Commission Type</Label>
                 <Select value={form.commission_type} onValueChange={v => setField("commission_type", v as "fixed" | "percentage")}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="fixed">Fixed</SelectItem>
                     <SelectItem value="percentage">Percentage</SelectItem>
@@ -344,7 +344,7 @@ export default function TailorDorjisPage() {
             <div>
               <Label className="text-xs text-gray-600 mb-1 block">Status</Label>
               <Select value={form.status} onValueChange={v => setField("status", v as "active" | "inactive")}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="active">Active</SelectItem>
                   <SelectItem value="inactive">Inactive</SelectItem>

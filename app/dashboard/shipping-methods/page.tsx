@@ -365,7 +365,7 @@ export default function ShippingMethodsPage() {
               <div className="space-y-2">
                 <Label>Icon</Label>
                 <Select value={form.icon ?? "package"} onValueChange={(v) => f("icon", v)}>
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -386,7 +386,7 @@ export default function ShippingMethodsPage() {
                   value={form.isActive ? "active" : "inactive"}
                   onValueChange={(v) => f("isActive", v === "active")}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>

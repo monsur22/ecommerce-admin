@@ -293,7 +293,7 @@ export default function TailorPaymentsPage() {
                     setForm(f => ({ ...f, order_id: v, amount: o && o.dueAmount > 0 ? String(o.dueAmount) : f.amount }))
                   }}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select an order..." />
                   </SelectTrigger>
                   <SelectContent className="max-h-60">
@@ -333,7 +333,7 @@ export default function TailorPaymentsPage() {
             <div>
               <Label className="text-xs text-gray-600 mb-1 block">Payment Method</Label>
               <Select value={form.payment_method} onValueChange={v => setField("payment_method", v)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {PAYMENT_METHODS.map(m => (
                     <SelectItem key={m} value={m}>{m}</SelectItem>

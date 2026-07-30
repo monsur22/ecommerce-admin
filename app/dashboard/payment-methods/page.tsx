@@ -320,7 +320,7 @@ export default function PaymentMethodsPage() {
             <div className="space-y-2">
               <Label>Gateway Type</Label>
               <Select value={form.gateway_type ?? "cod"} onValueChange={(v) => f("gateway_type", v)}>
-                <SelectTrigger>
+                <SelectTrigger className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -340,7 +340,7 @@ export default function PaymentMethodsPage() {
               <div className="space-y-2">
                 <Label>Icon</Label>
                 <Select value={form.icon ?? "banknote"} onValueChange={(v) => f("icon", v)}>
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -374,7 +374,7 @@ export default function PaymentMethodsPage() {
                 value={form.isActive ? "active" : "inactive"}
                 onValueChange={(v) => f("isActive", v === "active")}
               >
-                <SelectTrigger>
+                <SelectTrigger className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
