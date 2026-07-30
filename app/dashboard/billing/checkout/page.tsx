@@ -8,12 +8,14 @@ import { Label } from "@/components/ui/label"
 import { Card } from "@/components/ui/card"
 import { saasBillingApi, type Plan } from "@/lib/saasBillingApi"
 import { useSaasAuth } from "@/contexts/saas-auth-context"
+import { useCompanySettings } from "@/contexts/company-settings-context"
 import { AlertCircle, Loader, Lock, Check } from "lucide-react"
 
 export default function CheckoutPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { user } = useSaasAuth()
+  const { formatCurrency } = useCompanySettings()
 
   const planId = searchParams.get("planId")
 
@@ -347,7 +349,7 @@ export default function CheckoutPage() {
                       Processing...
                     </>
                   ) : (
-                    `Pay $${(finalAmount / 100).toFixed(2)}`
+                    `Pay ${formatCurrency(finalAmount / 100)}`
                   )}
                 </Button>
               </div>
@@ -392,7 +394,7 @@ export default function CheckoutPage() {
               <div className="flex items-center justify-between text-sm">
                 <span className="text-gray-600">Plan Price ({billingPeriod}):</span>
                 <span className="font-medium text-gray-900">
-                  ${(totalAmount / 100).toFixed(2)}
+                  {formatCurrency(totalAmount / 100)}
                 </span>
               </div>
 
@@ -400,7 +402,7 @@ export default function CheckoutPage() {
                 <div className="flex items-center justify-between text-sm bg-emerald-50 p-2 rounded -mx-2 px-2">
                   <span className="text-emerald-700 font-medium">Annual Savings:</span>
                   <span className="text-emerald-700 font-bold">
-                    -${(savings / 100).toFixed(2)}
+                    -{formatCurrency(savings / 100)}
                   </span>
                 </div>
               )}
@@ -408,7 +410,7 @@ export default function CheckoutPage() {
               <div className="flex items-center justify-between text-sm">
                 <span className="text-gray-600">Tax (10%):</span>
                 <span className="font-medium text-gray-900">
-                  ${(taxAmount / 100).toFixed(2)}
+                  {formatCurrency(taxAmount / 100)}
                 </span>
               </div>
             </div>
@@ -417,7 +419,7 @@ export default function CheckoutPage() {
             <div className="flex items-center justify-between mb-6">
               <span className="font-bold text-gray-900">Total:</span>
               <span className="text-2xl font-bold text-emerald-600">
-                ${(finalAmount / 100).toFixed(2)}
+                {formatCurrency(finalAmount / 100)}
               </span>
             </div>
 

@@ -200,7 +200,7 @@ export default function CheckoutPage() {
                 <div className="space-y-2">
                   <Label htmlFor="customer">Select Customer (Optional)</Label>
                   <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId}>
-                    <SelectTrigger>
+                    <SelectTrigger className="w-full">
                       <SelectValue placeholder="Guest checkout" />
                     </SelectTrigger>
                     <SelectContent>

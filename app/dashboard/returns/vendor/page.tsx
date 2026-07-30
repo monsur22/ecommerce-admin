@@ -558,8 +558,8 @@ export default function VendorReturnsPage() {
               <div>
                 <Label>Supplier *</Label>
                 <Select value={formData.vendorId} onValueChange={handleVendorSelect}>
-                  <SelectTrigger className="mt-1">
-                    <SelectValue placeholder="Select supplier" />
+                  <SelectTrigger className="mt-1 w-full">
+                    <SelectValue placeholder="Select vendor" />
                   </SelectTrigger>
                   <SelectContent>
                     {vendors.map((v) => (
@@ -580,7 +580,7 @@ export default function VendorReturnsPage() {
               <div>
                 <Label>Credit Type *</Label>
                 <Select value={formData.creditType} onValueChange={(v) => setFormData({ ...formData, creditType: v })}>
-                  <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="mt-1 w-full"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="refund">Refund</SelectItem>
                     <SelectItem value="credit_note">Credit Note</SelectItem>
@@ -715,7 +715,7 @@ export default function VendorReturnsPage() {
                         <div className="col-span-3">
                           <Label className="text-xs">Reason *</Label>
                           <Select value={item.reason} onValueChange={(v) => handleItemChange(index, "reason", v)}>
-                            <SelectTrigger className="mt-1"><SelectValue placeholder="Select reason" /></SelectTrigger>
+                            <SelectTrigger className="mt-1 w-full"><SelectValue placeholder="Select reason" /></SelectTrigger>
                             <SelectContent>
                               {RETURN_REASONS.map((r) => (
                                 <SelectItem key={r} value={r}>{r}</SelectItem>

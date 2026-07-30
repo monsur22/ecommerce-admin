@@ -678,7 +678,7 @@ export default function TailorOrderDetailPage({ params: paramsProp }: { params: 
             <div>
               <Label className="text-xs text-gray-600 mb-1 block">New Status</Label>
               <Select value={newStatus} onValueChange={v => setNewStatus(v as TailorOrderStatus)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {ALL_STATUSES.map(s => (
                     <SelectItem key={s} value={s}>{ORDER_STATUS_LABELS[s]}</SelectItem>
@@ -708,7 +708,7 @@ export default function TailorOrderDetailPage({ params: paramsProp }: { params: 
             <div>
               <Label className="text-xs text-gray-600 mb-1 block">Dorji *</Label>
               <Select value={assignForm.dorji_id} onValueChange={v => setAssignForm(f => ({ ...f, dorji_id: v }))}>
-                <SelectTrigger><SelectValue placeholder="Select dorji..." /></SelectTrigger>
+                <SelectTrigger className="w-full"><SelectValue placeholder="Select dorji..." /></SelectTrigger>
                 <SelectContent>
                   {dorjis.map(d => (
                     <SelectItem key={d.id} value={String(d.id)}>{d.name} {d.phone ? `(${d.phone})` : ""}</SelectItem>
@@ -734,7 +734,7 @@ export default function TailorOrderDetailPage({ params: paramsProp }: { params: 
               <div>
                 <Label className="text-xs text-gray-600 mb-1 block">Work Status</Label>
                 <Select value={assignForm.work_status} onValueChange={v => setAssignForm(f => ({ ...f, work_status: v as TailorWorkStatus }))}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {WORK_STATUSES.map(ws => (
                       <SelectItem key={ws} value={ws}>{WORK_STATUS_LABELS[ws]}</SelectItem>
@@ -776,7 +776,7 @@ export default function TailorOrderDetailPage({ params: paramsProp }: { params: 
               <div>
                 <Label className="text-xs text-gray-600 mb-1 block">Method *</Label>
                 <Select value={paymentForm.payment_method} onValueChange={v => setPaymentForm(f => ({ ...f, payment_method: v }))}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {PAYMENT_METHODS.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
                   </SelectContent>

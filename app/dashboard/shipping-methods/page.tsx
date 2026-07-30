@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useToast } from "@/hooks/use-toast"
+import { useCompanySettings } from "@/contexts/company-settings-context"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -69,6 +70,7 @@ const emptyForm: ShippingMethodPayload = {
 export default function ShippingMethodsPage() {
   const { canRead } = useSaasAuth()
   const { toast } = useToast()
+  const { formatCurrency } = useCompanySettings()
   const [methods, setMethods] = useState<ShippingMethod[]>([])
   const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -241,7 +243,7 @@ export default function ShippingMethodsPage() {
                 </div>
 
                 {/* Price */}
-                <p className="font-bold text-gray-900">${m.price.toFixed(2)}</p>
+                <p className="font-bold text-gray-900">{formatCurrency(m.price)}</p>
 
                 {/* Est. days */}
                 <p className="text-sm text-gray-600">{m.estimatedDays ?? "—"}</p>
@@ -363,7 +365,7 @@ export default function ShippingMethodsPage() {
               <div className="space-y-2">
                 <Label>Icon</Label>
                 <Select value={form.icon ?? "package"} onValueChange={(v) => f("icon", v)}>
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -384,7 +386,7 @@ export default function ShippingMethodsPage() {
                   value={form.isActive ? "active" : "inactive"}
                   onValueChange={(v) => f("isActive", v === "active")}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -407,7 +409,7 @@ export default function ShippingMethodsPage() {
                   <p className="text-xs text-gray-500">{form.description || "Description"}</p>
                 </div>
                 <div className="text-right">
-                  <p className="font-bold">${Number(form.price || 0).toFixed(2)}</p>
+                  <p className="font-bold">{formatCurrency(Number(form.price || 0))}</p>
                   <p className="text-xs text-gray-500">{form.estimatedDays || "Est. days"}</p>
                 </div>
               </div>

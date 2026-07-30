@@ -9,7 +9,9 @@ import { saasCompanyApi, type CompanyProfile, type CompanySettings } from "@/lib
 import { useSaasAuth } from "@/contexts/saas-auth-context"
 import { AccessDenied } from "@/components/ui/access-denied"
 import { useModuleGuard } from "@/hooks/use-module-guard"
-import { AlertCircle, Loader, Save, Building2, Globe, DollarSign, Clock } from "lucide-react"
+import { AlertCircle, Loader, Save, Building2, Globe, DollarSign, Clock, Palette } from "lucide-react"
+import { AccentPicker } from "@/components/accent-picker"
+import { StorefrontBrandColors } from "@/components/storefront-brand-colors"
 
 export default function CompanySettingsPage() {
   const router = useRouter()
@@ -203,6 +205,20 @@ export default function CompanySettingsPage() {
           </div>
         </Card>
       )}
+
+      {/* Appearance */}
+      <Card className="p-8">
+        <div className="flex items-center gap-3 mb-6">
+          <Palette className="w-5 h-5 text-brand-fg" />
+          <h2 className="text-xl font-bold text-foreground">Appearance</h2>
+        </div>
+        <AccentPicker />
+
+        <div className="mt-8 pt-6 border-t border-border">
+          <h3 className="text-sm font-semibold text-foreground mb-1">Storefront brand colors</h3>
+          <StorefrontBrandColors />
+        </div>
+      </Card>
 
       {/* Company Profile */}
       <Card className="p-8">

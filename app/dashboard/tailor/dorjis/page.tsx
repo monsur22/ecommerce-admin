@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { tailorApi, TailorDorji } from "@/lib/tailorApi"
 import { useSaasAuth } from "@/contexts/saas-auth-context"
+import { useCompanySettings } from "@/contexts/company-settings-context"
 import { AccessDenied } from "@/components/ui/access-denied"
 import { useModuleGuard } from "@/hooks/use-module-guard"
 import { toast } from "sonner"
@@ -81,6 +82,7 @@ function TagInput({ tags, onChange }: { tags: string[]; onChange: (tags: string[
 
 export default function TailorDorjisPage() {
   const { canRead, canWrite, canDelete } = useSaasAuth()
+  const { formatCurrency } = useCompanySettings()
 
   const [dorjis, setDorjis] = useState<TailorDorji[]>([])
   const [loading, setLoading] = useState(true)
@@ -249,7 +251,7 @@ export default function TailorDorjisPage() {
                     </div>
                   </td>
                   <td className="px-4 py-3 text-gray-700">
-                    {d.commissionType === "percentage" ? `${d.commissionValue}%` : `৳${d.commissionValue}`}
+                    {d.commissionType === "percentage" ? `${d.commissionValue}%` : formatCurrency(d.commissionValue)}
                     <span className="text-gray-400 ml-1 text-xs">({d.commissionType})</span>
                   </td>
                   <td className="px-4 py-3">
@@ -320,7 +322,7 @@ export default function TailorDorjisPage() {
               <div>
                 <Label className="text-xs text-gray-600 mb-1 block">Commission Type</Label>
                 <Select value={form.commission_type} onValueChange={v => setField("commission_type", v as "fixed" | "percentage")}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="fixed">Fixed</SelectItem>
                     <SelectItem value="percentage">Percentage</SelectItem>
@@ -342,7 +344,7 @@ export default function TailorDorjisPage() {
             <div>
               <Label className="text-xs text-gray-600 mb-1 block">Status</Label>
               <Select value={form.status} onValueChange={v => setField("status", v as "active" | "inactive")}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="active">Active</SelectItem>
                   <SelectItem value="inactive">Inactive</SelectItem>

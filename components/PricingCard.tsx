@@ -6,6 +6,7 @@ import { Check } from "lucide-react"
 import { saasBillingApi, type Plan } from "@/lib/saasBillingApi"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { useCompanySettings } from "@/contexts/company-settings-context"
 
 interface PricingCardProps {
   plan: Plan
@@ -15,6 +16,7 @@ interface PricingCardProps {
 
 export function PricingCard({ plan, isCurrentPlan = false, onSelectPlan }: PricingCardProps) {
   const router = useRouter()
+  const { formatCurrency } = useCompanySettings()
   const [loading, setLoading] = useState(false)
 
   const handleSelectPlan = async () => {
@@ -32,7 +34,7 @@ export function PricingCard({ plan, isCurrentPlan = false, onSelectPlan }: Prici
     }
   }
 
-  const formattedPrice = (plan.price / 100).toFixed(2)
+  const formattedPrice = formatCurrency(plan.price / 100)
 
   return (
     <Card
@@ -71,7 +73,7 @@ export function PricingCard({ plan, isCurrentPlan = false, onSelectPlan }: Prici
         {plan.price > 0 ? (
           <div>
             <span className="text-4xl font-bold text-gray-900">
-              ${formattedPrice}
+              {formattedPrice}
             </span>
             <span className="text-gray-600 text-sm">
               {plan.billingPeriod === "monthly" && " / month"}
