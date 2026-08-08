@@ -85,6 +85,7 @@ type ReturnFormItem = {
 
 const defaultFormData = {
   customerId: "",
+  customerName: "", // filled from the loaded order — supports guest (no account) orders
   orderNumber: "",
   sellId: undefined as number | undefined,
   refundMethod: "original_payment",
@@ -245,6 +246,10 @@ export default function CustomerReturnsPage() {
   }
 
   const handleCreateReturn = async () => {
+    if (!formData.customerId && !formData.customerName.trim()) {
+      toast({ title: "Select a customer or enter a name", variant: "destructive" })
+      return
+    }
     if (formData.items.some((item) => !item.productId || !item.quantity || !item.reason)) {
       toast({ title: "Please fill in all item details", variant: "destructive" })
       return
@@ -259,6 +264,9 @@ export default function CustomerReturnsPage() {
     try {
       await customerReturnsApi.create({
         ...(formData.customerId ? { customerId: Number(formData.customerId) } : {}),
+        // For guest orders there's no account — carry the name from the order so
+        // the return still records who returned it.
+        ...(formData.customerName ? { customerName: formData.customerName } : {}),
         sellId: formData.sellId,
         orderNumber: formData.orderNumber || undefined,
         refundMethod: formData.refundMethod,
@@ -305,7 +313,8 @@ export default function CustomerReturnsPage() {
       setLoadedOrder(order)
       setFormData((prev) => ({
         ...prev,
-        customerId: order.customerId ? String(order.customerId) : prev.customerId,
+        customerId: order.customerId ? String(order.customerId) : "",
+        customerName: order.customerName || prev.customerName,
         sellId: order.id,
         orderNumber: order.invoiceNo || order.invoice_no || orderNumber,
         items: returnItems.length > 0 ? returnItems : prev.items,
@@ -430,7 +439,7 @@ export default function CustomerReturnsPage() {
                     <td className="py-3 px-4 font-medium text-gray-900">{ret.returnNumber ?? `#${ret.id}`}</td>
                     <td className="py-3 px-4 text-sm text-gray-900">{ret.customerName ?? ret.customerId}</td>
                     <td className="py-3 px-4 text-sm text-gray-600">{ret.orderNumber ?? "N/A"}</td>
-                    <td className="py-3 px-4 text-right font-semibold text-gray-900">${fmt(ret.totalAmount)}</td>
+                    <td className="py-3 px-4 text-right font-semibold text-gray-900">{formatCurrency(Number(fmt(ret.totalAmount)))}</td>
                     <td className="py-3 px-4 text-center"><ReturnStatusBadge status={ret.status} /></td>
                     <td className="py-3 px-4 text-sm text-gray-600">{formatDate(ret.createdAt)}</td>
                     <td className="py-3 px-4">
@@ -526,8 +535,8 @@ export default function CustomerReturnsPage() {
                               {item.variantName && <p className="text-xs text-gray-500">{item.variantName}</p>}
                             </td>
                             <td className="py-2 px-3 text-center text-sm">{item.quantity}</td>
-                            <td className="py-2 px-3 text-right text-sm font-medium">${fmt(item.price)}</td>
-                            <td className="py-2 px-3 text-right text-sm font-medium">${fmt((item.price ?? 0) * item.quantity)}</td>
+                            <td className="py-2 px-3 text-right text-sm font-medium">{formatCurrency(Number(fmt(item.price)))}</td>
+                            <td className="py-2 px-3 text-right text-sm font-medium">{formatCurrency(Number(fmt((item.price ?? 0) * item.quantity)))}</td>
                             <td className="py-2 px-3 text-sm text-gray-600">{item.reason}</td>
                           </tr>
                         ))}
@@ -540,7 +549,7 @@ export default function CustomerReturnsPage() {
               <div className="flex justify-end">
                 <div className="text-right">
                   <p className="text-sm text-gray-600">Total Refund Amount</p>
-                  <p className="text-2xl font-bold text-gray-900">${fmt(selectedReturn.totalAmount)}</p>
+                  <p className="text-2xl font-bold text-gray-900">{formatCurrency(Number(fmt(selectedReturn.totalAmount)))}</p>
                 </div>
               </div>
 
@@ -566,7 +575,7 @@ export default function CustomerReturnsPage() {
             <div className="bg-gray-50 p-4 rounded-lg space-y-2">
               <p className="text-sm"><span className="font-medium">Return:</span> {selectedReturn.returnNumber ?? `#${selectedReturn.id}`}</p>
               <p className="text-sm"><span className="font-medium">Customer:</span> {selectedReturn.customerName ?? selectedReturn.customerId}</p>
-              <p className="text-sm"><span className="font-medium">Amount:</span> ${fmt(selectedReturn.totalAmount)}</p>
+              <p className="text-sm"><span className="font-medium">Amount:</span> {formatCurrency(Number(fmt(selectedReturn.totalAmount)))}</p>
             </div>
           )}
           <DialogFooter>
@@ -650,7 +659,7 @@ export default function CustomerReturnsPage() {
                 <div className="grid grid-cols-3 gap-3 text-sm">
                   <div><p className="text-xs text-gray-500">Customer</p><p className="font-medium text-gray-900">{loadedOrder.customerName}</p></div>
                   <div><p className="text-xs text-gray-500">Order Date</p><p className="font-medium text-gray-900">{formatDate(loadedOrder.orderTime || loadedOrder.createdAt)}</p></div>
-                  <div><p className="text-xs text-gray-500">Order Total</p><p className="font-medium text-gray-900">${fmt(loadedOrder.amount)}</p></div>
+                  <div><p className="text-xs text-gray-500">Order Total</p><p className="font-medium text-gray-900">{formatCurrency(Number(fmt(loadedOrder.amount)))}</p></div>
                 </div>
               </div>
             )}
@@ -659,19 +668,35 @@ export default function CustomerReturnsPage() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label>Customer *</Label>
-                <Select value={formData.customerId} onValueChange={(v) => setFormData({ ...formData, customerId: v })}>
-                  <SelectTrigger className="mt-1"><SelectValue placeholder="Select customer" /></SelectTrigger>
-                  <SelectContent>
-                    {customers.map((c) => (
-                      <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                {loadedOrder && !formData.customerId ? (
+                  // Guest order (no linked account): use the name from the order.
+                  <>
+                    <Input
+                      className="mt-1"
+                      value={formData.customerName}
+                      onChange={(e) => setFormData({ ...formData, customerName: e.target.value })}
+                      placeholder="Customer name"
+                    />
+                    <p className="text-xs text-amber-600 mt-1">Guest order — no linked account. Return is recorded against this name.</p>
+                  </>
+                ) : (
+                  <Select value={formData.customerId} onValueChange={(v) => {
+                    const c = customers.find((x) => String(x.id) === v)
+                    setFormData({ ...formData, customerId: v, customerName: c?.name ?? formData.customerName })
+                  }}>
+                    <SelectTrigger className="mt-1 w-full"><SelectValue placeholder="Select customer" /></SelectTrigger>
+                    <SelectContent>
+                      {customers.map((c) => (
+                        <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
               <div>
                 <Label>Refund Method *</Label>
                 <Select value={formData.refundMethod} onValueChange={(v) => setFormData({ ...formData, refundMethod: v })}>
-                  <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="mt-1 w-full"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="original_payment">Original Payment</SelectItem>
                     <SelectItem value="cash">Cash</SelectItem>
@@ -740,7 +765,7 @@ export default function CustomerReturnsPage() {
                       <div className="col-span-3">
                         <Label className="text-xs">Reason *</Label>
                         <Select value={item.reason} onValueChange={(v) => handleItemChange(index, "reason", v)}>
-                          <SelectTrigger className="mt-1"><SelectValue placeholder="Select reason" /></SelectTrigger>
+                          <SelectTrigger className="mt-1 w-full"><SelectValue placeholder="Select reason" /></SelectTrigger>
                           <SelectContent>
                             {RETURN_REASONS.map((r) => (
                               <SelectItem key={r} value={r}>{r}</SelectItem>

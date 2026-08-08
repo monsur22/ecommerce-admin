@@ -135,7 +135,7 @@ export default function TailorFabricsPage() {
                 <th className="px-4 py-3">Stock</th>
                 <th className="px-4 py-3">Buy Price</th>
                 <th className="px-4 py-3">Sell Price</th>
-                <th className="px-4 py-3">Vendor</th>
+                <th className="px-4 py-3">Supplier</th>
                 <th className="px-4 py-3">Status</th>
                 <th className="px-4 py-3">Actions</th>
               </tr>
@@ -230,7 +230,7 @@ export default function TailorFabricsPage() {
               <div className="space-y-1">
                 <Label>Unit</Label>
                 <Select value={editing.unit ?? "goj"} onValueChange={v => set("unit", v)}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="goj">Goj</SelectItem>
                     <SelectItem value="gaj">Gaj</SelectItem>
@@ -250,9 +250,9 @@ export default function TailorFabricsPage() {
                 <Input type="number" value={editing.sellingPrice ?? 0} onChange={e => set("sellingPrice", parseFloat(e.target.value) || 0)} />
               </div>
               <div className="col-span-2 space-y-1">
-                <Label>Vendor / Supplier</Label>
+                <Label>Supplier</Label>
                 <Select value={editing.vendorId?.toString() ?? ""} onValueChange={v => set("vendorId", v ? parseInt(v) : undefined)}>
-                  <SelectTrigger><SelectValue placeholder="Select vendor" /></SelectTrigger>
+                  <SelectTrigger className="w-full"><SelectValue placeholder="Select vendor" /></SelectTrigger>
                   <SelectContent>
                     {vendors.map(v => (
                       <SelectItem key={v.id} value={v.id.toString()}>{v.name}</SelectItem>
@@ -263,7 +263,7 @@ export default function TailorFabricsPage() {
               <div className="space-y-1">
                 <Label>Status</Label>
                 <Select value={editing.status ?? "active"} onValueChange={v => set("status", v)}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="active">Active</SelectItem>
                     <SelectItem value="inactive">Inactive</SelectItem>

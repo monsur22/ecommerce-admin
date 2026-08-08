@@ -447,7 +447,7 @@ export default function TailorOrdersPage() {
             <div>
               <Label className="text-xs text-gray-600 mb-1 block">Payment Method</Label>
               <Select value={paymentForm.payment_method} onValueChange={v => setPaymentForm(f => ({ ...f, payment_method: v }))}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {["Cash", "Bank Transfer", "Mobile Banking", "Card"].map(m => (
                     <SelectItem key={m} value={m}>{m}</SelectItem>

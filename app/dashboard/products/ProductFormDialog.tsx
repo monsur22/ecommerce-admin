@@ -26,6 +26,7 @@ import { useVendor } from "@/contexts/vendor-context"
 import { useCategory } from "@/contexts/category-context"
 import { useWarehouse } from "@/contexts/warehouse-context"
 import { useAttribute } from "@/contexts/attribute-context"
+import { useCompanySettings } from "@/contexts/company-settings-context"
 import { useToast } from "@/hooks/use-toast"
 import { useSaasAuth } from "@/contexts/saas-auth-context"
 
@@ -63,6 +64,7 @@ export function ProductFormDialog({ open, editingProduct, onClose }: ProductForm
   const { categories, getAllCategoriesFlat, refreshCategories } = useCategory()
   const { attributes: globalAttributes, isLoading: attributesLoading } = useAttribute()
   const { toast } = useToast()
+  const { formatCurrency } = useCompanySettings()
   const { isPlanModule } = useSaasAuth()
   const [barcodeCopied, setBarcodeCopied] = useState(false)
 
@@ -684,13 +686,13 @@ export function ProductFormDialog({ open, editingProduct, onClose }: ProductForm
 
             {isPlanModule("Vendors") && (
             <div className="space-y-2">
-              <Label htmlFor="vendor">Vendor</Label>
+              <Label htmlFor="vendor">Supplier</Label>
               <Select
                 value={formData.vendorId || undefined}
                 onValueChange={(value) => set("vendorId", value)}
               >
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select Vendor (Optional)" />
+                  <SelectValue placeholder="Select Supplier (Optional)" />
                 </SelectTrigger>
                 <SelectContent>
                   {vendors.map((vendor) => (
@@ -845,12 +847,13 @@ export function ProductFormDialog({ open, editingProduct, onClose }: ProductForm
                 <p className="text-xs text-orange-600 mt-1">
                   Offer price:{" "}
                   <strong>
-                    $
-                    {formData.offerType === "percentage"
-                      ? (Number(formData.salePrice) * (1 - Number(formData.offerPrice) / 100)).toFixed(2)
-                      : (Number(formData.salePrice) - Number(formData.offerPrice)).toFixed(2)}
+                    {formatCurrency(
+                      formData.offerType === "percentage"
+                        ? Number(formData.salePrice) * (1 - Number(formData.offerPrice) / 100)
+                        : Number(formData.salePrice) - Number(formData.offerPrice)
+                    )}
                   </strong>{" "}
-                  ({formData.offerPrice}{formData.offerType === "percentage" ? "%" : "$"} off ${formData.salePrice})
+                  ({formData.offerPrice}{formData.offerType === "percentage" ? "%" : ""} off {formatCurrency(Number(formData.salePrice))})
                 </p>
               )}
             </div>
@@ -872,7 +875,7 @@ export function ProductFormDialog({ open, editingProduct, onClose }: ProductForm
                     value={formData.locationId || String(warehouses[0]?.id || "")}
                     onValueChange={(val) => set("locationId", val)}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="w-full">
                       <SelectValue placeholder="Location" />
                     </SelectTrigger>
                     <SelectContent>
@@ -1050,9 +1053,9 @@ export function ProductFormDialog({ open, editingProduct, onClose }: ProductForm
                             </div>
                             {variant.offerPrice ? (
                               <span className="text-xs text-orange-600">
-                                =${(variant.offerType ?? 'percentage') === 'percentage'
-                                  ? (variant.salePrice * (1 - variant.offerPrice / 100)).toFixed(2)
-                                  : (variant.salePrice - variant.offerPrice).toFixed(2)}
+                                ={formatCurrency((variant.offerType ?? 'percentage') === 'percentage'
+                                  ? variant.salePrice * (1 - variant.offerPrice / 100)
+                                  : variant.salePrice - variant.offerPrice)}
                               </span>
                             ) : null}
                           </div>

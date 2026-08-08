@@ -317,7 +317,7 @@ export default function EditTailorOrderPage({ params }: { params: Promise<{ id: 
                 <div>
                   <Label className="text-xs text-gray-600 mb-1 block">Product Type *</Label>
                   <Select value={item.productType} onValueChange={v => updateItem(idx, "productType", v)}>
-                    <SelectTrigger><SelectValue placeholder="Select type..." /></SelectTrigger>
+                    <SelectTrigger className="w-full"><SelectValue placeholder="Select type..." /></SelectTrigger>
                     <SelectContent>
                       {PRODUCT_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
                     </SelectContent>
@@ -331,7 +331,7 @@ export default function EditTailorOrderPage({ params }: { params: Promise<{ id: 
                     onValueChange={v => updateItem(idx, "measurementId", v)}
                     disabled={!customerResolved}
                   >
-                    <SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger>
+                    <SelectTrigger className="w-full"><SelectValue placeholder="Select..." /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">None</SelectItem>
                       {itemMeasurements.map(m => (
@@ -357,7 +357,7 @@ export default function EditTailorOrderPage({ params }: { params: Promise<{ id: 
                   className="mb-1.5"
                 />
                 <Select value={item.fabricId} onValueChange={v => updateItem(idx, "fabricId", v)}>
-                  <SelectTrigger><SelectValue placeholder="Select fabric..." /></SelectTrigger>
+                  <SelectTrigger className="w-full"><SelectValue placeholder="Select fabric..." /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">No fabric</SelectItem>
                     {filteredFabrics.map(f => (

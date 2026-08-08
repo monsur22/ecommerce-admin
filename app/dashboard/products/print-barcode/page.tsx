@@ -379,7 +379,7 @@ export default function PrintBarcodePage() {
                           <p className="text-xs text-gray-500">{product.sku}</p>
                         </div>
                         <div className="text-right">
-                          <p className="text-sm font-semibold text-emerald-600">${getPrice(product).toFixed(2)}</p>
+                          <p className="text-sm font-semibold text-emerald-600">{formatCurrency(getPrice(product))}</p>
                         </div>
                       </button>
                     ))}
@@ -502,7 +502,7 @@ export default function PrintBarcodePage() {
             <Card className="p-6">
               <h2 className="text-lg font-semibold text-gray-900 mb-4">Paper / Label Size</h2>
               <Select value={selectedPaperSizeId} onValueChange={setSelectedPaperSizeId}>
-                <SelectTrigger>
+                <SelectTrigger className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>

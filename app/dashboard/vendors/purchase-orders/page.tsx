@@ -17,6 +17,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from "@/components/ui/select"
 import { useModuleGuard } from "@/hooks/use-module-guard"
+import { useCompanySettings } from "@/contexts/company-settings-context"
 import { useWarehouse } from "@/contexts/warehouse-context"
 import purchaseOrderApi, { type PurchaseOrder, type PurchaseOrderItem } from "@/lib/purchaseOrderApi"
 import vendorApi from "@/lib/vendorApi"
@@ -52,6 +53,7 @@ const emptyItem = (): FormItem => ({
 })
 
 export default function PurchaseOrdersPage() {
+  const { formatCurrency } = useCompanySettings()
   const blocked = useModuleGuard("Vendors")
   if (blocked) return blocked
 
@@ -121,7 +123,7 @@ export default function PurchaseOrdersPage() {
 
   const handleCreate = async () => {
     if (!vendorId || formItems.some(i => !i.productId || i.quantityOrdered < 1)) {
-      toast.error("Fill in vendor and all item fields")
+      toast.error("Fill in supplier and all item fields")
       return
     }
     setSaving(true)
@@ -227,7 +229,7 @@ export default function PurchaseOrdersPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Purchase Orders</h1>
-          <p className="text-gray-600 mt-1">Order stock from vendors and receive it into inventory</p>
+          <p className="text-gray-600 mt-1">Order stock from suppliers and receive it into inventory</p>
         </div>
         <Button onClick={() => setCreateOpen(true)} className="bg-emerald-600 hover:bg-emerald-700">
           <Plus className="w-4 h-4 mr-2" /> New Purchase Order
@@ -252,7 +254,7 @@ export default function PurchaseOrdersPage() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <Input
             className="pl-9"
-            placeholder="Search PO number or vendor..."
+            placeholder="Search PO number or supplier..."
             value={search}
             onChange={e => { setSearch(e.target.value); setPage(1) }}
           />
@@ -280,7 +282,7 @@ export default function PurchaseOrdersPage() {
           <CardContent className="flex flex-col items-center justify-center py-16 text-center">
             <Package className="w-12 h-12 text-gray-300 mb-4" />
             <p className="text-gray-500 text-lg font-medium">No purchase orders yet</p>
-            <p className="text-gray-400 mt-1">Create your first PO to order stock from vendors</p>
+            <p className="text-gray-400 mt-1">Create your first PO to order stock from suppliers</p>
           </CardContent>
         </Card>
       ) : (
@@ -290,7 +292,7 @@ export default function PurchaseOrdersPage() {
               <thead>
                 <tr className="border-b bg-gray-50">
                   <th className="text-left p-4 font-medium text-gray-600">PO Number</th>
-                  <th className="text-left p-4 font-medium text-gray-600">Vendor</th>
+                  <th className="text-left p-4 font-medium text-gray-600">Supplier</th>
                   <th className="text-left p-4 font-medium text-gray-600">Location</th>
                   <th className="text-left p-4 font-medium text-gray-600">Status</th>
                   <th className="text-left p-4 font-medium text-gray-600">Expected</th>
@@ -306,7 +308,7 @@ export default function PurchaseOrdersPage() {
                     <td className="p-4 text-gray-500">{po.locationName ?? "—"}</td>
                     <td className="p-4"><StatusBadge status={po.status} /></td>
                     <td className="p-4 text-gray-500">{po.expectedDate ?? "—"}</td>
-                    <td className="p-4 text-right font-medium">${po.totalAmount.toFixed(2)}</td>
+                    <td className="p-4 text-right font-medium">{formatCurrency(po.totalAmount)}</td>
                     <td className="p-4">
                       <div className="flex items-center justify-center gap-1">
                         <Button variant="ghost" size="sm" onClick={() => { setViewPo(po); setViewOpen(true) }} title="View">
@@ -354,14 +356,14 @@ export default function PurchaseOrdersPage() {
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>New Purchase Order</DialogTitle>
-            <DialogDescription>Order stock from a vendor</DialogDescription>
+            <DialogDescription>Order stock from a supplier</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Vendor *</Label>
+                <Label>Supplier *</Label>
                 <Select value={vendorId} onValueChange={setVendorId}>
-                  <SelectTrigger className="w-full"><SelectValue placeholder="Select vendor" /></SelectTrigger>
+                  <SelectTrigger className="w-full"><SelectValue placeholder="Select supplier" /></SelectTrigger>
                   <SelectContent>
                     {vendors.map(v => <SelectItem key={v.id} value={String(v.id)}>{v.name}</SelectItem>)}
                   </SelectContent>
@@ -453,7 +455,7 @@ export default function PurchaseOrdersPage() {
                     <tr>
                       <td colSpan={3} className="p-2 text-right font-medium text-gray-600">Total:</td>
                       <td className="p-2 font-bold">
-                        ${formItems.reduce((s, i) => s + i.quantityOrdered * i.unitCost, 0).toFixed(2)}
+                        {formatCurrency(formItems.reduce((s, i) => s + i.quantityOrdered * i.unitCost, 0))}
                       </td>
                       <td></td>
                     </tr>
@@ -484,10 +486,10 @@ export default function PurchaseOrdersPage() {
           {viewPo && (
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4 text-sm">
-                <div><span className="text-gray-500">Vendor:</span> <strong>{viewPo.vendorName}</strong></div>
+                <div><span className="text-gray-500">Supplier:</span> <strong>{viewPo.vendorName}</strong></div>
                 <div><span className="text-gray-500">Location:</span> <strong>{viewPo.locationName ?? "—"}</strong></div>
                 <div><span className="text-gray-500">Expected:</span> <strong>{viewPo.expectedDate ?? "—"}</strong></div>
-                <div><span className="text-gray-500">Total:</span> <strong>${viewPo.totalAmount.toFixed(2)}</strong></div>
+                <div><span className="text-gray-500">Total:</span> <strong>{formatCurrency(viewPo.totalAmount)}</strong></div>
                 {viewPo.notes && <div className="col-span-2"><span className="text-gray-500">Notes:</span> {viewPo.notes}</div>}
               </div>
               <table className="w-full text-sm border rounded-lg overflow-hidden">
@@ -514,8 +516,8 @@ export default function PurchaseOrdersPage() {
                           {item.quantityReceived}
                         </span>
                       </td>
-                      <td className="p-3 text-right">${item.unitCost.toFixed(2)}</td>
-                      <td className="p-3 text-right font-medium">${item.subtotal.toFixed(2)}</td>
+                      <td className="p-3 text-right">{formatCurrency(item.unitCost)}</td>
+                      <td className="p-3 text-right font-medium">{formatCurrency(item.subtotal)}</td>
                     </tr>
                   ))}
                 </tbody>

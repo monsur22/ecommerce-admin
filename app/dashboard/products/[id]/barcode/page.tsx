@@ -346,7 +346,7 @@ export default function ProductBarcodePage() {
               </div>
               <div>
                 <p className="text-xs text-gray-600 uppercase font-semibold">Price</p>
-                <p className="text-lg font-bold text-emerald-600 mt-1">${(product.sale_price ?? product.salePrice ?? product.price ?? 0)?.toFixed(2)}</p>
+                <p className="text-lg font-bold text-emerald-600 mt-1">{formatCurrency(product.sale_price ?? product.salePrice ?? product.price ?? 0)}</p>
               </div>
             </div>
           </div>

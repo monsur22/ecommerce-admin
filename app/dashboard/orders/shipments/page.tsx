@@ -750,7 +750,7 @@ export default function ShipmentsPage() {
                 value={statusUpdateData.status}
                 onValueChange={(v) => setStatusUpdateData({ ...statusUpdateData, status: v as ShipmentStatus })}
               >
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {allowedNextStatuses(editingShipment?.status ?? 'pending').map((s) => (
                     <SelectItem key={s} value={s}>{STATUS_LABELS[s]}</SelectItem>

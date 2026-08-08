@@ -445,7 +445,10 @@ export default function CustomersPage() {
   }
 
   const handleSaveCustomer = async () => {
-    if (!formData.name || !formData.email) return
+    if (!formData.name || !formData.phone) {
+      toast({ variant: "destructive", title: "Error", description: "Full name and phone number are required" })
+      return
+    }
 
     try {
       if (editingCustomer) {
@@ -963,20 +966,20 @@ export default function CustomersPage() {
                     <Input id="name" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder="John Doe" />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="email">Email Address *</Label>
+                    <Label htmlFor="email">Email Address</Label>
                     <Input id="email" type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} placeholder="john@example.com" />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="phone">Phone Number</Label>
+                    <Label htmlFor="phone">Phone Number *</Label>
                     <Input id="phone" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} placeholder="+1 (555) 000-0000" />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="type">Customer Type</Label>
                     <Select value={formData.customerType} onValueChange={(val: "retail" | "wholesale") => setFormData({ ...formData, customerType: val })}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="retail">Retail</SelectItem>
                         <SelectItem value="wholesale">Wholesale</SelectItem>
@@ -1013,7 +1016,7 @@ export default function CustomersPage() {
                   <div className="space-y-2">
                     <Label htmlFor="status">Status</Label>
                     <Select value={formData.status} onValueChange={(val: "active" | "inactive") => setFormData({ ...formData, status: val })}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="active">Active</SelectItem>
                         <SelectItem value="inactive">Inactive</SelectItem>
@@ -1057,7 +1060,7 @@ export default function CustomersPage() {
             <div className="py-4">
                 <Label className="mb-2 block">Select Action</Label>
                 <Select value={bulkAction} onValueChange={setBulkAction}>
-                    <SelectTrigger>
+                    <SelectTrigger className="w-full">
                         <SelectValue placeholder="Choose action..." />
                     </SelectTrigger>
                     <SelectContent>

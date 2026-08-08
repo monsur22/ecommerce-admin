@@ -396,15 +396,28 @@ export default function SerialBatchPage() {
           <div className="space-y-4 py-2">
             <div className="space-y-1">
               <Label>Product <span className="text-red-500">*</span></Label>
-              <Select value={serialForm.productId} onValueChange={v => setSerialForm(f => ({ ...f, productId: v }))}>
-                <SelectTrigger><SelectValue placeholder="Select product..." /></SelectTrigger>
-                <SelectContent>
-                  {products.filter((p: any) => p.trackingType === "serial" || p.tracking_type === "serial").map((p: any) => (
-                    <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-gray-400">Only products with Serial Number tracking enabled are shown.</p>
+              {(() => {
+                const serialProducts = products.filter((p: any) => p.trackingType === "serial" || p.tracking_type === "serial")
+                return (
+                  <>
+                    <Select value={serialForm.productId} onValueChange={v => setSerialForm(f => ({ ...f, productId: v }))} disabled={serialProducts.length === 0}>
+                      <SelectTrigger className="w-full"><SelectValue placeholder="Select product..." /></SelectTrigger>
+                      <SelectContent>
+                        {serialProducts.map((p: any) => (
+                          <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {serialProducts.length === 0 ? (
+                      <p className="text-xs text-amber-600">
+                        No products have Serial tracking enabled. Edit a product and set its tracking type to “Serial” first.
+                      </p>
+                    ) : (
+                      <p className="text-xs text-muted-foreground">Only products with Serial Number tracking enabled are shown.</p>
+                    )}
+                  </>
+                )
+              })()}
             </div>
             <div className="space-y-1">
               <Label>Serial Numbers <span className="text-red-500">*</span></Label>
@@ -448,15 +461,28 @@ export default function SerialBatchPage() {
           <div className="space-y-4 py-2">
             <div className="space-y-1">
               <Label>Product <span className="text-red-500">*</span></Label>
-              <Select value={batchForm.productId} onValueChange={v => setBatchForm(f => ({ ...f, productId: v }))}>
-                <SelectTrigger><SelectValue placeholder="Select product..." /></SelectTrigger>
-                <SelectContent>
-                  {products.filter((p: any) => p.trackingType === "batch" || p.tracking_type === "batch").map((p: any) => (
-                    <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-gray-400">Only products with Batch/Lot tracking enabled are shown.</p>
+              {(() => {
+                const batchProducts = products.filter((p: any) => p.trackingType === "batch" || p.tracking_type === "batch")
+                return (
+                  <>
+                    <Select value={batchForm.productId} onValueChange={v => setBatchForm(f => ({ ...f, productId: v }))} disabled={batchProducts.length === 0}>
+                      <SelectTrigger className="w-full"><SelectValue placeholder="Select product..." /></SelectTrigger>
+                      <SelectContent>
+                        {batchProducts.map((p: any) => (
+                          <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {batchProducts.length === 0 ? (
+                      <p className="text-xs text-amber-600">
+                        No products have Batch/Lot tracking enabled. Edit a product and set its tracking type to “Batch” first.
+                      </p>
+                    ) : (
+                      <p className="text-xs text-muted-foreground">Only products with Batch/Lot tracking enabled are shown.</p>
+                    )}
+                  </>
+                )
+              })()}
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">

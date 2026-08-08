@@ -53,8 +53,10 @@ export interface GeneralSettings {
   storeName: string;
   storeEmail: string;
   storePhone: string;
-  storeAddress: string;
+  /** Deprecated — store address lives in Company Settings now. Kept optional for backend compatibility. */
+  storeAddress?: string;
   storeDescription: string;
+  freeShippingThreshold?: number | null;
   primaryColor?: string;
   accentColor?: string;
   backgroundColor?: string;
@@ -159,7 +161,8 @@ export interface BusinessSettings {
   businessName: string;
   businessType: string;
   registrationNumber?: string;
-  gstNumber: string;
+  /** Deprecated — tax ID lives in Company Settings now. Optional for compatibility. */
+  gstNumber?: string;
   logoUrl?: string;
   bannerUrl?: string;
   website?: string;
@@ -368,7 +371,7 @@ export const settingsApi = {
   },
 
   // Update specific sections
-  updateGeneral: async (data: GeneralSettings): Promise<{ message: string; data: GeneralSettings }> => {
+  updateGeneral: async (data: Partial<GeneralSettings>): Promise<{ message: string; data: GeneralSettings }> => {
     const response = await api.put('/settings/general', data);
     return response.data;
   },

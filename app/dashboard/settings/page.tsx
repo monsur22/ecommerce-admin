@@ -5,9 +5,8 @@ import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
-import { Building2, Mail, Phone, MapPin, Bell, Clock, Upload, Loader2, CreditCard, Copy, Check, ExternalLink } from "lucide-react"
+import { Building2, Bell, Clock, Upload, Loader2, CreditCard, Copy, Check, ExternalLink } from "lucide-react"
 import { settingsApi, type StoreHours, type SSLCommerzConfig, type PortWalletConfig, type StripeConfig, type PayPalConfig, type BkashConfig, type NagadConfig, type CodShippingDepositConfig } from "@/lib/settingsApi"
 import { toast } from "sonner"
 import { useSaasAuth } from "@/contexts/saas-auth-context"
@@ -16,19 +15,10 @@ import { useModuleGuard } from "@/hooks/use-module-guard"
 
 type SavingSection = "general" | "business" | "notifications" | "storeHours" | "logo" | "banner" | "gateways" | null
 
-const DEFAULT_GENERAL_SETTINGS = {
-  storeName: "Dashtar Store",
-  storeEmail: "store@dashtar.com",
-  storePhone: "+1 (555) 123-4567",
-  storeAddress: "123 Business St, New York, NY 10001",
-  storeDescription: "Your one-stop shop for all your electronic and accessory needs.",
-}
-
 const DEFAULT_BUSINESS_SETTINGS = {
   businessName: "Dashtar Store",
   businessType: "Retail",
   registrationNumber: "REG-2026-001",
-  gstNumber: "GST-123456789",
   website: "https://dashtar.com",
   socialLinks: {
     facebook: "https://facebook.com/dashtar",
@@ -75,20 +65,11 @@ export default function SettingsPage() {
   const [savingSection, setSavingSection] = useState<SavingSection>(null)
 
   // General Settings
-  const [storeName, setStoreName] = useState(DEFAULT_GENERAL_SETTINGS.storeName)
-  const [storeEmail, setStoreEmail] = useState(DEFAULT_GENERAL_SETTINGS.storeEmail)
-  const [storePhone, setStorePhone] = useState(DEFAULT_GENERAL_SETTINGS.storePhone)
-  const [storeAddress, setStoreAddress] = useState(DEFAULT_GENERAL_SETTINGS.storeAddress)
-  const [storeDescription, setStoreDescription] = useState(DEFAULT_GENERAL_SETTINGS.storeDescription)
-  const [primaryColor, setPrimaryColor] = useState("#6B1A2A")
-  const [accentColor, setAccentColor] = useState("#B8963E")
-  const [backgroundColor, setBackgroundColor] = useState("#F0EBE3")
 
   // Business Settings
   const [businessName, setBusinessName] = useState(DEFAULT_BUSINESS_SETTINGS.businessName)
   const [businessType, setBusinessType] = useState(DEFAULT_BUSINESS_SETTINGS.businessType)
   const [registrationNumber, setRegistrationNumber] = useState(DEFAULT_BUSINESS_SETTINGS.registrationNumber)
-  const [gstNumber, setGstNumber] = useState(DEFAULT_BUSINESS_SETTINGS.gstNumber)
   const [website, setWebsite] = useState(DEFAULT_BUSINESS_SETTINGS.website)
   const [facebook, setFacebook] = useState(DEFAULT_BUSINESS_SETTINGS.socialLinks.facebook)
   const [instagram, setInstagram] = useState(DEFAULT_BUSINESS_SETTINGS.socialLinks.instagram)
@@ -152,22 +133,11 @@ export default function SettingsPage() {
       const data = res.data
 
       // Load all settings
-      const general = data.general ?? {}
-      setStoreName(general.storeName ?? DEFAULT_GENERAL_SETTINGS.storeName)
-      setStoreEmail(general.storeEmail ?? DEFAULT_GENERAL_SETTINGS.storeEmail)
-      setStorePhone(general.storePhone ?? DEFAULT_GENERAL_SETTINGS.storePhone)
-      setStoreAddress(general.storeAddress ?? DEFAULT_GENERAL_SETTINGS.storeAddress)
-      setStoreDescription(general.storeDescription ?? DEFAULT_GENERAL_SETTINGS.storeDescription)
-      if (general.primaryColor) setPrimaryColor(general.primaryColor)
-      if (general.accentColor) setAccentColor(general.accentColor)
-      if (general.backgroundColor) setBackgroundColor(general.backgroundColor)
-
       const business = data.business ?? {}
       const socialLinks = business.socialLinks ?? {}
       setBusinessName(business.businessName ?? DEFAULT_BUSINESS_SETTINGS.businessName)
       setBusinessType(business.businessType ?? DEFAULT_BUSINESS_SETTINGS.businessType)
       setRegistrationNumber(business.registrationNumber ?? "")
-      setGstNumber(business.gstNumber ?? DEFAULT_BUSINESS_SETTINGS.gstNumber)
       setWebsite(business.website ?? DEFAULT_BUSINESS_SETTINGS.website)
       setFacebook(socialLinks.facebook ?? DEFAULT_BUSINESS_SETTINGS.socialLinks.facebook)
       setInstagram(socialLinks.instagram ?? DEFAULT_BUSINESS_SETTINGS.socialLinks.instagram)
@@ -221,53 +191,6 @@ export default function SettingsPage() {
       toast.error(err?.response?.data?.message || "Failed to load settings")
     } finally {
       setIsLoading(false)
-    }
-  }
-
-  const handleSaveGeneral = async () => {
-    try {
-      setSavingSection("general")
-      await settingsApi.updateGeneral({
-        storeName,
-        storeEmail,
-        storePhone,
-        storeAddress,
-        storeDescription,
-        primaryColor,
-        accentColor,
-        backgroundColor,
-      })
-      toast.success("General settings saved successfully!")
-    } catch (err: any) {
-      toast.error(err?.response?.data?.message || "Failed to save settings")
-    } finally {
-      setSavingSection(null)
-    }
-  }
-
-  const handleSaveBusiness = async () => {
-    try {
-      setSavingSection("business")
-      await settingsApi.updateBusiness({
-        businessName,
-        businessType,
-        registrationNumber,
-        gstNumber,
-        website,
-        socialLinks: { facebook, instagram, twitter },
-        promoBanner: {
-          enabled: promoBannerEnabled,
-          title: promoBannerTitle,
-          subtitle: promoBannerSubtitle,
-          cta: promoBannerCta,
-          link: promoBannerLink,
-        },
-      })
-      toast.success("Business settings saved successfully!")
-    } catch (err: any) {
-      toast.error(err?.response?.data?.message || "Failed to save settings")
-    } finally {
-      setSavingSection(null)
     }
   }
 
@@ -365,15 +288,15 @@ export default function SettingsPage() {
         <p className="text-gray-600 mt-1">Manage your store information, notifications, and operating hours</p>
       </div>
 
-      {/* Business Information */}
+      {/* Logo & Banner */}
       <Card className="p-6">
         <div className="flex items-center gap-3 mb-6">
           <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
             <Building2 className="w-5 h-5 text-blue-600" />
           </div>
           <div>
-            <h2 className="text-xl font-semibold">Business Information</h2>
-            <p className="text-sm text-gray-600">Update your business details and branding</p>
+            <h2 className="text-xl font-semibold">Logo & Banner</h2>
+            <p className="text-sm text-gray-600">Upload your store logo and banner image</p>
           </div>
         </div>
 
@@ -445,283 +368,7 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          {/* Business Details */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="businessName">Business Name</Label>
-              <Input
-                id="businessName"
-                value={businessName}
-                onChange={(e) => setBusinessName(e.target.value)}
-                placeholder="Enter business name"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="businessType">Business Type</Label>
-              <select
-                id="businessType"
-                value={businessType}
-                onChange={(e) => setBusinessType(e.target.value)}
-                className="flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <option value="Retail">Retail</option>
-                <option value="Wholesale">Wholesale</option>
-                <option value="B2B">B2B</option>
-                <option value="Service">Service</option>
-              </select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="registrationNumber">Registration Number</Label>
-              <Input
-                id="registrationNumber"
-                value={registrationNumber}
-                onChange={(e) => setRegistrationNumber(e.target.value)}
-                placeholder="Business registration number"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="gstNumber">GST/Tax ID</Label>
-              <Input
-                id="gstNumber"
-                value={gstNumber}
-                onChange={(e) => setGstNumber(e.target.value)}
-                placeholder="GST or Tax identification number"
-              />
-            </div>
-
-            <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="website">Website</Label>
-              <Input
-                id="website"
-                type="url"
-                value={website}
-                onChange={(e) => setWebsite(e.target.value)}
-                placeholder="https://yoursite.com"
-              />
-            </div>
-          </div>
-
-          {/* Social Links */}
-          <div className="pt-4 border-t">
-            <p className="font-medium text-sm mb-4">Social Media Links</p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="facebook">Facebook</Label>
-                <Input
-                  id="facebook"
-                  type="url"
-                  value={facebook}
-                  onChange={(e) => setFacebook(e.target.value)}
-                  placeholder="https://facebook.com/..."
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="instagram">Instagram</Label>
-                <Input
-                  id="instagram"
-                  type="url"
-                  value={instagram}
-                  onChange={(e) => setInstagram(e.target.value)}
-                  placeholder="https://instagram.com/..."
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="twitter">Twitter</Label>
-                <Input
-                  id="twitter"
-                  type="url"
-                  value={twitter}
-                  onChange={(e) => setTwitter(e.target.value)}
-                  placeholder="https://twitter.com/..."
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Promo Banner */}
-          <div className="space-y-4 pt-4 border-t">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-semibold text-sm">Promo Banner</h3>
-                <p className="text-xs text-gray-500">Shown on homepage between hero and products</p>
-              </div>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <span className="text-xs text-gray-600">{promoBannerEnabled ? "Enabled" : "Disabled"}</span>
-                <button
-                  type="button"
-                  onClick={() => setPromoBannerEnabled(!promoBannerEnabled)}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${promoBannerEnabled ? "bg-blue-600" : "bg-gray-300"}`}
-                >
-                  <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${promoBannerEnabled ? "translate-x-6" : "translate-x-1"}`} />
-                </button>
-              </label>
-            </div>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="space-y-1 sm:col-span-2">
-                <Label>Banner Title</Label>
-                <Input value={promoBannerTitle} onChange={(e) => setPromoBannerTitle(e.target.value)} placeholder="Flash Sale — Up to 60% Off Everything" />
-              </div>
-              <div className="space-y-1 sm:col-span-2">
-                <Label>Subtitle</Label>
-                <Input value={promoBannerSubtitle} onChange={(e) => setPromoBannerSubtitle(e.target.value)} placeholder="Limited time offer on thousands of products." />
-              </div>
-              <div className="space-y-1">
-                <Label>CTA Button Text</Label>
-                <Input value={promoBannerCta} onChange={(e) => setPromoBannerCta(e.target.value)} placeholder="Shop the Sale" />
-              </div>
-              <div className="space-y-1">
-                <Label>CTA Link</Label>
-                <Input value={promoBannerLink} onChange={(e) => setPromoBannerLink(e.target.value)} placeholder="/shop" />
-              </div>
-            </div>
-          </div>
-
-          <div className="flex justify-end pt-4">
-            <Button
-              onClick={handleSaveBusiness}
-              disabled={savingSection === "business"}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              {savingSection === "business" ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                "Save Changes"
-              )}
-            </Button>
-          </div>
-        </div>
-      </Card>
-
-      {/* General Settings */}
-      <Card className="p-6">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 bg-emerald-50 rounded-lg flex items-center justify-center">
-            <Building2 className="w-5 h-5 text-emerald-600" />
-          </div>
-          <div>
-            <h2 className="text-xl font-semibold">General Settings</h2>
-            <p className="text-sm text-gray-600">Update your store information</p>
-          </div>
-        </div>
-
-        <div className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="storeName">Store Name</Label>
-              <Input id="storeName" value={storeName} onChange={(e) => setStoreName(e.target.value)} />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="storeEmail">Store Email</Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <Input
-                  id="storeEmail"
-                  type="email"
-                  value={storeEmail}
-                  onChange={(e) => setStoreEmail(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="storePhone">Store Phone</Label>
-              <div className="relative">
-                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <Input
-                  id="storePhone"
-                  value={storePhone}
-                  onChange={(e) => setStorePhone(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="storeAddress">Store Address</Label>
-              <div className="relative">
-                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <Input
-                  id="storeAddress"
-                  value={storeAddress}
-                  onChange={(e) => setStoreAddress(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="storeDescription">Store Description</Label>
-            <Textarea
-              id="storeDescription"
-              value={storeDescription}
-              onChange={(e) => setStoreDescription(e.target.value)}
-              rows={3}
-            />
-          </div>
-
-          {/* Brand Colors */}
-          <div className="space-y-3">
-            <Label className="text-sm font-semibold">Brand Colors</Label>
-            <p className="text-xs text-gray-500">These colors are applied to the storefront automatically.</p>
-            <div className="grid grid-cols-3 gap-4">
-              {[
-                { label: "Primary Color", value: primaryColor, setter: setPrimaryColor },
-                { label: "Accent Color", value: accentColor, setter: setAccentColor },
-                { label: "Background Color", value: backgroundColor, setter: setBackgroundColor },
-              ].map(({ label, value, setter }) => (
-                <div key={label} className="flex flex-col gap-1.5">
-                  <label className="text-xs text-gray-600">{label}</label>
-                  <div className="flex items-center gap-2 border rounded-lg px-2 py-1.5">
-                    <input
-                      type="color"
-                      value={value}
-                      onChange={(e) => setter(e.target.value)}
-                      className="w-8 h-8 rounded cursor-pointer border-0 p-0 bg-transparent shrink-0"
-                    />
-                    <input
-                      type="text"
-                      value={value}
-                      onChange={(e) => {
-                        const v = e.target.value
-                        if (/^#[0-9A-Fa-f]{0,6}$/.test(v)) setter(v)
-                      }}
-                      maxLength={7}
-                      className="w-full text-xs font-mono uppercase bg-transparent outline-none text-gray-700"
-                      placeholder="#000000"
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="flex justify-end">
-            <Button
-              onClick={handleSaveGeneral}
-              disabled={savingSection === "general"}
-              className="bg-emerald-600 hover:bg-emerald-700"
-            >
-              {savingSection === "general" ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                "Save Changes"
-              )}
-            </Button>
-          </div>
+          <p className="text-xs text-gray-500 pt-2">Logo and banner are saved automatically when uploaded.</p>
         </div>
       </Card>
 

@@ -649,7 +649,7 @@ export default function SellsPage() {
                                         <td className="py-3 px-4 text-sm text-gray-600">{sell.orderTime}</td>
                                         <td className="py-3 px-4 text-sm text-gray-900">{sell.customerName}</td>
                                         <td className="py-3 px-4 text-sm text-gray-900">{sell.method}</td>
-                                        <td className="py-3 px-4 text-sm font-semibold text-gray-900">${sell.amount.toFixed(2)}</td>
+                                        <td className="py-3 px-4 text-sm font-semibold text-gray-900">{formatCurrency(sell.amount)}</td>
                                         <td className="py-3 px-4">
                                             <StatusBadge status={sell.status} />
                                         </td>

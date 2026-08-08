@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -313,6 +314,15 @@ export default function TeamUsersPage() {
                     </option>
                   ))}
                 </select>
+                {staffRoles.length === 0 && (
+                  <p className="text-xs text-amber-600 mt-1.5">
+                    No roles yet.{" "}
+                    <Link href="/dashboard/staff/roles" className="underline font-medium">
+                      Create a role
+                    </Link>{" "}
+                    first, then invite the member.
+                  </p>
+                )}
               </div>
 
               <div className="flex gap-3 pt-4">

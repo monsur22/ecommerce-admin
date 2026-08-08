@@ -102,6 +102,7 @@ export interface CustomerReturnListResponse {
 
 export interface CreateCustomerReturnData {
   customerId?: number;
+  customerName?: string;
   sellId?: number;
   orderNumber?: string;
   refundMethod?: string;

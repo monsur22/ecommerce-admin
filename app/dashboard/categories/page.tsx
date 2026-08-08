@@ -523,7 +523,7 @@ export default function CategoriesPage() {
             <div className="space-y-2">
               <Label>Action Type</Label>
               <Select value={bulkAction} onValueChange={setBulkAction}>
-                <SelectTrigger>
+                <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select action" />
                 </SelectTrigger>
                 <SelectContent>

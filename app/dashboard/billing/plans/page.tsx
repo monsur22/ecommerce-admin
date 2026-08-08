@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { saasBillingApi, type Plan, type UpdatePlanPayload } from "@/lib/saasBillingApi"
 import { useSaasAuth } from "@/contexts/saas-auth-context"
+import { useCompanySettings } from "@/contexts/company-settings-context"
 import { AccessDenied } from "@/components/ui/access-denied"
 import { useModuleGuard } from "@/hooks/use-module-guard"
 import { AlertCircle, Loader, Check, Zap, ChevronDown, ChevronUp, X } from "lucide-react"
@@ -22,6 +23,7 @@ import { useToast } from "@/hooks/use-toast"
 export default function PlansPage() {
   const router = useRouter()
   const { company, canRead } = useSaasAuth()
+  const { formatCurrency } = useCompanySettings()
   const { toast } = useToast()
 
   const [plans, setPlans] = useState<Plan[]>([])
@@ -168,7 +170,7 @@ export default function PlansPage() {
                 <div className="bg-emerald-50 border border-emerald-200 rounded-lg px-6 py-4">
                   <p className="text-emerald-900 font-semibold mb-1">✓ Active Subscription</p>
                   <p className="text-emerald-700 text-sm">
-                    Current Plan: <span className="font-semibold">{company.planName || plans.find(p => p.id === currentPlanId)?.name || "Professional"}</span>
+                    Current Plan: <span className="font-semibold">{company.planName || plans.find(p => p.id === currentPlanId)?.name || "No active plan"}</span>
                   </p>
                 </div>
               )}
@@ -195,7 +197,7 @@ export default function PlansPage() {
               const isPopular = plan.isFeatured || false
               const planNameMatch = company?.planName?.toLowerCase().trim() === plan.name?.toLowerCase().trim()
               const isCurrent = currentPlanId === plan.id || planNameMatch
-              const formattedPrice = (plan.price / 100).toFixed(2)
+              const formattedPrice = formatCurrency(plan.price / 100)
               const isExpanded = expandedPlans.has(plan.id)
               const visibleFeatures = isExpanded ? plan.features : plan.features.slice(0, 5)
 
@@ -247,7 +249,7 @@ export default function PlansPage() {
                       <div className="mb-8">
                         {plan.price > 0 ? (
                           <div className="flex items-baseline gap-1">
-                            <span className="text-4xl sm:text-5xl font-bold text-gray-900">${formattedPrice}</span>
+                            <span className="text-4xl sm:text-5xl font-bold text-gray-900">{formattedPrice}</span>
                             <span className="text-gray-600 text-base sm:text-lg">/month</span>
                           </div>
                         ) : (

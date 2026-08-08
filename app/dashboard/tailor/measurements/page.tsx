@@ -294,7 +294,7 @@ export default function TailorMeasurementsPage() {
               <div className="col-span-2">
                 <Label className="text-xs text-gray-600 mb-1 block">Product Type *</Label>
                 <Select value={form.product_type} onValueChange={v => setField("product_type", v)}>
-                  <SelectTrigger><SelectValue placeholder="Select type..." /></SelectTrigger>
+                  <SelectTrigger className="w-full"><SelectValue placeholder="Select type..." /></SelectTrigger>
                   <SelectContent>
                     {PRODUCT_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
                   </SelectContent>

@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card"
 import { barcodeApi, type ProductWithBarcode } from "@/lib/barcodeApi"
 import { AlertCircle, Loader, Search, X } from "lucide-react"
 import { toast } from "sonner"
+import { useCompanySettings } from "@/contexts/company-settings-context"
 
 interface BarcodeScannerProps {
   onProductFound?: (product: ProductWithBarcode) => void
@@ -30,6 +31,7 @@ export default function BarcodeScanner({
   onError,
   autoFocus = true,
 }: BarcodeScannerProps) {
+  const { formatCurrency } = useCompanySettings()
   const [barcodeInput, setBarcodeInput] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
@@ -221,7 +223,7 @@ export default function BarcodeScanner({
               <div>
                 <p className="text-xs text-gray-600 font-semibold">Sale Price</p>
                 <p className="text-sm font-medium text-green-700">
-                  ${foundProduct.sale_price.toFixed(2)}
+                  {formatCurrency(foundProduct.sale_price)}
                 </p>
               </div>
             </div>
