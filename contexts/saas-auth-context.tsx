@@ -132,8 +132,12 @@ export function SaasAuthProvider({ children }: { children: React.ReactNode }) {
       localStorage.setItem("user_role", response.data.userRole)
       localStorage.setItem("userRole", response.data.userRole)
       localStorage.setItem("userEmail", response.data.userEmail ?? response.data.email ?? "")
-      // Set cookies for Next.js middleware
-      document.cookie = `token=${response.data.token}; path=/; max-age=86400; SameSite=Lax`
+      // Cookies for the Next.js middleware ONLY. It checks token *presence* and
+      // reads the role — it never needs the JWT itself (that lives in
+      // localStorage for the Authorization header). Storing a 1-byte marker
+      // instead of the full JWT keeps the cookie jar small and avoids upstream
+      // 431 "Request Header Fields Too Large".
+      document.cookie = `token=1; path=/; max-age=86400; SameSite=Lax`
       document.cookie = `user_role=${response.data.userRole}; path=/; max-age=86400; SameSite=Lax`
 
       // Super admin goes straight to platform, skip getCurrentUser (no company)

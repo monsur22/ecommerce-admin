@@ -60,7 +60,7 @@ export default function LoginPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
             </svg>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">Dashtar Admin</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Inventory Admin</h1>
           <p className="text-sm text-gray-600 mt-2">Sign in to your account</p>
         </div>
 

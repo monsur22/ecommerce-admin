@@ -17,19 +17,26 @@ export default function SalaryManagementPage() {
     const { canRead } = useSaasAuth()
     const { staff, salaryPayments, isLoading, salaryPaymentsLoading, addSalaryPayment, updateSalaryPayment, deleteSalaryPayment } = useStaff()
     const { formatCurrency } = useCompanySettings()
+    // Month is stored/sent as YYYY-MM (the format the backend validates), and
+    // shown to the user as "Jul 2026" via labelForMonth below.
     const [selectedMonth, setSelectedMonth] = useState(() => {
         const now = new Date()
-        return `${now.toLocaleString('en-US', { month: 'short' })} ${now.getFullYear()}`
+        return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
     })
 
     const blocked = useModuleGuard('Salary Management')
   if (blocked) return blocked
 
-    // Generate month options (last 12 months)
+    const labelForMonth = (value: string) => {
+        const [y, m] = value.split('-').map(Number)
+        return new Date(y, (m || 1) - 1, 1).toLocaleString('en-US', { month: 'short', year: 'numeric' })
+    }
+
+    // Generate month options (last 12 months) as YYYY-MM values.
     const monthOptions = Array.from({ length: 12 }, (_, i) => {
         const now = new Date()
         const date = new Date(now.getFullYear(), now.getMonth() - i, 1)
-        return `${date.toLocaleString('en-US', { month: 'short' })} ${date.getFullYear()}`
+        return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
     })
 
     // Get payments for selected month
@@ -108,7 +115,7 @@ export default function SalaryManagementPage() {
                     >
                         {monthOptions.map((month) => (
                             <option key={month} value={month}>
-                                {month}
+                                {labelForMonth(month)}
                             </option>
                         ))}
                     </select>
@@ -156,7 +163,7 @@ export default function SalaryManagementPage() {
 
             {/* Staff Salary List */}
             <Card className="p-6">
-                <h2 className="text-lg font-semibold mb-4">Staff Salaries for {selectedMonth}</h2>
+                <h2 className="text-lg font-semibold mb-4">Staff Salaries for {labelForMonth(selectedMonth)}</h2>
                 <div className="overflow-x-auto">
                     <table className="w-full">
                         <thead className="bg-gray-50 border-b">
