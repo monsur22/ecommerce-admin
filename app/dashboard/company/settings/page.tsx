@@ -9,9 +9,10 @@ import { saasCompanyApi, type CompanyProfile, type CompanySettings } from "@/lib
 import { useSaasAuth } from "@/contexts/saas-auth-context"
 import { AccessDenied } from "@/components/ui/access-denied"
 import { useModuleGuard } from "@/hooks/use-module-guard"
-import { AlertCircle, Loader, Save, Building2, Globe, DollarSign, Clock, Palette } from "lucide-react"
+import { AlertCircle, Loader, Save, Building2, Globe, DollarSign, Clock, Palette, CreditCard } from "lucide-react"
 import { AccentPicker } from "@/components/accent-picker"
 import { StorefrontBrandColors } from "@/components/storefront-brand-colors"
+import { BillingContactForm } from "@/components/billing-contact-form"
 
 export default function CompanySettingsPage() {
   const router = useRouter()
@@ -604,6 +605,18 @@ export default function CompanySettingsPage() {
             )}
           </Button>
         </div>
+      </Card>
+
+      {/* Billing Contact */}
+      <Card className="p-8">
+        <div className="flex items-center gap-3 mb-6">
+          <CreditCard className="w-5 h-5 text-brand-fg" />
+          <div>
+            <h2 className="text-xl font-bold text-foreground">Billing Contact</h2>
+            <p className="text-sm text-muted-foreground">Billing address and tax info for invoices and payments</p>
+          </div>
+        </div>
+        <BillingContactForm />
       </Card>
     </div>
   )

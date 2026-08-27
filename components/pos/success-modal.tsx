@@ -61,20 +61,27 @@ export function SuccessModal({ open, onOpenChange, onClose, orderDetails, format
     if (!orderDetails) return
     const printWindow = window.open('', '_blank', 'height=600,width=800')
     if (!printWindow) { alert("Please allow popups to print the invoice."); return }
-    const html = `<html><head><title>Receipt</title><style>
-      @page{size:80mm auto;margin:4mm 0}
+    const html = `<html><head><title>Receipt</title><meta name="viewport" content="width=80mm"><style>
+      /* 80mm thermal roll. size:80mm auto keeps the sheet as tall as the
+         content (no blank A4 page). Real thermal printers honour this; if a
+         browser preview still shows A4, pick the 80mm/Roll paper in the dialog. */
+      @page{size:80mm auto;margin:0}
       *{box-sizing:border-box}
-      body{font-family:'Courier New',monospace;width:80mm;max-width:80mm;margin:0 auto;padding:4mm 5mm;color:#000;font-size:11px;line-height:1.4}
-      .header{text-align:center;margin-bottom:8px;border-bottom:1px dashed #000;padding-bottom:8px}
-      .store-name{font-size:15px;font-weight:bold;text-transform:uppercase;letter-spacing:1px;margin-bottom:3px}
-      .meta{font-size:9px;margin-top:2px}
-      .divider{border:none;border-top:1px dashed #000;margin:6px 0}
-      .item-row{display:flex;justify-content:space-between;margin-bottom:2px;font-size:10px}
-      .item-name{font-weight:bold;font-size:11px;margin-bottom:1px}
-      .summary-row{display:flex;justify-content:space-between;margin-bottom:2px;font-size:10px}
-      .total-row{display:flex;justify-content:space-between;font-size:13px;font-weight:bold;margin-top:6px;border-top:1px dashed #000;padding-top:6px}
-      .footer{text-align:center;margin-top:10px;font-size:9px;border-top:1px dashed #000;padding-top:6px}
-      @media print{@page{size:80mm auto;margin:4mm 0}body{width:80mm}}
+      html,body{width:80mm;margin:0;padding:0;background:#fff}
+      body{font-family:'Courier New',ui-monospace,monospace;padding:3mm 4mm;color:#000;font-size:11px;line-height:1.35}
+      .header{text-align:center;margin-bottom:6px;border-bottom:1px dashed #000;padding-bottom:6px}
+      .store-name{font-size:14px;font-weight:bold;text-transform:uppercase;letter-spacing:1px;margin-bottom:2px}
+      .meta{font-size:9px;margin-top:1px}
+      .divider{border:none;border-top:1px dashed #000;margin:5px 0}
+      .item-row{display:flex;justify-content:space-between;gap:6px;margin-bottom:1px;font-size:10px}
+      .item-name{font-weight:bold;font-size:11px;margin-bottom:1px;word-break:break-word}
+      .summary-row{display:flex;justify-content:space-between;margin-bottom:1px;font-size:10px}
+      .total-row{display:flex;justify-content:space-between;font-size:13px;font-weight:bold;margin-top:5px;border-top:1px dashed #000;padding-top:5px}
+      .footer{text-align:center;margin-top:8px;font-size:9px;border-top:1px dashed #000;padding-top:5px}
+      @media print{
+        html,body{width:80mm}
+        body{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+      }
     </style></head><body>
       <div class="header">
         <div class="store-name">${storeInfo.storeName || "Store"}</div>

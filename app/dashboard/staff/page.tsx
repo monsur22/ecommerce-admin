@@ -22,6 +22,15 @@ import { useModuleGuard } from "@/hooks/use-module-guard"
 import saasCompanyApi, { type PlanLimits } from "@/lib/saasCompanyApi"
 import { UpgradeRequiredModal } from "@/components/UpgradeRequiredModal"
 
+// Coerce any stored joining-date string (ISO, or "5 Jul 2026") to the
+// YYYY-MM-DD a <input type="date"> needs; empty if unparseable.
+function toDateInput(value?: string): string {
+  if (!value) return ""
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value
+  const d = new Date(value)
+  return isNaN(d.getTime()) ? "" : d.toISOString().split("T")[0]
+}
+
 export default function StaffPage() {
   const { canRead } = useSaasAuth()
   const { staff, roles, isLoading, addStaff, updateStaff, deleteStaff } = useStaff()
@@ -124,7 +133,7 @@ export default function StaffPage() {
       name: formData.get("name") as string,
       email: formData.get("email") as string,
       contact: formData.get("contact") as string,
-      joiningDate: new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }),
+      joiningDate: (formData.get("joiningDate") as string) || new Date().toISOString().split("T")[0],
       role: formData.get("role") as string,
       staffRoleId: formData.get("staffRoleId") ? parseInt(formData.get("staffRoleId") as string) : null,
       status: "Active",
@@ -257,7 +266,7 @@ export default function StaffPage() {
               <tr>
                 <th className="text-left py-3 px-4 text-xs font-semibold text-gray-700 uppercase tracking-wider">Name</th>
                 <th className="text-left py-3 px-4 text-xs font-semibold text-gray-700 uppercase tracking-wider">Email</th>
-                <th className="text-left py-3 px-4 text-xs font-semibold text-gray-700 uppercase tracking-wider">Contact</th>
+                <th className="text-left py-3 px-4 text-xs font-semibold text-gray-700 uppercase tracking-wider">Contact Number</th>
                 <th className="text-left py-3 px-4 text-xs font-semibold text-gray-700 uppercase tracking-wider">Joining Date</th>
                 <th className="text-left py-3 px-4 text-xs font-semibold text-gray-700 uppercase tracking-wider">Role</th>
                 <th className="text-left py-3 px-4 text-xs font-semibold text-gray-700 uppercase tracking-wider">Salary</th>
@@ -402,7 +411,7 @@ export default function StaffPage() {
                   <p className="font-medium">{selectedStaff.email}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-500">Contact</p>
+                  <p className="text-sm text-gray-500">Contact Number</p>
                   <p className="font-medium">{selectedStaff.contact}</p>
                 </div>
                 <div>
@@ -445,10 +454,18 @@ export default function StaffPage() {
                 />
               </div>
               <div>
-                <Label>Contact</Label>
+                <Label>Contact Number</Label>
                 <Input
                   value={editFormData.contact}
                   onChange={(e) => setEditFormData({ ...editFormData, contact: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label>Joining Date</Label>
+                <Input
+                  type="date"
+                  value={toDateInput(editFormData.joiningDate)}
+                  onChange={(e) => setEditFormData({ ...editFormData, joiningDate: e.target.value })}
                 />
               </div>
               <div>
@@ -524,8 +541,12 @@ export default function StaffPage() {
               <Input name="password" type="password" placeholder="Leave blank to use default (ChangeMe123)" />
             </div>
             <div>
-              <Label>Contact</Label>
+              <Label>Contact Number</Label>
               <Input name="contact" required />
+            </div>
+            <div>
+              <Label>Joining Date</Label>
+              <Input name="joiningDate" type="date" defaultValue={new Date().toISOString().split("T")[0]} />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>

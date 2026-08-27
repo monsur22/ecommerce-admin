@@ -9,6 +9,7 @@ export interface Product {
     description: string
     category: string        // display name
     categoryId?: string     // backend id
+    unitId?: string
     price: number
     salePrice: number
     offerPrice?: number | null
@@ -111,6 +112,7 @@ function convertToProduct(p: ProductResponse): Product {
         description: p.description || "",
         category: categoryName,
         categoryId,
+        unitId: (p as any).unitId ? String((p as any).unitId) : undefined,
         price: p.price,
         salePrice: p.salePrice ?? p.sale_price,
         offerPrice: (p as any).offerPrice ?? (p as any).offer_price ?? undefined,
@@ -234,6 +236,7 @@ export function ProductProvider({ children }: { children: React.ReactNode }) {
                 name: product.name,
                 description: product.description,
                 category_id: parseInt(product.categoryId),
+                unit_id: product.unitId ? parseInt(product.unitId) : undefined,
                 location_id: parseInt(product.locationId),
                 price: product.price,
                 sale_price: product.salePrice,
@@ -291,6 +294,7 @@ export function ProductProvider({ children }: { children: React.ReactNode }) {
                 name: product.name,
                 description: product.description,
                 category_id: product.categoryId ? parseInt(product.categoryId) : undefined,
+                unit_id: product.unitId ? parseInt(product.unitId) : undefined,
                 location_id: product.locationId ? parseInt(product.locationId) : undefined,
                 price: product.price,
                 sale_price: product.salePrice,

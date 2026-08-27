@@ -32,6 +32,7 @@ import { useCompanySettings } from "@/contexts/company-settings-context"
 import { useSaasAuth } from "@/contexts/saas-auth-context"
 import { AccessDenied } from "@/components/ui/access-denied"
 import { useModuleGuard } from "@/hooks/use-module-guard"
+import { useSidebar } from "@/components/ui/sidebar"
 
 interface CartItem {
     id: string
@@ -51,6 +52,15 @@ export default function PosPage() {
     const { getAllCategoriesFlat } = useCategory()
     const { getCustomerById } = useCustomer()
     const { taxRate, formatCurrency, formatTaxLabel } = useCompanySettings()
+    const { open: sidebarOpen, setOpen: setSidebarOpen } = useSidebar()
+
+    // Collapse the sidebar on POS for more product/cart room; restore on leave.
+    useEffect(() => {
+        const wasOpen = sidebarOpen
+        setSidebarOpen(false)
+        return () => setSidebarOpen(wasOpen)
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
 
     const [searchQuery, setSearchQuery] = useState("")
     const [selectedCategory, setSelectedCategory] = useState("all")
@@ -518,7 +528,7 @@ export default function PosPage() {
                                         })}
                                     </div>
                                 ) : (
-                                    <div className={cn("grid gap-3 pb-4", viewMode === "2col" ? "grid-cols-2" : "grid-cols-2 md:grid-cols-3 xl:grid-cols-4")}>
+                                    <div className={cn("grid gap-2.5 pb-4", viewMode === "2col" ? "grid-cols-2" : "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5")}>
                                         {filteredProducts.map(product => (
                                             <PosProductCard
                                                 key={product.id}

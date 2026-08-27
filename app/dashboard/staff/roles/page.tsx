@@ -220,7 +220,7 @@ export default function RolesPage() {
 
             {/* Add/Edit Role Dialog */}
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                <DialogContent className="max-w-4xl sm:max-w-4xl max-h-[80vh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle>{editingRole ? "Edit Role" : "Add Role"}</DialogTitle>
                     </DialogHeader>

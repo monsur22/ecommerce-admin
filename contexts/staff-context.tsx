@@ -7,6 +7,7 @@ export const PERMISSION_MODULES = [
     "Dashboard",
     "Products",
     "Categories",
+    "Units",
     "Attributes",
     "Coupons",
     "Print Barcode",

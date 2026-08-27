@@ -353,7 +353,7 @@ export default function PurchaseOrdersPage() {
 
       {/* Create Dialog */}
       <Dialog open={createOpen} onOpenChange={open => { if (!open) resetCreate(); setCreateOpen(open) }}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl sm:max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>New Purchase Order</DialogTitle>
             <DialogDescription>Order stock from a supplier</DialogDescription>
@@ -476,7 +476,7 @@ export default function PurchaseOrdersPage() {
 
       {/* View Dialog */}
       <Dialog open={viewOpen} onOpenChange={setViewOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl sm:max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{viewPo?.poNumber}</DialogTitle>
             <DialogDescription>
