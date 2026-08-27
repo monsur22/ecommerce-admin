@@ -111,6 +111,8 @@ export interface ProductResponse {
   description: string;
   category: string | ProductCategoryResponse;
   categoryId?: number;
+  unitId?: number;
+  unitName?: string;
   categoryName?: string;
   location_id?: number;
   location?: ProductLocationResponse;
@@ -204,6 +206,7 @@ export interface CreateProductData {
   name: string;
   description?: string;
   category_id: number;
+  unit_id?: number;
   location_id: number;
   price: number;
   sale_price: number;
@@ -254,6 +257,7 @@ function buildFormData(data: CreateProductData | UpdateProductData): FormData {
   if (data.name !== undefined) fd.append('name', data.name);
   if (data.description !== undefined) fd.append('description', data.description);
   if (data.category_id !== undefined) fd.append('category_id', String(data.category_id));
+  if (data.unit_id !== undefined) fd.append('unit_id', String(data.unit_id));
   if (data.vendor_id !== undefined && !isNaN(data.vendor_id)) fd.append('vendor_id', String(data.vendor_id));
   if (data.location_id !== undefined) fd.append('location_id', String(data.location_id));
   if (data.price !== undefined) fd.append('price', String(data.price));

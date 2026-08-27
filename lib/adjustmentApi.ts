@@ -1,0 +1,102 @@
+/**
+ * Stock Adjustment API Service
+ * Proxied through the Next.js API route (same pattern as transferApi).
+ */
+
+import axios from 'axios';
+import { getCompanyId } from './utils/apiInterceptor';
+
+const API_URL = '/api/proxy';
+
+const api = axios.create({
+  baseURL: API_URL,
+  headers: { 'Content-Type': 'application/json' },
+  withCredentials: true,
+});
+
+api.interceptors.request.use(
+  (config) => {
+    if (typeof window !== 'undefined') {
+      const token = localStorage.getItem('token');
+      if (token) config.headers.Authorization = `Bearer ${token}`;
+      const companyId = getCompanyId();
+      if (companyId) {
+        if (!config.params) config.params = {};
+        config.params.company_id = companyId;
+      }
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401 && typeof window !== 'undefined') {
+      localStorage.removeItem('token');
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
+
+export type AdjustmentType = 'increase' | 'decrease' | 'set';
+
+export interface CreateAdjustmentData {
+  productId: number;
+  variantId?: number | null;
+  locationId: number;
+  type: AdjustmentType;
+  quantity: number;
+  reason: string;
+}
+
+export interface AdjustmentResult {
+  id: number;
+  productId: number;
+  productName: string;
+  variantId: number | null;
+  locationId: number;
+  type: AdjustmentType;
+  quantity: number;
+  delta: number;
+  before: number;
+  after: number;
+  reason: string;
+}
+
+export interface AdjustmentRow {
+  id: number;
+  productId: number;
+  productName: string;
+  variantId: number | null;
+  variantName: string | null;
+  locationId: number;
+  locationName: string | null;
+  quantity: number; // signed delta
+  notes: string | null;
+  createdBy: number | null;
+  createdAt: string | null;
+}
+
+export interface AdjustmentListResponse {
+  success: boolean;
+  message: string;
+  data: AdjustmentRow[];
+  meta?: { total: number; per_page: number; current_page: number; last_page: number };
+}
+
+export const adjustmentApi = {
+  getAll: async (): Promise<AdjustmentListResponse> => {
+    const response = await api.get('/adjustments');
+    return response.data;
+  },
+
+  create: async (data: CreateAdjustmentData): Promise<{ message: string; data: AdjustmentResult }> => {
+    const response = await api.post('/adjustments', data);
+    return response.data;
+  },
+};
+
+export default adjustmentApi;

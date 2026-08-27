@@ -21,7 +21,7 @@ export function PosProductCard({ product, onAddToCart, large }: PosProductCardPr
             onClick={() => !isOutOfStock && onAddToCart(product)}
         >
             <div
-                className={`relative w-full overflow-hidden bg-gradient-to-b from-muted/80 to-card ${large ? 'h-[160px]' : 'h-[110px]'}`}
+                className={`relative w-full overflow-hidden bg-gradient-to-b from-muted/80 to-card ${large ? 'h-[160px]' : 'h-[92px]'}`}
             >
                 {/* Soft radial glow behind the product (mockup) */}
                 <div
@@ -32,7 +32,7 @@ export function PosProductCard({ product, onAddToCart, large }: PosProductCardPr
                 <img
                     src={product.image || "/placeholder.svg"}
                     alt={product.name}
-                    className={`relative w-full h-full object-contain p-3 drop-shadow-md transition-transform duration-300 group-hover:scale-110 ${isOutOfStock ? 'grayscale' : ''}`}
+                    className={`relative w-full h-full object-contain ${large ? 'p-3' : 'p-2'} drop-shadow-md transition-transform duration-300 group-hover:scale-110 ${isOutOfStock ? 'grayscale' : ''}`}
                 />
                 {/* Stock pill (mockup) */}
                 {!isOutOfStock && (
@@ -42,7 +42,7 @@ export function PosProductCard({ product, onAddToCart, large }: PosProductCardPr
                             : 'bg-money-soft text-money-fg'
                     }`}>
                         <span className={`size-1.5 rounded-full ${product.stock <= 10 ? 'bg-amber-500' : 'bg-money'}`} />
-                        {product.stock <= 10 ? `Low · ${product.stock}` : 'In stock'}
+                        {product.stock <= 10 ? `Low · ${product.stock}` : `In stock · ${product.stock}`}
                     </span>
                 )}
                 {/* Category tag (mockup) */}
@@ -59,7 +59,7 @@ export function PosProductCard({ product, onAddToCart, large }: PosProductCardPr
                     </div>
                 )}
             </div>
-            <div className={`flex flex-col flex-1 gap-1.5 ${large ? 'p-3' : 'p-2.5'}`}>
+            <div className={`flex flex-col flex-1 gap-1 ${large ? 'p-3' : 'p-2'}`}>
                 <h3 className={`font-medium text-foreground leading-snug line-clamp-2 ${large ? 'text-sm' : 'text-xs'}`} title={product.name}>
                     {product.name}
                 </h3>
@@ -72,8 +72,8 @@ export function PosProductCard({ product, onAddToCart, large }: PosProductCardPr
                             {formatCurrency(product.salePrice || product.price || 0)}
                             <span className="text-[11px] font-normal text-muted-foreground"> /unit</span>
                         </p>
-                        <div className="size-9 rounded-xl bg-brand text-brand-foreground flex items-center justify-center shadow-md shadow-brand/30 transition-transform group-hover:scale-110 active:scale-90">
-                            <Plus className="size-[18px]" />
+                        <div className={`${large ? 'size-9' : 'size-7'} rounded-lg bg-brand text-brand-foreground flex items-center justify-center shadow-sm shadow-brand/30 transition-transform group-hover:scale-110 active:scale-90`}>
+                            <Plus className={large ? 'size-[18px]' : 'size-4'} />
                         </div>
                     </div>
                 </div>

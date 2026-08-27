@@ -270,6 +270,8 @@ export function SaasAuthProvider({ children }: { children: React.ReactNode }) {
 
   // Returns true if module is included in the company's current plan
   const isPlanModule = (module: string): boolean => {
+    // Owner always sees every module, regardless of the plan's module list.
+    if (user?.role === "owner") return true
     const modules = company?.planModules
     // No modules array = no plan assigned yet (trial with no plan) → allow all
     if (!modules || modules.length === 0) return true

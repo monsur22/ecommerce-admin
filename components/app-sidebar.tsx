@@ -88,6 +88,7 @@ const NAV_CONFIG = [
         items: [
             { name: "Products",      href: "/dashboard/products",               module: "Products" },
             { name: "Categories",    href: "/dashboard/categories",             module: "Categories" },
+            { name: "Units",         href: "/dashboard/units",                  module: "Units" },
             { name: "Attributes",    href: "/dashboard/attributes",             module: "Attributes" },
             { name: "Coupons",       href: "/dashboard/coupons",                module: "Coupons" },
             { name: "Print barcode", href: "/dashboard/products/print-barcode", module: "Print Barcode" },
@@ -110,6 +111,7 @@ const NAV_CONFIG = [
         items: [
             { name: "Stock overview", href: "/dashboard/inventory",                module: "Inventory" },
             { name: "Transfers",      href: "/dashboard/inventory/transfer",      module: "Transfers" },
+            { name: "Stock adjustment", href: "/dashboard/inventory/adjustment",  module: "Inventory" },
             { name: "Serial & batch", href: "/dashboard/inventory/serial-batch",  module: "Inventory" },
         ],
     },

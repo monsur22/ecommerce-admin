@@ -24,6 +24,7 @@ import { useProduct, type Product, type Variant } from "@/contexts/product-conte
 import { productApi } from "@/lib/productApi"
 import { useVendor } from "@/contexts/vendor-context"
 import { useCategory } from "@/contexts/category-context"
+import { unitApi, type UnitResponse } from "@/lib/unitApi"
 import { useWarehouse } from "@/contexts/warehouse-context"
 import { useAttribute } from "@/contexts/attribute-context"
 import { useCompanySettings } from "@/contexts/company-settings-context"
@@ -41,6 +42,7 @@ const emptyForm = {
   description: "",
   category: "",
   categoryId: "",
+  unitId: "",
   price: "",
   salePrice: "",
   offerPrice: "",
@@ -67,6 +69,11 @@ export function ProductFormDialog({ open, editingProduct, onClose }: ProductForm
   const { formatCurrency } = useCompanySettings()
   const { isPlanModule } = useSaasAuth()
   const [barcodeCopied, setBarcodeCopied] = useState(false)
+  const [units, setUnits] = useState<UnitResponse[]>([])
+
+  useEffect(() => {
+    if (open) unitApi.simple().then(setUnits).catch(() => {})
+  }, [open])
 
   const randomAlphaNumeric = useCallback((len: number) => {
     const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
@@ -127,6 +134,7 @@ export function ProductFormDialog({ open, editingProduct, onClose }: ProductForm
           description: p.description || "",
           category: "",
           categoryId: p.categoryId ? String(p.categoryId) : "",
+          unitId: p.unitId ? String(p.unitId) : "",
           price: String(p.price || ""),
           salePrice: String(p.salePrice || ""),
           offerPrice: String(p.offerPrice || ""),
@@ -327,6 +335,7 @@ export function ProductFormDialog({ open, editingProduct, onClose }: ProductForm
         description: formData.description,
         category: formData.category,
         categoryId: formData.categoryId,
+        unitId: formData.unitId,
         locationId: formData.locationId || String(warehouses[0]?.id || ""),
         price: Number.parseFloat(formData.price),
         salePrice: Number.parseFloat(formData.salePrice),
@@ -388,6 +397,7 @@ export function ProductFormDialog({ open, editingProduct, onClose }: ProductForm
         description: formData.description,
         category: formData.category,
         categoryId: formData.categoryId || editingProduct.categoryId,
+        unitId: formData.unitId || editingProduct.unitId,
         locationId: formData.locationId || editingProduct.locationId || String(warehouses[0]?.id || ""),
         price: Number.parseFloat(formData.price),
         salePrice: Number.parseFloat(formData.salePrice),
@@ -678,6 +688,25 @@ export function ProductFormDialog({ open, editingProduct, onClose }: ProductForm
                     <SelectItem key={cat.id} value={cat.id} textValue={cat.category_name}>
                       {cat.parent_id !== null ? `  └─ ${cat.category_name}` : cat.category_name}
                       {!cat.status ? " (Inactive)" : ""}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="unit">Unit</Label>
+              <Select
+                value={formData.unitId}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, unitId: value }))}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select Unit" />
+                </SelectTrigger>
+                <SelectContent>
+                  {units.map((u) => (
+                    <SelectItem key={u.id} value={String(u.id)} textValue={u.unitName}>
+                      {u.unitName}{u.symbol ? ` (${u.symbol})` : ""}
                     </SelectItem>
                   ))}
                 </SelectContent>
