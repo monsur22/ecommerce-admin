@@ -22,6 +22,7 @@ import {
     Bell,
     Headphones,
     Scissors,
+    Receipt,
 } from "lucide-react"
 
 import {
@@ -70,6 +71,7 @@ const NAV_CONFIG = [
     { section: "Overview", name: "Dashboard", href: "/dashboard", icon: LayoutDashboard, module: "Dashboard" },
 
     { section: "Sell", name: "POS",       href: "/dashboard/pos",       icon: CreditCard, module: "POS" },
+    { section: "Sell", name: "Sales",     href: "/dashboard/sales",     icon: Receipt,    module: "Orders" },
     {
         section: "Sell",
         name: "Orders",
