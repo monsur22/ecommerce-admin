@@ -180,6 +180,7 @@ export interface CreateSellData {
   shippingPostalCode?: string;
   shippingCountry?: string;
   method: string;
+  source?: 'pos' | 'storefront' | 'manual';
   amount: number;
   discount?: number;
   couponId?: number;
@@ -220,6 +221,7 @@ export const sellsApi = {
     search?: string;
     status?: string;
     method?: string;
+    source?: string;
     start_date?: string;
     end_date?: string;
   }): Promise<SellListResponse> => {
