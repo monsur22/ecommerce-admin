@@ -3,6 +3,8 @@
 import type React from "react"
 import { useState, useMemo, useEffect } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
+import { useToast } from "@/hooks/use-toast"
 import { Edit2, Trash2, Eye, FilePen, Loader2, MessageSquare } from "lucide-react"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
@@ -43,6 +45,9 @@ export default function ProductsPage() {
   const [selectedWarehouse, setSelectedWarehouse] = useState<string>("all")
   const [sortOption, setSortOption] = useState<string>("default")
   const [selectedProducts, setSelectedProducts] = useState<string[]>([])
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const { toast } = useToast()
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [viewingProduct, setViewingProduct] = useState<Product | null>(null)
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
@@ -130,9 +135,24 @@ export default function ProductsPage() {
     setIsAddDialogOpen(true)
   }
 
-  const handleDelete = async (id: string) => {
-    await deleteProduct(id)
-    setSelectedProducts(prev => prev.filter(sid => sid !== id))
+  // Ask before deleting; actual delete happens in confirmDelete.
+  const handleDelete = (id: string) => {
+    const product = products.find(p => p.id === id)
+    setDeleteTarget({ id, name: product?.name || "this product" })
+  }
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return
+    setIsDeleting(true)
+    try {
+      await deleteProduct(deleteTarget.id)
+      setSelectedProducts(prev => prev.filter(sid => sid !== deleteTarget.id))
+      setDeleteTarget(null)
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "Delete failed", description: err?.message || "Could not delete product" })
+    } finally {
+      setIsDeleting(false)
+    }
   }
 
   const closeDialog = () => {
@@ -435,6 +455,24 @@ export default function ProductsPage() {
         editingProduct={editingProduct}
         onClose={closeDialog}
       />
+
+      {/* Delete confirmation */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={(o) => !o && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete product?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete <b>{deleteTarget?.name}</b>. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={(e) => { e.preventDefault(); confirmDelete() }} disabled={isDeleting} className="bg-red-600 hover:bg-red-700">
+              {isDeleting ? "Deleting…" : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* View Product Details Dialog */}
       <Dialog open={!!viewingProduct} onOpenChange={() => setViewingProduct(null)}>

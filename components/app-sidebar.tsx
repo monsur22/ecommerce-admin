@@ -91,6 +91,7 @@ const NAV_CONFIG = [
             { name: "Products",      href: "/dashboard/products",               module: "Products" },
             { name: "Categories",    href: "/dashboard/categories",             module: "Categories" },
             { name: "Units",         href: "/dashboard/units",                  module: "Units" },
+            { name: "Brands",        href: "/dashboard/brands",                 module: "Brands" },
             { name: "Attributes",    href: "/dashboard/attributes",             module: "Attributes" },
             { name: "Coupons",       href: "/dashboard/coupons",                module: "Coupons" },
             { name: "Print barcode", href: "/dashboard/products/print-barcode", module: "Print Barcode" },

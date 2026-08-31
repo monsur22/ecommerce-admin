@@ -10,6 +10,7 @@ export interface Product {
     category: string        // display name
     categoryId?: string     // backend id
     unitId?: string
+    brandId?: string
     price: number
     salePrice: number
     offerPrice?: number | null
@@ -30,6 +31,7 @@ export interface Product {
     keep_images?: string[]  // existing paths to keep on update
     sku: string
     barcode: string
+    barcodeType?: string
     createdAt?: string
     updatedAt?: string
     vendorId?: string
@@ -113,6 +115,7 @@ function convertToProduct(p: ProductResponse): Product {
         category: categoryName,
         categoryId,
         unitId: (p as any).unitId ? String((p as any).unitId) : undefined,
+        brandId: (p as any).brandId ? String((p as any).brandId) : undefined,
         price: p.price,
         salePrice: p.salePrice ?? p.sale_price,
         offerPrice: (p as any).offerPrice ?? (p as any).offer_price ?? undefined,
@@ -150,6 +153,7 @@ function convertToProduct(p: ProductResponse): Product {
         })(),
         sku: p.sku || "",
         barcode: p.barcode || "",
+        barcodeType: (p as any).barcodeType || "C128",
         createdAt: p.created_at,
         updatedAt: p.updated_at,
         vendorId,
@@ -228,15 +232,16 @@ export function ProductProvider({ children }: { children: React.ReactNode }) {
     }, [])
 
     const addProduct = async (product: Omit<Product, 'id'>) => {
-        if (!product.categoryId || !product.locationId) {
-            throw new Error("Category and location are required")
+        if (!product.locationId) {
+            throw new Error("Warehouse location is required")
         }
         try {
             await productApi.create({
                 name: product.name,
                 description: product.description,
-                category_id: parseInt(product.categoryId),
+                category_id: product.categoryId ? parseInt(product.categoryId) : undefined,
                 unit_id: product.unitId ? parseInt(product.unitId) : undefined,
+                brand_id: product.brandId ? parseInt(product.brandId) : undefined,
                 location_id: parseInt(product.locationId),
                 price: product.price,
                 sale_price: product.salePrice,
@@ -249,6 +254,7 @@ export function ProductProvider({ children }: { children: React.ReactNode }) {
                 published: product.published,
                 sku: product.sku,
                 barcode: product.barcode,
+                barcode_type: product.barcodeType || "C128",
                 vendor_id: product.vendorId ? parseInt(product.vendorId) : undefined,
                 receipt_number: product.receiptNumber,
                 is_hot_deal: product.isHotDeal,
@@ -295,6 +301,7 @@ export function ProductProvider({ children }: { children: React.ReactNode }) {
                 description: product.description,
                 category_id: product.categoryId ? parseInt(product.categoryId) : undefined,
                 unit_id: product.unitId ? parseInt(product.unitId) : undefined,
+                brand_id: product.brandId ? parseInt(product.brandId) : undefined,
                 location_id: product.locationId ? parseInt(product.locationId) : undefined,
                 price: product.price,
                 sale_price: product.salePrice,
@@ -307,6 +314,7 @@ export function ProductProvider({ children }: { children: React.ReactNode }) {
                 published: product.published,
                 sku: product.sku,
                 barcode: product.barcode,
+                barcode_type: product.barcodeType || "C128",
                 vendor_id: product.vendorId ? parseInt(product.vendorId) : undefined,
                 receipt_number: product.receiptNumber,
                 is_hot_deal: product.isHotDeal,
