@@ -50,6 +50,7 @@ export interface ProductVariantResponse {
   name: string;
   sku: string;
   barcode?: string;
+  barcodeType?: string;
   price: number;
   sale_price: number;
   cost_price?: number;
@@ -113,6 +114,8 @@ export interface ProductResponse {
   categoryId?: number;
   unitId?: number;
   unitName?: string;
+  brandId?: number;
+  brandName?: string;
   categoryName?: string;
   location_id?: number;
   location?: ProductLocationResponse;
@@ -205,8 +208,9 @@ export interface ProductReviewListResponse {
 export interface CreateProductData {
   name: string;
   description?: string;
-  category_id: number;
+  category_id?: number;
   unit_id?: number;
+  brand_id?: number;
   location_id: number;
   price: number;
   sale_price: number;
@@ -223,6 +227,7 @@ export interface CreateProductData {
   deal_label?: string;
   sku?: string;
   barcode?: string;
+  barcode_type?: string;
   vendor_id?: number;
   receipt_number?: string;
   attributes?: { id: string; name: string; value: string | string[] }[];
@@ -258,6 +263,7 @@ function buildFormData(data: CreateProductData | UpdateProductData): FormData {
   if (data.description !== undefined) fd.append('description', data.description);
   if (data.category_id !== undefined) fd.append('category_id', String(data.category_id));
   if (data.unit_id !== undefined) fd.append('unit_id', String(data.unit_id));
+  if (data.brand_id !== undefined) fd.append('brand_id', String(data.brand_id));
   if (data.vendor_id !== undefined && !isNaN(data.vendor_id)) fd.append('vendor_id', String(data.vendor_id));
   if (data.location_id !== undefined) fd.append('location_id', String(data.location_id));
   if (data.price !== undefined) fd.append('price', String(data.price));
@@ -270,6 +276,7 @@ function buildFormData(data: CreateProductData | UpdateProductData): FormData {
   if (data.stock !== undefined) fd.append('stock', String(data.stock));
   if (data.sku !== undefined && data.sku !== '') fd.append('sku', data.sku);
   if (data.barcode !== undefined && data.barcode !== '') fd.append('barcode', data.barcode);
+  if (data.barcode_type !== undefined && data.barcode_type !== '') fd.append('barcode_type', data.barcode_type);
   if (data.published !== undefined) fd.append('published', data.published ? 'true' : 'false');
   if (data.is_hot_deal !== undefined) fd.append('is_hot_deal', data.is_hot_deal ? '1' : '0');
   if (data.is_best_seller !== undefined) fd.append('is_best_seller', data.is_best_seller ? '1' : '0');

@@ -25,6 +25,7 @@ import { productApi } from "@/lib/productApi"
 import { useVendor } from "@/contexts/vendor-context"
 import { useCategory } from "@/contexts/category-context"
 import { unitApi, type UnitResponse } from "@/lib/unitApi"
+import { brandApi, type BrandResponse } from "@/lib/brandApi"
 import { useWarehouse } from "@/contexts/warehouse-context"
 import { useAttribute } from "@/contexts/attribute-context"
 import { useCompanySettings } from "@/contexts/company-settings-context"
@@ -43,6 +44,7 @@ const emptyForm = {
   category: "",
   categoryId: "",
   unitId: "",
+  brandId: "",
   price: "",
   salePrice: "",
   offerPrice: "",
@@ -54,6 +56,7 @@ const emptyForm = {
   reorderPoint: "",
   sku: "",
   barcode: "",
+  barcodeType: "C128",
   vendorId: "",
   receiptNumber: "",
   locationId: "",
@@ -70,9 +73,11 @@ export function ProductFormDialog({ open, editingProduct, onClose }: ProductForm
   const { isPlanModule } = useSaasAuth()
   const [barcodeCopied, setBarcodeCopied] = useState(false)
   const [units, setUnits] = useState<UnitResponse[]>([])
+  const [brands, setBrands] = useState<BrandResponse[]>([])
 
   useEffect(() => {
     if (open) unitApi.simple().then(setUnits).catch(() => {})
+    if (open) brandApi.simple().then(setBrands).catch(() => {})
   }, [open])
 
   const randomAlphaNumeric = useCallback((len: number) => {
@@ -135,6 +140,7 @@ export function ProductFormDialog({ open, editingProduct, onClose }: ProductForm
           category: "",
           categoryId: p.categoryId ? String(p.categoryId) : "",
           unitId: p.unitId ? String(p.unitId) : "",
+          brandId: p.brandId ? String(p.brandId) : "",
           price: String(p.price || ""),
           salePrice: String(p.salePrice || ""),
           offerPrice: String(p.offerPrice || ""),
@@ -146,6 +152,7 @@ export function ProductFormDialog({ open, editingProduct, onClose }: ProductForm
           reorderPoint: String(p.reorderPoint ?? ""),
           sku: p.sku || "",
           barcode: p.barcode || "",
+          barcodeType: (p as any).barcodeType || "C128",
           vendorId: p.vendorId ? String(p.vendorId) : "",
           receiptNumber: p.receiptNumber || "",
           locationId: p.locationId ? String(p.locationId) : "",
@@ -324,8 +331,18 @@ export function ProductFormDialog({ open, editingProduct, onClose }: ProductForm
   }
 
   const handleAdd = async () => {
-    if (!formData.name || !formData.category || !formData.price || !formData.salePrice || !formData.stock) return
-    let finalStock = Number.parseInt(formData.stock)
+    // Validate required fields and tell the user exactly what's missing.
+    const missing: string[] = []
+    if (!formData.name?.trim()) missing.push("Product name")
+    if (!formData.price) missing.push("Product price")
+    if (!(formData.locationId || warehouses[0]?.id)) missing.push("Warehouse")
+    if (missing.length) {
+      const msg = `Please fill in: ${missing.join(", ")}`
+      setErrorMessage(msg)
+      toast({ variant: "destructive", title: "Missing required fields", description: msg })
+      return
+    }
+    let finalStock = Number.parseInt(formData.stock || "0")
     if (generatedVariants.length > 0) finalStock = generatedVariants.reduce((sum, v) => sum + v.stock, 0)
     setIsSaving(true)
     setErrorMessage(null)
@@ -336,9 +353,11 @@ export function ProductFormDialog({ open, editingProduct, onClose }: ProductForm
         category: formData.category,
         categoryId: formData.categoryId,
         unitId: formData.unitId,
+        brandId: formData.brandId,
         locationId: formData.locationId || String(warehouses[0]?.id || ""),
         price: Number.parseFloat(formData.price),
-        salePrice: Number.parseFloat(formData.salePrice),
+        // Sale price defaults to the base price when not set.
+        salePrice: Number.parseFloat(formData.salePrice || formData.price),
         offerPrice: formData.offerPrice ? Number.parseFloat(formData.offerPrice) : undefined,
         offerType: formData.offerPrice ? formData.offerType : undefined,
         costPrice: formData.costPrice ? Number.parseFloat(formData.costPrice) : undefined,
@@ -357,6 +376,7 @@ export function ProductFormDialog({ open, editingProduct, onClose }: ProductForm
         images: imageFiles,
         sku: formData.sku,
         barcode: formData.barcode,
+        barcodeType: formData.barcodeType,
         vendorId: formData.vendorId || undefined,
         receiptNumber: formData.receiptNumber || undefined,
         attributes: productAttributes,
@@ -398,6 +418,7 @@ export function ProductFormDialog({ open, editingProduct, onClose }: ProductForm
         category: formData.category,
         categoryId: formData.categoryId || editingProduct.categoryId,
         unitId: formData.unitId || editingProduct.unitId,
+        brandId: formData.brandId || editingProduct.brandId,
         locationId: formData.locationId || editingProduct.locationId || String(warehouses[0]?.id || ""),
         price: Number.parseFloat(formData.price),
         salePrice: Number.parseFloat(formData.salePrice),
@@ -416,6 +437,7 @@ export function ProductFormDialog({ open, editingProduct, onClose }: ProductForm
         dealLabel: dealLabel || undefined,
         sku: formData.sku,
         barcode: formData.barcode,
+        barcodeType: formData.barcodeType,
         image: uploadedImages[0] || editingProduct.image,
         images: imageFiles.length > 0 ? imageFiles : undefined,
         delete_images: false,
@@ -662,6 +684,23 @@ export function ProductFormDialog({ open, editingProduct, onClose }: ProductForm
             </div>
 
             <div className="space-y-2">
+              <Label htmlFor="barcodeType">Barcode Type *</Label>
+              <Select value={formData.barcodeType} onValueChange={(v) => set("barcodeType", v)}>
+                <SelectTrigger id="barcodeType" className="w-full">
+                  <SelectValue placeholder="Select barcode type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="C128">Code 128 (C128)</SelectItem>
+                  <SelectItem value="C39">Code 39 (C39)</SelectItem>
+                  <SelectItem value="EAN13">EAN-13</SelectItem>
+                  <SelectItem value="EAN8">EAN-8</SelectItem>
+                  <SelectItem value="UPCA">UPC-A</SelectItem>
+                  <SelectItem value="UPCE">UPC-E</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="receiptNumber">Receipt Number</Label>
               <Input
                 id="receiptNumber"
@@ -707,6 +746,25 @@ export function ProductFormDialog({ open, editingProduct, onClose }: ProductForm
                   {units.map((u) => (
                     <SelectItem key={u.id} value={String(u.id)} textValue={u.unitName}>
                       {u.unitName}{u.symbol ? ` (${u.symbol})` : ""}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="brand">Brand</Label>
+              <Select
+                value={formData.brandId}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, brandId: value }))}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select Brand" />
+                </SelectTrigger>
+                <SelectContent>
+                  {brands.map((b) => (
+                    <SelectItem key={b.id} value={String(b.id)} textValue={b.brandName}>
+                      {b.brandName}
                     </SelectItem>
                   ))}
                 </SelectContent>
