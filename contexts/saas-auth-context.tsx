@@ -27,6 +27,7 @@ export interface SaasAuthContextType {
 
   // Methods
   login: (email: string, password: string) => Promise<void>
+  pinLogin: (companyId: number, identifier: string, pin: string) => Promise<void>
   signup: (data: {
     companyName: string
     ownerFullName: string
@@ -49,6 +50,8 @@ export interface SaasAuthContextType {
   canRead: (module: string) => boolean
   canWrite: (module: string) => boolean
   canDelete: (module: string) => boolean
+  /** Sensitive actions set on the role (cost visibility, export, ...). Owners and admins can do all. */
+  canDo: (flag: 'cost' | 'discount' | 'refund' | 'export' | 'void') => boolean
   // Plan module check — true if module is included in current plan
   isPlanModule: (module: string) => boolean
 }
@@ -65,6 +68,7 @@ const SaasAuthContext = createContext<SaasAuthContextType>({
   trialEndDate: null,
   subscriptionEndDate: null,
   login: async () => {},
+  pinLogin: async () => {},
   signup: async () => {},
   logout: () => {},
   refreshUserData: async () => {},
@@ -77,6 +81,7 @@ const SaasAuthContext = createContext<SaasAuthContextType>({
   canRead: () => false,
   canWrite: () => false,
   canDelete: () => false,
+  canDo: () => true,
   isPlanModule: () => true,
 })
 
@@ -122,9 +127,18 @@ export function SaasAuthProvider({ children }: { children: React.ReactNode }) {
     initAuth()
   }, [pathname, router])
 
+  const pinLogin = async (companyId: number, identifier: string, pin: string) => {
+    const response = await saasAuthApi.pinLogin({ companyId, identifier, pin })
+    await completeLogin(response)
+  }
+
   const login = async (email: string, password: string) => {
+    const response = await saasAuthApi.login({ email, password })
+    await completeLogin(response)
+  }
+
+  const completeLogin = async (response: Awaited<ReturnType<typeof saasAuthApi.login>>) => {
     try {
-      const response = await saasAuthApi.login({ email, password })
 
       // Store auth data
       localStorage.setItem("token", response.data.token)
@@ -132,8 +146,12 @@ export function SaasAuthProvider({ children }: { children: React.ReactNode }) {
       localStorage.setItem("user_role", response.data.userRole)
       localStorage.setItem("userRole", response.data.userRole)
       localStorage.setItem("userEmail", response.data.userEmail ?? response.data.email ?? "")
-      // Set cookies for Next.js middleware
-      document.cookie = `token=${response.data.token}; path=/; max-age=86400; SameSite=Lax`
+      // Cookies for the Next.js middleware ONLY. It checks token *presence* and
+      // reads the role — it never needs the JWT itself (that lives in
+      // localStorage for the Authorization header). Storing a 1-byte marker
+      // instead of the full JWT keeps the cookie jar small and avoids upstream
+      // 431 "Request Header Fields Too Large".
+      document.cookie = `token=1; path=/; max-age=86400; SameSite=Lax`
       document.cookie = `user_role=${response.data.userRole}; path=/; max-age=86400; SameSite=Lax`
 
       // Super admin goes straight to platform, skip getCurrentUser (no company)
@@ -266,6 +284,8 @@ export function SaasAuthProvider({ children }: { children: React.ReactNode }) {
 
   // Returns true if module is included in the company's current plan
   const isPlanModule = (module: string): boolean => {
+    // Owner always sees every module, regardless of the plan's module list.
+    if (user?.role === "owner") return true
     const modules = company?.planModules
     // No modules array = no plan assigned yet (trial with no plan) → allow all
     if (!modules || modules.length === 0) return true
@@ -288,6 +308,12 @@ export function SaasAuthProvider({ children }: { children: React.ReactNode }) {
   const canRead   = (module: string): boolean => hasPermission(module, 'read')
   const canWrite  = (module: string): boolean => hasPermission(module, 'write')
   const canDelete = (module: string): boolean => hasPermission(module, 'delete')
+  const canDo = (flag: 'cost' | 'discount' | 'refund' | 'export' | 'void'): boolean => {
+    if (!user) return false
+    if (user.role === 'owner' || user.role === 'admin') return true
+    const s = (user as any).sensitive
+    return s ? s[flag] !== false : true
+  }
 
   if (loading) {
     return (
@@ -312,6 +338,7 @@ export function SaasAuthProvider({ children }: { children: React.ReactNode }) {
     trialEndDate: company?.trialEndDate || null,
     subscriptionEndDate: company?.subscriptionEndDate || null,
     login,
+    pinLogin,
     signup,
     logout,
     refreshUserData,
@@ -324,6 +351,7 @@ export function SaasAuthProvider({ children }: { children: React.ReactNode }) {
     canRead,
     canWrite,
     canDelete,
+    canDo,
     isPlanModule,
   }
 

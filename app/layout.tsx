@@ -1,12 +1,14 @@
+import { cn } from "@/lib/utils"
 import type React from "react"
 import type { Metadata } from "next"
-import { Open_Sans } from "next/font/google"
+import { Geist } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { SaasAuthProvider } from "@/contexts/saas-auth-context"
 import { ThemeProvider } from "next-themes"
+import { TooltipProvider } from "@/components/ui/tooltip"
 import "./globals.css"
 
-const openSans = Open_Sans({ subsets: ["latin"] })
+const geist = Geist({ subsets: ["latin"], variable: "--font-sans" })
 
 export const metadata: Metadata = {
   title: "Admin Dashboard with POS",
@@ -36,10 +38,12 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={`${openSans.className} antialiased`} suppressHydrationWarning>
+    <html lang="en" className={cn(geist.variable, "font-sans")} suppressHydrationWarning>
+      <body className="font-sans antialiased" suppressHydrationWarning>
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
-          <SaasAuthProvider>{children}</SaasAuthProvider>
+          <TooltipProvider>
+            <SaasAuthProvider>{children}</SaasAuthProvider>
+          </TooltipProvider>
           <Analytics />
         </ThemeProvider>
       </body>

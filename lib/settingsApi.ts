@@ -53,8 +53,23 @@ export interface GeneralSettings {
   storeName: string;
   storeEmail: string;
   storePhone: string;
-  storeAddress: string;
+  /** Deprecated — store address lives in Company Settings now. Kept optional for backend compatibility. */
+  storeAddress?: string;
   storeDescription: string;
+  legalName?: string;
+  /** BIN / VAT registration number */
+  bin?: string;
+  /** Trade licence number */
+  licence?: string;
+  invoicePrefix?: string;
+  nextInvoiceNumber?: number;
+  poPrefix?: string;
+  lowStockDefault?: number;
+  receiptPaper?: '58' | '80' | 'a4';
+  receiptFooter?: string;
+  /** ISO dates (YYYY-MM-DD) the store is closed */
+  holidays?: string[];
+  freeShippingThreshold?: number | null;
   primaryColor?: string;
   accentColor?: string;
   backgroundColor?: string;
@@ -84,6 +99,11 @@ export interface ShippingSettings {
   defaultShippingCost: number;
   freeShippingThreshold?: number;
   shippingMethods: ShippingMethod[];
+  /** Shipping & delivery screen */
+  freeOn?: boolean;
+  freeMin?: number;
+  weight?: number;
+  pkg?: string;
 }
 
 export interface SSLCommerzConfig {
@@ -152,6 +172,23 @@ export interface PaymentSettings {
   bkash?: BkashConfig;
   nagad?: NagadConfig;
   cod_shipping_deposit?: CodShippingDepositConfig;
+  /** COD only for orders under this amount (0 = no limit) */
+  cod_limit?: number;
+  /** Extra fee added to COD orders */
+  cod_fee?: number;
+  cod_phone_verify?: 'new' | 'always' | 'never';
+  /** The six fixed methods (cash, bkash, nagad, card, bank, cod) */
+  methods?: Record<string, PaymentMethodConfig>;
+  /** Slug of the default method (must be enabled) */
+  default?: string;
+}
+
+export interface PaymentMethodConfig {
+  enabled: boolean;
+  test: boolean;
+  /** Sales channels the method is offered in; an enabled method needs at least one */
+  channels?: ('pos' | 'online')[];
+  fields?: { account?: string; accountName?: string; bankName?: string };
 }
 
 export interface BusinessSettings {
@@ -159,12 +196,15 @@ export interface BusinessSettings {
   businessName: string;
   businessType: string;
   registrationNumber?: string;
-  gstNumber: string;
+  /** Deprecated — tax ID lives in Company Settings now. Optional for compatibility. */
+  gstNumber?: string;
   logoUrl?: string;
   bannerUrl?: string;
   website?: string;
   auraShopHero?: AuraShopHeroSettings;
+  onlineStore?: OnlineStoreSettings;
   promoBanner?: PromoBannerSettings;
+  homepageSections?: HomepageSections;
   socialLinks?: {
     facebook?: string;
     instagram?: string;
@@ -172,7 +212,19 @@ export interface BusinessSettings {
   };
 }
 
+export interface OnlineStoreSettings {
+  name?: string;
+  slug?: string;
+  theme?: string;
+  published?: boolean;
+  apiUrl?: string;
+  companyId?: string;
+  policies?: { returns?: string; shipping?: string; privacy?: string };
+  social?: { facebook?: string; instagram?: string; whatsapp?: string; youtube?: string };
+}
+
 export interface AuraShopHeroSlide {
+  id?: string;
   imagePath?: string;
   tag: string;
   title: string;
@@ -186,6 +238,37 @@ export interface AuraShopHeroSlide {
 export interface AuraShopHeroSettings {
   autoplayMs: number;
   slides: AuraShopHeroSlide[];
+}
+
+// Aura Shop homepage blocks below the hero. A section left undefined keeps the storefront's automatic content.
+export interface HomepageAisle {
+  id: string;
+  label: string;
+  tagline: string;
+  emoji: string;
+  imagePath: string;
+  link: string;
+  enabled: boolean;
+}
+
+export type HomepageProductSource = 'latest' | 'featured' | 'best_seller' | 'hot_deal' | 'on_sale';
+
+export type HomepagePerkIcon = 'truck' | 'rotate' | 'shield' | 'heart' | 'gift' | 'star' | 'sparkles' | 'package' | 'clock' | 'phone';
+
+export interface HomepagePerk {
+  id: string;
+  icon: HomepagePerkIcon;
+  title: string;
+  text: string;
+  link: string;
+}
+
+export interface HomepageSections {
+  aisles?: { enabled: boolean; title: string; subtitle: string; items: HomepageAisle[] };
+  products?: { enabled: boolean; title: string; subtitle: string; source: HomepageProductSource; categoryId: number | null; limit: number };
+  lookbook?: { enabled: boolean; tag: string; title: string; text: string; cta: string; link: string; images: string[] };
+  perks?: { enabled: boolean; items: HomepagePerk[] };
+  footer?: { tagline: string };
 }
 
 export interface PromoBannerSettings {
@@ -264,6 +347,7 @@ const normalizeBusiness = (data: any): BusinessSettings => ({
   logoUrl: resolveStorageUrl(data?.logoUrl ?? data?.logo_url),
   bannerUrl: resolveStorageUrl(data?.bannerUrl ?? data?.banner_url),
   auraShopHero: data?.auraShopHero ?? data?.aura_shop_hero,
+  onlineStore: data?.onlineStore ?? data?.online_store,
   socialLinks: data?.socialLinks ?? data?.social_links,
 });
 
@@ -368,8 +452,9 @@ export const settingsApi = {
   },
 
   // Update specific sections
-  updateGeneral: async (data: GeneralSettings): Promise<{ message: string; data: GeneralSettings }> => {
+  updateGeneral: async (data: Partial<GeneralSettings>): Promise<{ message: string; data: GeneralSettings }> => {
     const response = await api.put('/settings/general', data);
+    if (typeof window !== 'undefined') window.dispatchEvent(new Event('receipt-prefs-stale'));
     return response.data;
   },
 
@@ -434,12 +519,57 @@ export const settingsApi = {
     return withMessage(response.data, { bannerUrl: resolveStorageUrl(data?.bannerUrl ?? data?.banner_url) });
   },
 
+  updateBranding: async (data: { logoUrl?: string | null; bannerUrl?: string | null }): Promise<{ message: string }> => {
+    const response = await api.put('/settings/branding', data);
+    return response.data;
+  },
+
+  removeLogo: async (): Promise<{ message: string }> => {
+    const response = await api.delete('/settings/logo');
+    return response.data;
+  },
+
+  removeBanner: async (): Promise<{ message: string }> => {
+    const response = await api.delete('/settings/banner');
+    return response.data;
+  },
+
   uploadStorefrontImage: async (file: File): Promise<{ message: string; data: { imagePath: string; imageUrl: string } }> => {
     const formData = new FormData();
     formData.append('file', file);
     const response = await api.post('/settings/upload-storefront-image', formData);
     return response.data;
   },
+};
+
+// ---- Payment methods enabled for the sales channels (GET /settings/payment)
+
+export interface EnabledPaymentMethods {
+  methods: { slug: string; name: string; channels?: string[] }[];
+  posMethods: string[];
+  default: string | null;
+  posDefault: string | null;
+}
+
+/** Method slug -> value accepted by the sells API (`method`). Unknown slugs have no match. */
+const SELL_METHOD_BY_SLUG: Record<string, string> = {
+  cash: 'Cash', card: 'Card', bkash: 'bKash', nagad: 'Nagad', bank: 'Bank', cod: 'COD', online: 'Online',
+};
+
+export const sellMethodForSlug = (slug: string): string | undefined =>
+  SELL_METHOD_BY_SLUG[String(slug || '').toLowerCase()];
+
+/** Enabled payment methods; empty lists when nothing was configured (callers keep their built-in list). */
+export const getPaymentMethods = async (): Promise<EnabledPaymentMethods> => {
+  const response = await api.get('/settings/payment');
+  const raw = response.data?.data ?? response.data ?? {};
+  const slugs = (v: unknown): string[] => (Array.isArray(v) ? v.map((x: any) => (typeof x === 'string' ? x : x?.slug)).filter(Boolean) : []);
+  return {
+    methods: Array.isArray(raw.methods) ? raw.methods : [],
+    posMethods: slugs(raw.posMethods),
+    default: raw.default ?? null,
+    posDefault: raw.posDefault ?? null,
+  };
 };
 
 export default settingsApi;

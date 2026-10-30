@@ -49,12 +49,69 @@ export interface PurchaseOrder {
   expectedDate: string | null
   notes: string | null
   totalAmount: number
+  paidAmount: number
+  dueAmount: number
+  paymentStatus: 'pending' | 'partially_paid' | 'paid'
+  payments: PurchasePayment[]
   items: PurchaseOrderItem[]
+  discountType?: 'flat' | 'percent'
+  discountValue?: number
+  discountAmount?: number
+  taxRate?: number
+  taxAmount?: number
+  shippingCost?: number
+  subtotal?: number
+  itemsSummary?: string | null
+  unitsOrdered?: number
+  unitsReceived?: number
+  isOverdue?: boolean
+  sentAt?: string | null
+  receivedAt?: string | null
+  receipts?: PurchaseReceipt[]
   createdAt: string
   updatedAt: string
 }
 
+export interface PurchaseReceipt {
+  id: number
+  date: string
+  receivedAt: string
+  locationId: number | null
+  locationName: string | null
+  itemsSummary: string | null
+  items: { itemId: number; productId: number; productName: string; quantity: number }[]
+}
+
+export interface PurchaseStats {
+  total: number
+  count?: number
+  totalDue: number
+  reorderCount: number
+  byStatus: Record<'draft' | 'ordered' | 'partial' | 'received' | 'cancelled', { count: number; amount: number }>
+}
+
+export interface PurchasePayment {
+  date?: string
+  method?: string
+  id: number
+  amount: number
+  paymentMethod: string
+  paymentDate: string | null
+  reference: string | null
+  notes: string | null
+  createdAt: string
+}
+
 export interface CreatePurchaseOrderData {
+  status?: 'draft' | 'sent' | 'received'
+  discountType?: 'flat' | 'percent'
+  discountValue?: number
+  taxRate?: number
+  shippingCost?: number
+  paidAmount?: number
+  paymentMethod?: string
+  paymentDate?: string
+  reference?: string
   vendorId: number
   locationId?: number
   expectedDate?: string
@@ -68,6 +125,7 @@ export interface CreatePurchaseOrderData {
 }
 
 export interface ReceiveItemsData {
+  locationId?: number
   items: {
     itemId: number
     quantityReceiving: number
@@ -92,6 +150,15 @@ const purchaseOrderApi = {
 
   updateStatus: (id: number, status: string) =>
     api.patch(`/purchase-orders/${id}/status`, { status }),
+
+  recordPayment: (id: number, data: { amount: number; paymentMethod: string; paymentDate: string; reference?: string; notes?: string }) =>
+    api.post(`/payments/purchase-orders/${id}`, {
+      amount: data.amount,
+      payment_method: data.paymentMethod,
+      payment_date: data.paymentDate,
+      reference: data.reference,
+      notes: data.notes,
+    }),
 
   receive: (id: number, data: ReceiveItemsData) =>
     api.post(`/purchase-orders/${id}/receive`, data),

@@ -1,76 +1,100 @@
 'use client'
 
-import { useState, useRef, useCallback, useEffect } from 'react'
-import { productApi, type ProductResponse } from '@/lib/productApi'
+import { cn } from "@/lib/utils"
+import { Suspense, useState, useRef, useCallback, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
+import { productApi, type ProductResponse, type ProductVariantResponse } from '@/lib/productApi'
+import purchaseOrderApi from '@/lib/purchaseOrderApi'
+import { settingsApi } from '@/lib/settingsApi'
+import { PAPER_SIZES, resolveFormat, escHtml } from '@/lib/barcode-labels'
 import { useSaasAuth } from '@/contexts/saas-auth-context'
-import { AccessDenied } from '@/components/ui/access-denied'
 import { useModuleGuard } from '@/hooks/use-module-guard'
-import { Card } from '@/components/ui/card'
+import Barcode from 'react-barcode'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Checkbox } from '@/components/ui/checkbox'
 import { Label } from '@/components/ui/label'
+import { Card } from '@/components/ui/card'
+import { Spinner } from '@/components/ui/spinner'
+import { Item, ItemActions, ItemContent } from '@/components/ui/item'
+import { PageHeader } from '@/components/common/PageHeader'
+import { SectionCard } from '@/components/common/SectionCard'
+import { EmptyState } from '@/components/common/EmptyState'
+import { FormField } from '@/components/common/FormField'
+import { ChoiceCard, ChoiceCardGroup } from '@/components/common/ChoiceCard'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { bricolage, instrument } from '@/components/dashboard/fonts'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Badge } from '@/components/ui/badge'
-import { Barcode, Search, Trash2, Printer, RotateCcw, Loader2 } from 'lucide-react'
+import { Search, Trash2, Minus, Plus, Printer, Eye, ChevronLeft, ChevronRight, ShoppingCart, Eraser } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { useCompanySettings } from '@/contexts/company-settings-context'
+import { WithTooltip } from "@/components/common/WithTooltip"
 
 // ============ TYPES ============
 
 interface PrintItem {
+  key: string
   product: ProductResponse
+  variant: ProductVariantResponse | null
   quantity: number
+  packingDate: string
 }
 
 interface LabelSettings {
   showProductName: boolean
-  showPrice: boolean
-  showPromoPrice: boolean
-  showBrand: boolean
+  showProductVariation: boolean
+  showProductPrice: boolean
   showBusinessName: boolean
+  showSku: boolean
+  showPackingDate: boolean
 }
 
 interface FontSizes {
   productName: number
-  price: number
-  promoPrice: number
-  brand: number
+  productVariation: number
+  productPrice: number
   businessName: number
-}
-
-interface PaperSize {
-  id: string
-  label: string
-  cols: number
-  labelWidthPx: number
-  labelHeightPx: number
-  description: string
+  sku: number
+  packingDate: number
 }
 
 // ============ CONSTANTS ============
 
-const PAPER_SIZES: PaperSize[] = [
-  { id: '20-per-sheet', label: '20 Labels/Sheet', cols: 4, labelWidthPx: 384, labelHeightPx: 96, description: '4" × 1"' },
-  { id: '14-per-sheet', label: '14 Labels/Sheet', cols: 3, labelWidthPx: 264, labelHeightPx: 128, description: '4" × 1.33"' },
-  { id: '10-per-sheet', label: '10 Labels/Sheet', cols: 2, labelWidthPx: 384, labelHeightPx: 192, description: '4" × 2"' },
-  { id: '6-per-sheet', label: '6 Labels/Sheet', cols: 2, labelWidthPx: 384, labelHeightPx: 320, description: '4" × 3.33"' },
-  { id: '30-per-sheet', label: '30 Labels/Sheet', cols: 3, labelWidthPx: 189, labelHeightPx: 96, description: '1" × 1"' },
+const LABEL_FIELDS: { key: keyof LabelSettings; sizeKey: keyof FontSizes; label: string }[] = [
+  { key: 'showProductName', sizeKey: 'productName', label: 'Product name' },
+  { key: 'showProductVariation', sizeKey: 'productVariation', label: 'Variant (size/colour)' },
+  { key: 'showProductPrice', sizeKey: 'productPrice', label: 'Price' },
+  { key: 'showBusinessName', sizeKey: 'businessName', label: 'Business name' },
+  { key: 'showSku', sizeKey: 'sku', label: 'SKU' },
+  { key: 'showPackingDate', sizeKey: 'packingDate', label: 'Packing date' },
 ]
 
-const LABEL_FIELDS = [
-  { key: 'showProductName', label: 'Product Name', sizeKey: 'productName' },
-  { key: 'showPrice', label: 'Price', sizeKey: 'price' },
-  { key: 'showPromoPrice', label: 'Promotional Price', sizeKey: 'promoPrice' },
-  { key: 'showBrand', label: 'Brand', sizeKey: 'brand' },
-  { key: 'showBusinessName', label: 'Business Name', sizeKey: 'businessName' },
-]
+const DEFAULT_LABELS: LabelSettings = { showProductName: true, showProductVariation: true, showProductPrice: true, showBusinessName: true, showSku: false, showPackingDate: false }
+const DEFAULT_SIZES: FontSizes = { productName: 12, productVariation: 11, productPrice: 13, businessName: 11, sku: 9, packingDate: 9 }
+const PREF_KEY = 'barcode-label-prefs'
+
+const todayStr = () => new Date().toISOString().slice(0, 10)
+
+const offerActive = (p: ProductResponse) => {
+  const v = Number(p.offerPrice ?? p.offer_price ?? 0)
+  if (!(v > 0)) return false
+  const end = (p as any).offerEndsAt ?? p.offer_ends_at
+  return !end || new Date(end).getTime() >= Date.now()
+}
 
 // ============ PAGE COMPONENT ============
 
 export default function PrintBarcodePage() {
-  const { formatCurrency } = useCompanySettings()
-  // Search state
+  return <Suspense fallback={null}><PrintBarcodeInner /></Suspense>
+}
+
+function PrintBarcodeInner() {
+  const searchParams = useSearchParams()
+  const { formatCurrency, taxRate } = useCompanySettings() as any
+  const { toast } = useToast()
+  const { company } = useSaasAuth()
+
+  // Search
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<ProductResponse[]>([])
   const [isSearching, setIsSearching] = useState(false)
@@ -79,462 +103,405 @@ export default function PrintBarcodePage() {
 
   // Print list
   const [printItems, setPrintItems] = useState<PrintItem[]>([])
+  const [loadingPo, setLoadingPo] = useState(false)
 
-  // Label settings
-  const [labelSettings, setLabelSettings] = useState<LabelSettings>({
-    showProductName: true,
-    showPrice: true,
-    showPromoPrice: false,
-    showBrand: false,
-    showBusinessName: false,
-  })
+  // Label settings (remembered)
+  const [labelSettings, setLabelSettings] = useState<LabelSettings>(DEFAULT_LABELS)
+  const [fontSizes, setFontSizes] = useState<FontSizes>(DEFAULT_SIZES)
+  const [showPrice, setShowPrice] = useState<'inc' | 'exc'>('inc')
+  const [selectedPaperSizeId, setSelectedPaperSizeId] = useState('a4-24')
+  const [prefsLoaded, setPrefsLoaded] = useState(false)
+  const [storeName, setStoreName] = useState<string>('')
+  const [sheetNo, setSheetNo] = useState(1)
 
-  // Font sizes
-  const [fontSizes, setFontSizes] = useState<FontSizes>({
-    productName: 11,
-    price: 14,
-    promoPrice: 10,
-    brand: 9,
-    businessName: 9,
-  })
+  const blocked = useModuleGuard('Print Barcode')
 
-  // Paper size
-  const [selectedPaperSizeId, setSelectedPaperSizeId] = useState('20-per-sheet')
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(PREF_KEY)
+      if (raw) {
+        const d = JSON.parse(raw)
+        if (d.labels) setLabelSettings({ ...DEFAULT_LABELS, ...d.labels })
+        if (d.sizes) setFontSizes({ ...DEFAULT_SIZES, ...d.sizes })
+        if (d.showPrice === 'inc' || d.showPrice === 'exc') setShowPrice(d.showPrice)
+        if (PAPER_SIZES.some(p => p.id === d.paper)) setSelectedPaperSizeId(d.paper)
+      }
+    } catch { /* ignore */ }
+    setPrefsLoaded(true)
+  }, [])
 
-  // Auth & UI
-  const { company, canRead } = useSaasAuth()
-  const { toast } = useToast()
+  useEffect(() => {
+    if (!prefsLoaded) return
+    try { localStorage.setItem(PREF_KEY, JSON.stringify({ labels: labelSettings, sizes: fontSizes, showPrice, paper: selectedPaperSizeId })) } catch { /* ignore */ }
+  }, [prefsLoaded, labelSettings, fontSizes, showPrice, selectedPaperSizeId])
+
+  useEffect(() => {
+    settingsApi.getGeneral().then(r => setStoreName(r.data?.storeName?.trim() || '')).catch(() => {})
+  }, [])
+
+  const businessName = storeName || company?.name || 'Business'
+
+  const rowsFor = (product: ProductResponse): PrintItem[] => {
+    const vs = product.variants ?? []
+    if (vs.length) return vs.map(v => ({ key: `${product.id}:${v.id}`, product, variant: v, quantity: 1, packingDate: todayStr() }))
+    return [{ key: String(product.id), product, variant: null, quantity: 1, packingDate: todayStr() }]
+  }
+
+  const mergeRows = (rows: PrintItem[]) =>
+    setPrintItems(prev => [...prev, ...rows.filter(r => !prev.some(i => i.key === r.key))])
+
+  // Deep link: ?ids=1,2,3 pre-selects products
+  const idsParam = searchParams.get('ids')
+  useEffect(() => {
+    const ids = Array.from(new Set((idsParam ?? '').split(',').map(s => Number(s.trim())).filter(n => Number.isInteger(n) && n > 0)))
+    if (!ids.length) return
+    let cancelled = false
+    Promise.all(ids.map(id => productApi.getById(id).then(r => r.data).catch(() => null))).then(list => {
+      if (cancelled) return
+      mergeRows(list.filter((p): p is ProductResponse => !!p).flatMap(rowsFor))
+    })
+    return () => { cancelled = true }
+  }, [idsParam])
 
   // ============ HANDLERS ============
 
   const handleSearchChange = useCallback((value: string) => {
     setSearchQuery(value)
     if (debounceRef.current) clearTimeout(debounceRef.current)
-
-    if (!value.trim()) {
-      setSearchResults([])
-      setShowDropdown(false)
-      return
-    }
-
+    if (!value.trim()) { setSearchResults([]); setShowDropdown(false); return }
     debounceRef.current = setTimeout(async () => {
       setIsSearching(true)
       try {
         const res = await productApi.getAll({ search: value, limit: 10 })
         setSearchResults(res.data ?? [])
         setShowDropdown(true)
-      } catch (error) {
-        console.error('Search error:', error)
-        setSearchResults([])
-      } finally {
-        setIsSearching(false)
-      }
+      } catch { setSearchResults([]) } finally { setIsSearching(false) }
     }, 300)
   }, [])
 
-  const handleAddProduct = useCallback((product: ProductResponse) => {
-    const alreadyAdded = printItems.some(item => item.product.id === product.id)
-    if (alreadyAdded) {
-      toast({
-        title: 'Already added',
-        description: `${product.name} is already in the print list`,
-        variant: 'default',
-      })
-    } else {
-      setPrintItems(prev => [...prev, { product, quantity: 1 }])
+  const handleAddProduct = async (product: ProductResponse) => {
+    setSearchQuery(''); setSearchResults([]); setShowDropdown(false)
+    let full = product
+    if (!product.variants) {
+      try { full = (await productApi.getById(product.id)).data ?? product } catch { /* use list row */ }
     }
-    setSearchQuery('')
-    setSearchResults([])
-    setShowDropdown(false)
-  }, [printItems, toast])
-
-  const handleRemoveItem = useCallback((productId: number) => {
-    setPrintItems(prev => prev.filter(item => item.product.id !== productId))
-  }, [])
-
-  const handleQuantityChange = useCallback((productId: number, qty: number) => {
-    setPrintItems(prev =>
-      prev.map(item =>
-        item.product.id === productId ? { ...item, quantity: Math.max(1, qty) } : item
-      )
-    )
-  }, [])
-
-  const handleReset = useCallback(() => {
-    setPrintItems([])
-    setSearchQuery('')
-    setSearchResults([])
-  }, [])
-
-  const getPrice = (product: ProductResponse) => {
-    return product.sale_price ?? (product as any).salePrice ?? product.price ?? 0
+    mergeRows(rowsFor(full))
   }
 
-  const handlePrint = useCallback(() => {
+  const addFromLastPurchase = async () => {
+    setLoadingPo(true)
+    try {
+      const res = await purchaseOrderApi.getAll({ page: 1, limit: 20 })
+      const list: any[] = (res.data?.data?.data ?? []).filter((o: any) => o.status !== 'cancelled' && o.status !== 'draft')
+      if (!list.length) { toast({ title: 'No purchase orders', description: 'There is no purchase order to take products from.', variant: 'destructive' }); return }
+      const last = list.reduce((a, b) => (new Date(b.createdAt).getTime() > new Date(a.createdAt).getTime() ? b : a))
+      const full = (await purchaseOrderApi.getById(last.id)).data?.data ?? last
+      const items: any[] = full.items ?? []
+      const rows: PrintItem[] = []
+      for (const it of items) {
+        const product = (await productApi.getById(it.productId).catch(() => null))?.data
+        if (!product) continue
+        const variant = it.variantId ? (product.variants ?? []).find(v => v.id === it.variantId) ?? null : null
+        rows.push({ key: variant ? `${product.id}:${variant.id}` : String(product.id), product, variant, quantity: Math.max(1, Number(it.quantityOrdered) || 1), packingDate: todayStr() })
+      }
+      setPrintItems(prev => {
+        const next = [...prev]
+        rows.forEach(r => { const i = next.findIndex(x => x.key === r.key); if (i >= 0) next[i] = { ...next[i], quantity: r.quantity }; else next.push(r) })
+        return next
+      })
+      toast({ title: `Added from ${full.poNumber ?? 'last purchase'}`, description: `${rows.length} item(s), label counts set to the ordered quantities.` })
+    } catch {
+      toast({ title: 'Could not load the last purchase', variant: 'destructive' })
+    } finally { setLoadingPo(false) }
+  }
+
+  const updateItem = (key: string, patch: Partial<PrintItem>) =>
+    setPrintItems(prev => prev.map(i => i.key === key ? { ...i, ...patch } : i))
+  const removeItem = (key: string) => setPrintItems(prev => prev.filter(i => i.key !== key))
+
+  const rate = Number(taxRate) || 0
+
+  // Label data for one row
+  const labelOf = (item: PrintItem) => {
+    const p = item.product, v = item.variant
+    let base: number
+    let offer = false
+    if (v) base = Number(v.sale_price ?? v.price) || 0
+    else {
+      base = Number(p.sale_price ?? p.salePrice ?? p.price) || 0
+      if (offerActive(p)) {
+        const ov = Number(p.offerPrice ?? p.offer_price)
+        const type = p.offerType ?? p.offer_type
+        base = type === 'percentage' ? base * (1 - ov / 100) : base - ov
+        offer = true
+      }
+    }
+    base = Math.max(0, base)
+    const price = showPrice === 'inc' && rate ? base * (1 + rate / 100) : base
+    const sku = (v?.sku || p.sku || '')
+    const code = String((v ? (v.barcode || v.sku) : (p.barcode || (p as any).barcode_code || p.sku)) || p.id)
+    const type = v ? (v.barcode ? (v.barcodeType || (p as any).barcodeType) : 'C128') : ((p as any).barcodeType || 'C128')
+    const { format } = resolveFormat(type, code)
+    return { name: p.name, variant: v?.name ?? '', sku, code, format, price, offer }
+  }
+
+  const paper = PAPER_SIZES.find(p => p.id === selectedPaperSizeId) ?? PAPER_SIZES[0]
+  const expanded = printItems.flatMap(item => Array.from({ length: item.quantity }, () => item))
+  const totalLabels = expanded.length
+  const sheets = Math.max(1, Math.ceil(totalLabels / paper.perSheet))
+  const pageN = Math.min(sheetNo, sheets)
+  const previewLabels = expanded.slice((pageN - 1) * paper.perSheet, pageN * paper.perSheet)
+  const hasOffer = printItems.some(i => !i.variant && offerActive(i.product))
+
+  const buildLabelsHtml = () => {
+    const calls: string[] = []
+    const cells = expanded.map((item, index) => {
+      const l = labelOf(item)
+      let html = '<div class="label">'
+      if (labelSettings.showBusinessName) html += `<div class="business-name" style="font-size:${fontSizes.businessName}px">${escHtml(businessName)}</div>`
+      if (labelSettings.showProductName) html += `<div class="product-name" style="font-size:${fontSizes.productName}px">${escHtml(l.name)}</div>`
+      if (labelSettings.showProductVariation && l.variant) html += `<div class="variation" style="font-size:${fontSizes.productVariation}px">${escHtml(l.variant)}</div>`
+      html += `<svg id="barcode-${index}" class="barcode-svg"></svg>`
+      html += `<div class="barcode-code">${escHtml(l.code)}</div>`
+      if (labelSettings.showProductPrice) html += `<div class="price" style="font-size:${fontSizes.productPrice}px">${escHtml(formatCurrency(l.price))}</div>`
+      if (labelSettings.showSku && l.sku) html += `<div class="sku" style="font-size:${fontSizes.sku}px">SKU ${escHtml(l.sku)}</div>`
+      if (labelSettings.showPackingDate) html += `<div class="packing-date" style="font-size:${fontSizes.packingDate}px">Packed: ${escHtml(item.packingDate)}</div>`
+      html += '</div>'
+      calls.push(`bc(${index}, ${JSON.stringify(l.code)}, "${l.format}");`)
+      return html
+    })
+    let sheetsHtml = ''
+    for (let i = 0; i < cells.length; i += paper.perSheet) sheetsHtml += `<div class="sheet">${cells.slice(i, i + paper.perSheet).join('')}</div>`
+    return { sheetsHtml, calls: calls.join('\n') }
+  }
+
+  const openPrint = (autoPrint: boolean) => {
     if (printItems.length === 0) {
-      toast({
-        title: 'No products',
-        description: 'Add at least one product to the print list',
-        variant: 'destructive',
-      })
+      toast({ title: 'No products', description: 'Add at least one product to print', variant: 'destructive' })
       return
     }
-
-    const paperSize = PAPER_SIZES.find(p => p.id === selectedPaperSizeId) ?? PAPER_SIZES[1]
-
-    // Expand items by quantity
-    const expandedLabels = printItems.flatMap(item =>
-      Array.from({ length: item.quantity }, () => item.product)
-    )
-
-    const businessName = company?.name ?? 'Business'
-
-    // Generate label HTML
-    const labelHtml = expandedLabels
-      .map((product, index) => {
-        const barcodeValue = product.barcode || (product as any).barcode_code || product.sku || String(product.id)
-        const price = getPrice(product).toFixed(2)
-
-        let html = '<div class="label">'
-
-        if (labelSettings.showBusinessName) {
-          html += `<div class="business-name" style="font-size:${fontSizes.businessName}px">${businessName}</div>`
-        }
-
-        if (labelSettings.showProductName) {
-          html += `<div class="product-name" style="font-size:${fontSizes.productName}px">${product.name}</div>`
-        }
-
-        if (labelSettings.showBrand) {
-          html += `<div class="brand" style="font-size:${fontSizes.brand}px">${(product as any).brand ?? 'Brand'}</div>`
-        }
-
-        html += `<svg id="barcode-${index}" class="barcode-svg"></svg>`
-        html += `<div class="barcode-code">${barcodeValue}</div>`
-
-        if (labelSettings.showPrice) {
-          html += `<div class="price" style="font-size:${fontSizes.price}px">${formatCurrency(Number(price))}</div>`
-        }
-
-        if (labelSettings.showPromoPrice) {
-          html += `<div class="promo-price" style="font-size:${fontSizes.promoPrice}px">Sale: ${formatCurrency(Number(price))}</div>`
-        }
-
-        html += '</div>'
-        return html
-      })
-      .join('')
-
-    // Generate JsBarcode calls
-    const jsbarcodeCalls = expandedLabels
-      .map((product, index) => {
-        const barcodeValue = product.barcode || (product as any).barcode_code || product.sku || String(product.id)
-        return `JsBarcode("#barcode-${index}", ${JSON.stringify(barcodeValue)}, { format: "CODE128", width: 1.5, height: 40, displayValue: false, margin: 4 });`
-      })
-      .join('\n')
-
-    // Open print window
-    const printWindow = window.open('', '_blank')
-    if (!printWindow) {
-      toast({
-        title: 'Popup blocked',
-        description: 'Please allow popups to print barcodes',
-        variant: 'destructive',
-      })
+    const { sheetsHtml, calls } = buildLabelsHtml()
+    const win = window.open('', '_blank')
+    if (!win) {
+      toast({ title: 'Popup blocked', description: 'Allow popups to print labels', variant: 'destructive' })
       return
     }
+    win.document.write(`<!DOCTYPE html><html><head><title>Print Labels</title>
+      <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"><\/script>
+      <style>
+        @page{size:${paper.pageCss};margin:${paper.id === 'roll' ? '0' : '8mm'}}
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:Arial,sans-serif;background:#fff}
+        .sheet{display:grid;grid-template-columns:repeat(${paper.cols},1fr);gap:2px;padding:8px;page-break-after:always;break-after:page}
+        .sheet:last-child{page-break-after:auto;break-after:auto}
+        .label{border:1px dashed #bbb;padding:6px 4px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;page-break-inside:avoid;overflow:hidden;min-height:${paper.heightPx}px}
+        .business-name{font-weight:bold;margin-bottom:2px}
+        .product-name{font-weight:600;margin-bottom:2px;line-height:1.2;word-break:break-word}
+        .variation{color:#555;margin-bottom:2px}
+        .barcode-svg{max-width:100%;height:auto;margin:2px 0}
+        .barcode-code{font-family:monospace;font-size:8px;color:#333;margin-top:2px}
+        .price{font-weight:bold;margin-top:2px}
+        .sku,.packing-date{color:#555;margin-top:2px}
+        @media print{.sheet{padding:0;gap:0}}
+      </style></head><body>
+      ${sheetsHtml}
+      <script>function bc(i,v,f){var o={format:f,width:1.5,height:40,displayValue:false,margin:4};try{JsBarcode("#barcode-"+i,v,o)}catch(e){try{o.format="CODE128";JsBarcode("#barcode-"+i,v,o)}catch(e2){}}}
+      window.onload=function(){${calls}${autoPrint ? 'setTimeout(function(){window.print()},600);' : ''}};<\/script>
+      </body></html>`)
+    win.document.close()
+  }
 
-    const htmlContent = `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <title>Print Barcode Labels</title>
-          <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"><\/script>
-          <style>
-            * { margin: 0; padding: 0; box-sizing: border-box; }
-            body { font-family: Arial, sans-serif; padding: 8px; background: white; }
-            .label-grid {
-              display: grid;
-              grid-template-columns: repeat(${paperSize.cols}, 1fr);
-              gap: 2px;
-            }
-            .label {
-              border: 1px solid #ddd;
-              padding: 6px 4px;
-              display: flex;
-              flex-direction: column;
-              align-items: center;
-              justify-content: center;
-              text-align: center;
-              page-break-inside: avoid;
-              overflow: hidden;
-              min-height: ${paperSize.labelHeightPx}px;
-            }
-            .business-name {
-              font-weight: bold;
-              margin-bottom: 2px;
-              font-size: 10px;
-            }
-            .product-name {
-              font-weight: 600;
-              margin-bottom: 2px;
-              line-height: 1.2;
-              word-break: break-word;
-            }
-            .brand {
-              color: #555;
-              margin-bottom: 2px;
-              font-size: 9px;
-            }
-            .barcode-svg {
-              max-width: 100%;
-              height: auto;
-              margin: 2px 0;
-            }
-            .barcode-code {
-              font-family: monospace;
-              font-size: 8px;
-              color: #333;
-              margin-top: 2px;
-            }
-            .price {
-              font-weight: bold;
-              color: #16a34a;
-              margin-top: 2px;
-            }
-            .promo-price {
-              color: #dc2626;
-              font-size: 9px;
-              text-decoration: line-through;
-            }
-            @media print {
-              body { padding: 0; }
-              .label-grid { gap: 0; }
-              .label { border: 1px dashed #ccc; }
-            }
-          </style>
-        </head>
-        <body>
-          <div class="label-grid">
-            ${labelHtml}
-          </div>
-          <script>
-            window.onload = function() {
-              ${jsbarcodeCalls}
-              setTimeout(function() {
-                window.print();
-              }, 600);
-            };
-          <\/script>
-        </body>
-      </html>
-    `
-
-    printWindow.document.write(htmlContent)
-    printWindow.document.close()
-  }, [printItems, labelSettings, fontSizes, selectedPaperSizeId, company?.name, toast])
-
-  const blocked = useModuleGuard('Print Barcode')
   if (blocked) return blocked
 
   // ============ JSX ============
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-muted/40 to-muted/20 dark:from-background dark:to-background p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Print Barcode Labels</h1>
-          <p className="text-gray-600 mt-1">Search products and configure barcode label settings</p>
-        </div>
+    <div className={cn(bricolage.variable, instrument.variable, "font-dash-body flex flex-col gap-5 text-dash-ink")}>
+      <PageHeader title="Print barcode labels" description="Pick products, choose what to show, and print, with a live preview." />
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* LEFT COLUMN - Search + Table */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Search Card */}
-            <Card className="p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Search Products</h2>
+      <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_400px]">
+        <div className="flex min-w-0 flex-col gap-5">
+          {/* 1 Products */}
+          <SectionCard title="1 · Products">
+            <div className="relative">
               <div className="relative">
-                <Barcode className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
+                <Label htmlFor="barcode-product-search" className="sr-only">Search products</Label>
                 <Input
-                  className="pl-10 pr-10"
-                  placeholder="Search by product name or SKU..."
+                  id="barcode-product-search"
+                  type="search"
+                  placeholder="Search products to add…"
                   value={searchQuery}
                   onChange={e => handleSearchChange(e.target.value)}
                   onFocus={() => searchResults.length > 0 && setShowDropdown(true)}
+                  className="pl-8 pr-8"
                 />
-                {isSearching && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-emerald-600 animate-spin" />}
-
-                {/* Dropdown */}
-                {showDropdown && searchResults.length > 0 && (
-                  <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 shadow-lg rounded-md max-h-64 overflow-y-auto">
-                    {searchResults.map(product => (
-                      <button
-                        key={product.id}
-                        onClick={() => handleAddProduct(product)}
-                        className="w-full text-left px-4 py-3 hover:bg-emerald-50 border-b last:border-b-0 flex justify-between items-center"
-                      >
-                        <div>
-                          <p className="font-medium text-gray-900">{product.name}</p>
-                          <p className="text-xs text-gray-500">{product.sku}</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-sm font-semibold text-emerald-600">${getPrice(product).toFixed(2)}</p>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                )}
+                {isSearching && <Spinner className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />}
               </div>
-              {searchQuery && searchResults.length === 0 && !isSearching && (
-                <p className="text-sm text-gray-500 mt-2">No products found</p>
+              {showDropdown && searchResults.length > 0 && (
+                <Card className="absolute z-50 mt-1 max-h-64 w-full gap-0 overflow-y-auto py-0 shadow-lg">
+                  {searchResults.map(product => (
+                    <Button key={product.id} type="button" variant="ghost" onClick={() => handleAddProduct(product)}
+                      className="h-auto w-full justify-between rounded-none text-left font-normal">
+                      <span>
+                        <span className="block text-sm font-semibold">{product.name}</span>
+                        <span className="block text-xs text-muted-foreground">{product.sku}</span>
+                      </span>
+                      <span className="text-sm font-semibold">{(product.variants?.length ?? 0) > 0 ? `${product.variants!.length} variants` : formatCurrency(labelOf({ key: '', product, variant: null, quantity: 1, packingDate: '' }).price)}</span>
+                    </Button>
+                  ))}
+                </Card>
               )}
-            </Card>
+            </div>
 
-            {/* Products Table Card */}
-            <Card className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-gray-900">Products to Print</h2>
-                <Badge variant="secondary">{printItems.length}</Badge>
-              </div>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <Button type="button" variant="outline" onClick={addFromLastPurchase} disabled={loadingPo}>
+                {loadingPo ? <Spinner /> : <ShoppingCart className="size-4" aria-hidden />} Add from last purchase
+              </Button>
+              <Button type="button" variant="outline" onClick={() => setPrintItems([])} disabled={printItems.length === 0}>
+                <Eraser className="size-4" aria-hidden /> Clear list
+              </Button>
+            </div>
 
-              {printItems.length > 0 ? (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b">
-                        <th className="text-left py-2 px-3 font-semibold text-gray-600">Product Name</th>
-                        <th className="text-left py-2 px-3 font-semibold text-gray-600">SKU / Code</th>
-                        <th className="text-center py-2 px-3 font-semibold text-gray-600 w-20">Qty</th>
-                        <th className="text-left py-2 px-3 font-semibold text-gray-600 w-24">Price</th>
-                        <th className="text-center py-2 px-3 font-semibold text-gray-600 w-12">Delete</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {printItems.map(item => (
-                        <tr key={item.product.id} className="border-b hover:bg-gray-50">
-                          <td className="py-3 px-3 text-gray-900">{item.product.name}</td>
-                          <td className="py-3 px-3 text-gray-600 text-xs">{item.product.sku}</td>
-                          <td className="py-3 px-3">
-                            <Input
-                              type="number"
-                              min={1}
-                              value={item.quantity}
-                              onChange={e => handleQuantityChange(item.product.id, parseInt(e.target.value) || 1)}
-                              className="w-16 text-center"
-                            />
-                          </td>
-                          <td className="py-3 px-3">
-                            <Input
-                              readOnly
-                              value={formatCurrency(getPrice(item.product))}
-                              className="w-24 bg-gray-100 text-gray-600 text-xs"
-                            />
-                          </td>
-                          <td className="py-3 px-3 text-center">
-                            <button
-                              onClick={() => handleRemoveItem(item.product.id)}
-                              className="text-red-500 hover:text-red-700 inline-flex"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <p className="text-gray-500">No products added yet. Use the search above to add products.</p>
-                </div>
-              )}
-            </Card>
-          </div>
+            <div className="mt-4">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Product</TableHead>
+                    <TableHead>Labels</TableHead>
+                    <TableHead>Packed on</TableHead>
+                    <TableHead className="w-12"><span className="sr-only">Remove</span></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {printItems.length === 0 ? (
+                    <TableRow><TableCell colSpan={4}><EmptyState className="p-4 md:p-6" title="No products added" description="Search and add products above, or pick them on the Products page." /></TableCell></TableRow>
+                  ) : printItems.map(item => (
+                    <TableRow key={item.key}>
+                      <TableCell>
+                        <div className="font-semibold">{item.product.name}{item.variant ? <span className="font-normal text-muted-foreground"> · {item.variant.name}</span> : null}</div>
+                        <div className="text-xs text-muted-foreground">{labelOf(item).code} · {formatCurrency(labelOf(item).price)}</div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="inline-flex items-center gap-1">
+                          <WithTooltip content="Fewer labels"><Button type="button" variant="outline" size="icon" aria-label="Fewer labels" onClick={() => updateItem(item.key, { quantity: Math.max(1, item.quantity - 1) })}><Minus className="size-4" aria-hidden /></Button></WithTooltip>
+                          <Input type="number" min={1} aria-label={`Labels for ${item.product.name}`} value={item.quantity}
+                            onChange={e => updateItem(item.key, { quantity: Math.max(1, parseInt(e.target.value) || 1) })}
+                            className="w-14 text-center tabular-nums" />
+                          <WithTooltip content="More labels"><Button type="button" variant="outline" size="icon" aria-label="More labels" onClick={() => updateItem(item.key, { quantity: item.quantity + 1 })}><Plus className="size-4" aria-hidden /></Button></WithTooltip>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Input type="date" aria-label="Packing date" value={item.packingDate}
+                          onChange={e => updateItem(item.key, { packingDate: e.target.value })}
+                          className="w-40" />
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <WithTooltip content={`Remove ${item.product.name}`}><Button type="button" variant="ghost" size="icon" aria-label={`Remove ${item.product.name}`} onClick={() => removeItem(item.key)}><Trash2 className="size-4" aria-hidden /></Button></WithTooltip>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+            <p className="mt-3 text-xs font-semibold text-muted-foreground">{totalLabels} labels · {sheets} sheet{sheets === 1 ? '' : 's'}</p>
+          </SectionCard>
 
-          {/* RIGHT COLUMN - Settings */}
-          <div className="space-y-6">
-            {/* Label Settings Card */}
-            <Card className="p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Label Content</h2>
-              <div className="space-y-3">
-                {LABEL_FIELDS.map(field => {
-                  const isChecked = labelSettings[field.key as keyof LabelSettings]
-                  return (
-                    <div key={field.key} className="flex items-center gap-3">
-                      <Checkbox
-                        id={field.key}
-                        checked={isChecked}
-                        onCheckedChange={checked =>
-                          setLabelSettings(prev => ({
-                            ...prev,
-                            [field.key]: !!checked,
-                          }))
-                        }
-                      />
-                      <Label htmlFor={field.key} className="flex-1 cursor-pointer">
+          {/* 2 What to show */}
+          <SectionCard title="2 · What to show">
+            <div className="grid gap-3 sm:grid-cols-2">
+              {LABEL_FIELDS.map(field => {
+                const checked = labelSettings[field.key]
+                return (
+                  <Item key={field.key} variant="outline" size="sm" data-state={checked ? 'checked' : 'unchecked'}
+                    className="justify-between data-[state=checked]:border-primary data-[state=checked]:bg-primary/5">
+                    <ItemContent>
+                      <Label className="cursor-pointer">
+                        <Checkbox checked={checked} onCheckedChange={v => setLabelSettings(prev => ({ ...prev, [field.key]: !!v }))} />
                         {field.label}
                       </Label>
-                      <div className="flex items-center gap-1">
-                        <Input
-                          type="number"
-                          min={6}
-                          max={32}
-                          value={fontSizes[field.sizeKey as keyof FontSizes]}
-                          onChange={e =>
-                            setFontSizes(prev => ({
-                              ...prev,
-                              [field.sizeKey]: parseInt(e.target.value) || 10,
-                            }))
-                          }
-                          className="w-14 text-center text-sm"
-                          disabled={!isChecked}
-                        />
-                        <span className="text-xs text-gray-500">pt</span>
-                      </div>
+                    </ItemContent>
+                    <ItemActions>
+                      <Label className="text-xs text-muted-foreground">
+                        <span>Size</span>
+                        <Input type="number" min={6} max={40} disabled={!checked} value={fontSizes[field.sizeKey]}
+                          aria-label={`${field.label} font size`}
+                          onChange={e => setFontSizes(prev => ({ ...prev, [field.sizeKey]: parseInt(e.target.value) || 10 }))}
+                          className="w-14 text-center tabular-nums" />
+                      </Label>
+                    </ItemActions>
+                  </Item>
+                )
+              })}
+            </div>
+            <FormField label="Price shown" htmlFor="price-shown" className="mt-4"
+              description={<>Products with an active offer print the offer price{hasOffer ? ' (some in your list do)' : ''}. Variants print their own selling price.</>}>
+              <Select value={showPrice} onValueChange={v => setShowPrice(v as 'inc' | 'exc')}>
+                <SelectTrigger id="price-shown" className="w-full max-w-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="inc">Including tax{rate ? ` (${rate}%)` : ''}</SelectItem>
+                  <SelectItem value="exc">Excluding tax</SelectItem>
+                </SelectContent>
+              </Select>
+            </FormField>
+          </SectionCard>
+
+          {/* 3 Paper */}
+          <SectionCard title="3 · Paper">
+            <ChoiceCardGroup aria-label="Paper" className="gap-3 sm:grid-cols-2"
+              value={selectedPaperSizeId} onValueChange={(id) => { setSelectedPaperSizeId(id); setSheetNo(1) }}>
+              {PAPER_SIZES.map(ps => (
+                <ChoiceCard key={ps.id} value={ps.id} title={ps.label} description={ps.sub} />
+              ))}
+            </ChoiceCardGroup>
+            <p className="mt-3 text-xs text-muted-foreground">Tip: for thermal label printers choose “Label roll” — one label per page. Codes follow each product’s barcode type; values that do not fit it (and QR) print as Code 128.</p>
+          </SectionCard>
+        </div>
+
+        {/* Preview */}
+        <aside aria-label="Preview" className="xl:sticky xl:top-4">
+        <SectionCard title="Preview" contentClassName="flex flex-col gap-4"
+          actions={<span className="text-xs text-muted-foreground">{totalLabels} labels · {sheets} sheet{sheets === 1 ? '' : 's'}</span>}>
+          <Card className="bg-muted/50 p-3 shadow-none">
+            {previewLabels.length === 0 ? (
+              <EmptyState className="p-6 md:p-6" title="Add products to see a preview." />
+            ) : (
+              <div className="grid gap-1.5" style={{ gridTemplateColumns: `repeat(${paper.cols}, minmax(0, 1fr))` }}>
+                {previewLabels.map((item, idx) => {
+                  const l = labelOf(item)
+                  const z = (n: number) => Math.max(6, Math.round(n * 0.7))
+                  return (
+                    <div key={idx} className="flex min-h-20 flex-col items-center justify-center overflow-hidden rounded-md border bg-white p-1.5 text-center text-black">
+                      {labelSettings.showBusinessName && <span className="max-w-full truncate font-bold uppercase" style={{ fontSize: z(fontSizes.businessName) }}>{businessName}</span>}
+                      {labelSettings.showProductName && <span className="line-clamp-2 font-semibold leading-tight" style={{ fontSize: z(fontSizes.productName) }}>{l.name}</span>}
+                      {labelSettings.showProductVariation && l.variant && <span className="max-w-full truncate text-neutral-600" style={{ fontSize: z(fontSizes.productVariation) }}>{l.variant}</span>}
+                      <Barcode value={l.code} format={l.format as any} height={24} width={1} fontSize={8} margin={2} background="#ffffff" lineColor="#000000" />
+                      {labelSettings.showProductPrice && <span className="font-bold" style={{ fontSize: z(fontSizes.productPrice) }}>{formatCurrency(l.price)}</span>}
+                      {labelSettings.showSku && l.sku && <span className="text-neutral-600" style={{ fontSize: z(fontSizes.sku) }}>SKU {l.sku}</span>}
+                      {labelSettings.showPackingDate && <span className="text-neutral-600" style={{ fontSize: z(fontSizes.packingDate) }}>Packed: {item.packingDate}</span>}
                     </div>
                   )
                 })}
               </div>
-            </Card>
-
-            {/* Paper Size Card */}
-            <Card className="p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Paper / Label Size</h2>
-              <Select value={selectedPaperSizeId} onValueChange={setSelectedPaperSizeId}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {PAPER_SIZES.map(ps => (
-                    <SelectItem key={ps.id} value={ps.id}>
-                      {ps.label} ({ps.description})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-gray-500 mt-3">
-                {PAPER_SIZES.find(p => p.id === selectedPaperSizeId)?.description} • {PAPER_SIZES.find(p => p.id === selectedPaperSizeId)?.cols} columns per sheet
-              </p>
-            </Card>
-
-            {/* Action Buttons Card */}
-            <Card className="p-6 space-y-3">
-              <Button
-                onClick={handlePrint}
-                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
-                disabled={printItems.length === 0}
-              >
-                <Printer className="h-4 w-4 mr-2" />
-                Preview & Print
-              </Button>
-              <Button onClick={handleReset} variant="outline" className="w-full">
-                <RotateCcw className="h-4 w-4 mr-2" />
-                Reset
-              </Button>
-            </Card>
+            )}
+          </Card>
+          {sheets > 1 && (
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <WithTooltip content="Previous sheet"><Button type="button" variant="outline" size="icon-sm" aria-label="Previous sheet" disabled={pageN <= 1} onClick={() => setSheetNo(pageN - 1)}><ChevronLeft className="size-4" aria-hidden /></Button></WithTooltip>
+              <span>Sheet {pageN} of {sheets}</span>
+              <WithTooltip content="Next sheet"><Button type="button" variant="outline" size="icon-sm" aria-label="Next sheet" disabled={pageN >= sheets} onClick={() => setSheetNo(pageN + 1)}><ChevronRight className="size-4" aria-hidden /></Button></WithTooltip>
+            </div>
+          )}
+          <div className="flex flex-wrap gap-2">
+            <Button type="button" variant="outline" onClick={() => openPrint(false)} disabled={printItems.length === 0} className="flex-1">
+              <Eye className="size-4" aria-hidden /> Preview
+            </Button>
+            <Button type="button" onClick={() => openPrint(true)} disabled={printItems.length === 0} className="flex-1">
+              <Printer className="size-4" aria-hidden /> Print {totalLabels} labels
+            </Button>
           </div>
-        </div>
+        </SectionCard>
+        </aside>
       </div>
     </div>
   )
