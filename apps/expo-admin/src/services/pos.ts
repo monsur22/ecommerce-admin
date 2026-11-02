@@ -255,6 +255,7 @@ export async function createSell(payload: CheckoutPayload): Promise<CreatedSale>
     shippingCountry: payload.shippingCountry,
     method: payload.method,
     source: payload.source,
+    adSource: payload.adSource || undefined,
     locationId: payload.locationId,
     amount: payload.amount,
     discount: payload.discount > 0 ? payload.discount : undefined,

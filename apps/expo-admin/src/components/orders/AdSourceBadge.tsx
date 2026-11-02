@@ -32,6 +32,21 @@ export const AD_SOURCE_FILTERS: AdSource[] = ["facebook", "instagram", "whatsapp
 /** Sources that count as social / ads ("From ads" filter = adSource=any: any non-null source except phone). */
 export const SOCIAL_SOURCES: AdSource[] = ["facebook", "instagram", "whatsapp", "messenger", "tiktok", "google", "youtube"];
 
+/**
+ * "Order came from" options for orders typed in by staff (same list as the web New sale form).
+ * "direct" = walk-in / direct and is sent as no `adSource` (stored null).
+ */
+export const MANUAL_SOURCE_OPTIONS: { value: "direct" | AdSource; label: string }[] = [
+  { value: "direct", label: "Walk-in / direct" },
+  { value: "facebook", label: "Facebook" },
+  { value: "messenger", label: "Messenger" },
+  { value: "instagram", label: "Instagram" },
+  { value: "whatsapp", label: "WhatsApp" },
+  { value: "tiktok", label: "TikTok" },
+  { value: "phone", label: "Phone call" },
+  { value: "other", label: "Other" },
+];
+
 export function adSourceMeta(source?: string | null): AdSourceMeta {
   const key = String(source ?? "").toLowerCase() as AdSource;
   return AD_SOURCE_META[key] ?? AD_SOURCE_META.other;

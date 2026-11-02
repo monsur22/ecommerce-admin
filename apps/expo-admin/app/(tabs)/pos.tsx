@@ -40,6 +40,7 @@ import type { Category } from "@/types/catalog";
 import type { CartItem, Coupon, CompletedSale, PaymentMethod, PosPaymentOptions, PosProduct, PosVariant } from "@/types/pos";
 import { useAuth } from "@/context/AuthContext";
 import { AccessDenied } from "@/components/AccessDenied";
+import { MANUAL_SOURCE_OPTIONS, adSourceMeta } from "@/components/orders/AdSourceBadge";
 
 
 function cartKey(productId: number, variantId?: number) {
@@ -69,6 +70,8 @@ export default function PosTab() {
   const [cart, setCart]               = useState<CartItem[]>([]);
   const [customerName, setCustomerName] = useState("Walk-in Customer");
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  // "Order came from" (orders taken from Facebook / WhatsApp / calls); "direct" = walk-in, sent as no adSource
+  const [adSource, setAdSource] = useState("direct");
   const [customerSuggestions, setCustomerSuggestions] = useState<Customer[]>([]);
   const [customerSearching, setCustomerSearching] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -220,6 +223,7 @@ export default function PosTab() {
     setAppliedCoupon(null);
     setCustomerName("Walk-in Customer");
     setSelectedCustomer(null);
+    setAdSource("direct");
     setCustomerSuggestions([]);
     setShowSuggestions(false);
     setCartOpen(false);
@@ -309,6 +313,7 @@ export default function PosTab() {
         shippingCountry: selectedCustomer?.country,
         method,
         source: "pos",
+        adSource: adSource !== "direct" ? adSource : undefined,
         locationId: location ? location.id : undefined,
         amount: total,
         discount: totalDiscount,
@@ -518,6 +523,32 @@ export default function PosTab() {
                   ))}
                 </View>
               )}
+            </View>
+
+            {/* Order came from */}
+            <View style={styles.sourceBlock}>
+              <Text style={styles.sourceLabel}>Order came from</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.sourceChips} keyboardShouldPersistTaps="handled">
+                {MANUAL_SOURCE_OPTIONS.map((o) => {
+                  const active = adSource === o.value;
+                  const meta = o.value === "direct" ? null : adSourceMeta(o.value);
+                  const tint = meta?.color ?? colors.primaryDark;
+                  return (
+                    <Pressable
+                      key={o.value}
+                      style={[styles.sourceChip, active && { backgroundColor: tint, borderColor: tint }]}
+                      onPress={() => setAdSource(o.value)}
+                    >
+                      <Ionicons
+                        name={meta?.icon ?? "storefront-outline"}
+                        size={13}
+                        color={active ? "#fff" : tint}
+                      />
+                      <Text style={[styles.sourceChipText, active && { color: "#fff" }]}>{o.label}</Text>
+                    </Pressable>
+                  );
+                })}
+              </ScrollView>
             </View>
 
             {/* Items */}
@@ -909,6 +940,33 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     height: 42,
     backgroundColor: "#f8fafc",
+  },
+  sourceBlock: {
+    gap: 6,
+  },
+  sourceLabel: {
+    color: colors.muted,
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  sourceChips: {
+    gap: 6,
+  },
+  sourceChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  sourceChipText: {
+    color: colors.text,
+    fontSize: 12,
+    fontWeight: "700",
   },
   customerInput: {
     flex: 1,

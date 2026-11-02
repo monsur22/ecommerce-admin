@@ -89,6 +89,8 @@ export interface CheckoutPayload {
   shippingCountry?: string;
   method: PaymentMethod;
   source?: "pos";
+  /** Where the order came from (facebook, whatsapp, phone, ...); omitted = walk-in / direct */
+  adSource?: string;
   /** Warehouse / branch the sale is made from (stock is checked there) */
   locationId?: number;
   amount: number;

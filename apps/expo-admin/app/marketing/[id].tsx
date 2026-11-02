@@ -21,6 +21,8 @@ import { useCurrency } from "@/context/CurrencyContext";
 import { AccessDenied } from "@/components/AccessDenied";
 import { AdSourceBadge, OrderFlagBadge } from "@/components/orders/AdSourceBadge";
 import { buildCaption, copyText, shareText, shareUrl, targetSummary } from "@/components/marketing/link-share";
+import { LinkQrCode, shareQrPdf } from "@/components/marketing/LinkQrCode";
+import { ClicksOrdersChart } from "@/components/marketing/ClicksOrdersChart";
 import { apiErrorMessage, formatCompactDate, formatDateTime } from "@/lib/format";
 import { getImageUrl } from "@/lib/images";
 import {
@@ -57,6 +59,7 @@ export default function AdOrderLinkDetailScreen() {
   const [toggling, setToggling] = useState(false);
   const [caption, setCaption] = useState("");
   const [captionEdited, setCaptionEdited] = useState(false);
+  const [showQr, setShowQr] = useState(true);
   const loadedOnce = useRef(false);
 
   const loadLink = useCallback(async () => {
@@ -258,6 +261,27 @@ export default function AdOrderLinkDetailScreen() {
           )}
         </View>
 
+        {/* QR code (for flyers, packaging, the shop counter) */}
+        {url ? (
+          <View style={styles.card}>
+            <View style={styles.sectionHead}>
+              <Text style={styles.sectionTitle}>QR code</Text>
+              <Pressable onPress={() => setShowQr((v) => !v)} hitSlop={8}>
+                <Text style={styles.resetText}>{showQr ? "Hide" : "Show"}</Text>
+              </Pressable>
+            </View>
+            {showQr ? (
+              <>
+                <LinkQrCode value={url} />
+                <Text style={styles.qrHint}>Customers scan it with their phone camera to open the link.</Text>
+                <View style={styles.btnRow}>
+                  <ActionButton icon="share-outline" label="Share QR (PDF)" onPress={() => void shareQrPdf(url, link.name)} />
+                </View>
+              </>
+            ) : null}
+          </View>
+        ) : null}
+
         {/* Caption */}
         {url ? (
           <View style={styles.card}>
@@ -317,6 +341,7 @@ export default function AdOrderLinkDetailScreen() {
                 <StatusCount label="Delivered" value={stats.delivered} color={STATUS_COLOR.Delivered} />
                 <StatusCount label="Cancelled" value={stats.cancelled} color={STATUS_COLOR.Cancelled} />
               </View>
+              <ClicksOrdersChart days={stats.byDay} formatMoney={formatCurrency} />
               {activeDays.length > 0 ? (
                 <View style={{ gap: 2 }}>
                   <Text style={styles.subHead}>Active days</Text>
@@ -329,9 +354,7 @@ export default function AdOrderLinkDetailScreen() {
                     </View>
                   ))}
                 </View>
-              ) : (
-                <Text style={styles.emptyText}>No clicks or orders in this period.</Text>
-              )}
+              ) : null}
             </>
           ) : !statsLoading ? (
             <Text style={styles.emptyText}>Stats are unavailable right now. Pull to refresh.</Text>
@@ -485,6 +508,7 @@ const styles = StyleSheet.create({
   fieldLabel: { color: colors.muted, fontSize: 12, fontWeight: "700" },
   urlBox: { backgroundColor: colors.background, borderRadius: 12, padding: 12, borderWidth: 1, borderColor: colors.border },
   urlText: { color: colors.text, fontSize: 14, fontWeight: "700" },
+  qrHint: { color: colors.muted, fontSize: 12, textAlign: "center" },
   fullUrlRow: { flexDirection: "row", alignItems: "center", gap: 6 },
   fullUrlText: { flex: 1, color: colors.muted, fontSize: 11 },
   btnRow: { flexDirection: "row", gap: 10 },

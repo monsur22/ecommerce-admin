@@ -338,6 +338,20 @@ export default function OrdersTab() {
             </View>
           ) : null}
         </Pressable>
+        <Pressable
+          style={[styles.tabChip, flagFilter === "quick" && styles.quickChipActive]}
+          onPress={() => setFlagFilter((v) => (v === "quick" ? "" : "quick"))}
+        >
+          <Ionicons name="flash" size={13} color={flagFilter === "quick" ? "#fff" : "#0369a1"} />
+          <Text style={[styles.tabChipText, flagFilter === "quick" && { color: "#fff" }]}>Quick order</Text>
+        </Pressable>
+        <Pressable
+          style={[styles.tabChip, flagFilter === "duplicate" && styles.dupChipActive]}
+          onPress={() => setFlagFilter((v) => (v === "duplicate" ? "" : "duplicate"))}
+        >
+          <Ionicons name="warning" size={13} color={flagFilter === "duplicate" ? "#fff" : "#b91c1c"} />
+          <Text style={[styles.tabChipText, flagFilter === "duplicate" && { color: "#fff" }]}>Possible duplicate</Text>
+        </Pressable>
         {ORDER_TABS.map((t) => {
           const active = tab === t.value;
           const count = tabCounts[t.value];
@@ -798,6 +812,14 @@ const styles = StyleSheet.create({
   adsChipActive: {
     borderColor: "#1877f2",
     backgroundColor: "#1877f2",
+  },
+  quickChipActive: {
+    borderColor: "#0369a1",
+    backgroundColor: "#0369a1",
+  },
+  dupChipActive: {
+    borderColor: "#b91c1c",
+    backgroundColor: "#b91c1c",
   },
   tabChipText: {
     color: colors.muted,
