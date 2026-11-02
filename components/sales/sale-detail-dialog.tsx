@@ -2,7 +2,9 @@
 
 import { paymentApi } from "@/lib/paymentApi"
 import { useEffect, useState } from "react"
-import { MapPin, Pencil, Phone, Printer } from "lucide-react"
+import Link from "next/link"
+import { AlertTriangle, Megaphone, MapPin, Pencil, Phone, Printer } from "lucide-react"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
@@ -17,6 +19,7 @@ import { SectionTitle } from "@/components/common/SectionTitle"
 import { StatusBadge } from "@/components/common/StatusBadge"
 import { sellsApi, type SellResponse } from "@/lib/sellsApi"
 import { FollowUpDialog, FollowUpHistory, canFollowUp, useFollowUps } from "@/components/sales/order-follow-up"
+import { AdSourceBadge, OrderFlagBadges } from "@/components/sales/ad-source"
 import { useToast } from "@/hooks/use-toast"
 import { useCompanySettings } from "@/contexts/company-settings-context"
 import { cn } from "@/lib/utils"
@@ -236,8 +239,20 @@ export function SaleDetailDialog({ sale: saleProp, onClose, onPrint, onRecordPay
           const step = cancelled ? null : nextStep(sale)
           const receiverName = sale.shippingFullName || sale.customerName
           const receiverPhone = sale.shippingPhone || sale.shippingAddress?.phone || ""
+          const utm: [string, string | null | undefined][] = [
+            ["utm_source", sale.utmSource], ["utm_medium", sale.utmMedium], ["utm_campaign", sale.utmCampaign],
+            ["utm_content", sale.utmContent], ["utm_term", sale.utmTerm],
+          ]
+          const hasAttribution = !!(sale.adSource || sale.campaignLink || utm.some(([, v]) => v) || sale.clickId || sale.landingUrl || sale.referrer)
           return (
             <div className="space-y-5">
+              {sale.possibleDuplicate && (
+                <Alert variant="destructive">
+                  <AlertTriangle aria-hidden />
+                  <AlertTitle>Possible duplicate order</AlertTitle>
+                  <AlertDescription>The same phone ordered the same product within 30 minutes. Call the customer before confirming.</AlertDescription>
+                </Alert>
+              )}
               <InfoList className="grid-cols-2 gap-4 sm:grid-cols-3">
                 <InfoRow layout="stacked" label="Date" value={new Date(sale.orderTime).toLocaleString()} />
                 <InfoRow layout="stacked" label="Customer" value={sale.customerName} />
@@ -245,6 +260,14 @@ export function SaleDetailDialog({ sale: saleProp, onClose, onPrint, onRecordPay
                 <InfoRow layout="stacked" label="Status" value={<StatusBadge status={status} />} />
                 <InfoRow layout="stacked" label="Payment" value={<StatusBadge status={pay.label} variant={SALE_PAY_VARIANT[pay.label]} />} />
                 <InfoRow layout="stacked" label="Channel · location" value={[sale.source ? sale.source.charAt(0).toUpperCase() + sale.source.slice(1) : "", sale.locationName || ""].filter(Boolean).join(" · ") || "—"} />
+                {(sale.adSource || sale.isQuickOrder) && (
+                  <InfoRow layout="stacked" label="Source" value={
+                    <span className="flex flex-wrap gap-1">
+                      <AdSourceBadge source={sale.adSource} label={sale.adSourceLabel} />
+                      <OrderFlagBadges order={{ isQuickOrder: sale.isQuickOrder }} />
+                    </span>
+                  } />
+                )}
                 {sale.couponCode && <InfoRow layout="stacked" label="Coupon" value={<span className="font-mono text-[13px]">{sale.couponCode}</span>} />}
                 {(sale.transactionId || sale.paymentTransactionId) && <InfoRow layout="stacked" label="Transaction ID" value={<span className="break-all font-mono text-[13px]">{sale.transactionId || sale.paymentTransactionId}</span>} />}
               </InfoList>
@@ -269,6 +292,29 @@ export function SaleDetailDialog({ sale: saleProp, onClose, onPrint, onRecordPay
                   </InfoList>
                 </Card>
               </div>
+
+              {hasAttribution && (
+                <Card className="gap-2 p-4 text-sm">
+                  <SectionTitle className="flex items-center gap-1.5">
+                    <Megaphone className="size-4" aria-hidden /> Ad &amp; campaign
+                  </SectionTitle>
+                  <InfoList className="grid-cols-2 gap-x-3 gap-y-2 sm:grid-cols-3">
+                    {sale.campaignLink && (
+                      <InfoRow layout="stacked" className="col-span-2 sm:col-span-3" label="Order link" value={
+                        <Link href={`/dashboard/marketing/links?link=${sale.campaignLink.id}`} className="text-primary underline-offset-4 hover:underline">
+                          {sale.campaignLink.name} <span className="font-mono text-xs text-muted-foreground">/{sale.campaignLink.code}</span>
+                        </Link>
+                      } />
+                    )}
+                    {utm.filter(([, v]) => v).map(([k, v]) => (
+                      <InfoRow key={k} layout="stacked" label={k} value={<span className="break-all font-mono text-[13px]">{v}</span>} />
+                    ))}
+                    {sale.clickId && <InfoRow layout="stacked" className="col-span-2 sm:col-span-3" label="Click ID" value={<span className="break-all font-mono text-xs">{sale.clickId}</span>} />}
+                    {sale.landingUrl && <InfoRow layout="stacked" className="col-span-2 sm:col-span-3" label="Landing page" value={<span className="break-all font-mono text-xs">{sale.landingUrl}</span>} />}
+                    {sale.referrer && <InfoRow layout="stacked" className="col-span-2 sm:col-span-3" label="Referrer" value={<span className="break-all font-mono text-xs">{sale.referrer}</span>} />}
+                  </InfoList>
+                </Card>
+              )}
 
               {(sale.deliveryNote || sale.notes) && (
                 <Card className="gap-1 p-4 text-sm">

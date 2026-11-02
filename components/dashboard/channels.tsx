@@ -3,6 +3,7 @@
 import { useCompanySettings } from "@/contexts/company-settings-context"
 import { Card } from "@/components/ui/card"
 import { SectionTitle } from "@/components/common/SectionTitle"
+import { AD_SOURCE_META, adSourceLabel } from "@/components/sales/ad-source"
 import { wholeMoney } from "./format"
 import { CardTitle, DashCard, EmptyNote, SectionError, SectionSkeleton } from "./section"
 import { useDashboardSection } from "./use-dashboard-section"
@@ -49,6 +50,34 @@ export function Channels() {
             </li>
           ))}
         </ul>
+        {!!data.adSources?.length && (() => {
+          const ads = data.adSources
+          const adTotal = data.channels.reduce((n, c) => n + c.orders, 0)
+          const adOrders = ads.reduce((n, a) => n + a.orders, 0)
+          return (
+            <>
+              <SectionTitle className="mt-2">
+                From ads &amp; social
+                <span className="ml-1.5 font-normal normal-case tracking-normal text-muted-foreground">
+                  {adOrders} order{adOrders === 1 ? "" : "s"}{adTotal > 0 ? ` · ${Math.round((adOrders / adTotal) * 100)}% of all` : ""}
+                </span>
+              </SectionTitle>
+              <ul className="divide-y">
+                {ads.map((a) => {
+                  const Icon = AD_SOURCE_META[a.key]?.icon
+                  return (
+                    <li key={a.key} className="flex items-center gap-2.5 py-2 text-sm">
+                      {Icon && <Icon className="size-4 text-muted-foreground" aria-hidden />}
+                      <span className="font-medium">{adSourceLabel(a.key)}</span>
+                      <span className="text-muted-foreground">{a.orders} orders</span>
+                      <span className="ml-auto font-semibold tabular-nums">{formatCurrency(a.revenue)}</span>
+                    </li>
+                  )
+                })}
+              </ul>
+            </>
+          )
+        })()}
         <SectionTitle className="mt-2">Payment methods</SectionTitle>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
           {data.paymentMethods.map((m) => (

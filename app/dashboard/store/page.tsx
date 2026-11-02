@@ -13,7 +13,8 @@ import { Switch as UISwitch } from "@/components/ui/switch"
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { StatsCards } from "@/components/ui/stats-card"
 import { bricolage, instrument } from "@/components/dashboard/fonts"
-import { settingsApi, resolveStorageUrl, type AuraShopHeroSlide } from "@/lib/settingsApi"
+import { settingsApi, resolveStorageUrl, type AuraShopHeroSlide, type HomepageSections } from "@/lib/settingsApi"
+import { HomepageSectionsEditor, sectionsFromSettings, sectionsToSettings, validateSections, type LinkGroup, type SectionsForm } from "@/components/storefront-homepage-sections"
 import wishlistApi, { type WishlistAnalytics } from "@/lib/wishlistApi"
 import { productApi, type ProductResponse } from "@/lib/productApi"
 import { categoryApi, type CategoryResponse } from "@/lib/categoryApi"
@@ -50,8 +51,12 @@ interface Form {
   instagram: string
   whatsapp: string
   youtube: string
+  facebookPixelId: string
+  tiktokPixelId: string
+  whatsappNumber: string
   secs: string
   slides: Slide[]
+  sections: SectionsForm
 }
 
 const THEMES: [string, string][] = [["#2449E8", "Blue"], ["#0F766E", "Teal"], ["#6D28D9", "Violet"], ["#0E1525", "Ink"]]
@@ -115,8 +120,12 @@ const normalize = (business: any): Form => {
     instagram: S(so.instagram),
     whatsapp: S(so.whatsapp),
     youtube: S(so.youtube),
+    facebookPixelId: S(o.facebookPixelId),
+    tiktokPixelId: S(o.tiktokPixelId),
+    whatsappNumber: S(o.whatsappNumber),
     secs: String(ms >= 2000 ? Math.round(ms / 1000) : 6),
     slides,
+    sections: sectionsFromSettings(business?.homepageSections),
   }
 }
 
@@ -215,6 +224,12 @@ export default function OnlineStorePage() {
     return { cats, prods }
   }, [categories, products])
   const knownLinks = useMemo(() => new Set([...PAGES.map(([v]) => v), ...linkOptions.cats.map((o) => o.v), ...linkOptions.prods.map((o) => o.v)]), [linkOptions])
+  const linkGroups = useMemo<LinkGroup[]>(() => [
+    { label: "Pages", options: PAGES.map(([v, l]) => ({ value: v, label: `${l} (${v})` })) },
+    { label: "Category", options: linkOptions.cats.map((o) => ({ value: o.v, label: o.l })) },
+    { label: "Product", options: linkOptions.prods.map((o) => ({ value: o.v, label: o.l })) },
+  ], [linkOptions])
+  const categoryChoices = useMemo(() => categories.filter((c) => c.status !== false).map((c) => ({ id: c.id, name: c.categoryName })), [categories])
 
   if (blocked) return blocked
 
@@ -222,7 +237,7 @@ export default function OnlineStorePage() {
   const header = (
     <PageHeader
       title="Online store"
-      description="Your online storefront: locations, wishlist analytics, details, policies and homepage slider, with a live preview."
+      description="Your online storefront: locations, wishlist analytics, details, policies, homepage slider and homepage sections, with a live preview."
     />
   )
 
@@ -270,6 +285,22 @@ export default function OnlineStorePage() {
     }
   }
 
+  const uploadImage = async (file: File): Promise<string | null> => {
+    if (!/^image\//.test(file.type)) { toast.error("Please choose an image file (PNG, JPG, WEBP)."); return null }
+    if (file.size > 10 * 1024 * 1024) { toast.error("Image must be 10MB or smaller."); return null }
+    try {
+      setUploading(true)
+      const res = await settingsApi.uploadStorefrontImage(file)
+      toast.success("Image uploaded")
+      return res.data.imagePath
+    } catch (e: any) {
+      toast.error(e?.response?.data?.message || "Failed to upload storefront image")
+      return null
+    } finally {
+      setUploading(false)
+    }
+  }
+
   const save = async () => {
     const name = d.name.trim(), slug = d.slug.trim()
     if (!name) return fail("Store name is required.")
@@ -282,11 +313,18 @@ export default function OnlineStorePage() {
     }
     const wa = d.whatsapp.trim()
     if (wa && !URLRE.test(wa) && !/^\+?[0-9][0-9\s-]{6,}$/.test(wa)) return fail("WhatsApp must be a phone number or a URL.")
+    const fbPixel = d.facebookPixelId.trim(), ttPixel = d.tiktokPixelId.trim()
+    if (fbPixel && !/^\d{5,20}$/.test(fbPixel)) return fail("Facebook Pixel ID must be 5–20 digits (Events Manager → Data sources).")
+    if (ttPixel && !/^[A-Za-z0-9]{5,40}$/.test(ttPixel)) return fail("TikTok Pixel ID must be 5–40 letters or digits.")
+    const waNumber = d.whatsappNumber.replace(/[\s-]/g, "").replace(/^\+/, "")
+    if (waNumber && !/^\d{8,15}$/.test(waNumber)) return fail("WhatsApp order number must be a phone number with country code, e.g. 8801712345678.")
     const secs = Number(d.secs)
     if (!(secs >= 2 && secs <= 60)) return fail("Slide timing must be between 2 and 60 seconds.")
     for (let i = 0; i < d.slides.length; i++) {
       if (!d.slides[i].title.trim()) return fail(`Slide ${i + 1} needs a headline.`, i)
     }
+    const sectionsError = validateSections(d.sections)
+    if (sectionsError) return fail(sectionsError)
     try {
       setSaving(true)
       await settingsApi.updateBusiness({
@@ -294,11 +332,13 @@ export default function OnlineStorePage() {
           name, slug, theme: d.theme, published: d.published, apiUrl: d.apiUrl.trim(), companyId: d.companyId.trim(),
           policies: { returns: d.returns.trim(), shipping: d.shipping.trim(), privacy: d.privacy.trim() },
           social: { facebook: d.facebook.trim(), instagram: d.instagram.trim(), whatsapp: wa, youtube: d.youtube.trim() },
+          facebookPixelId: fbPixel, tiktokPixelId: ttPixel, whatsappNumber: waNumber,
         },
         auraShopHero: {
           autoplayMs: Math.round(secs * 1000),
           slides: d.slides.map((x, i) => ({ ...x, id: x.id || `aura-slide-${i + 1}`, tag: x.tag.trim(), title: x.title.trim(), subtitle: x.subtitle.trim(), cta: x.cta.trim(), link: x.link.trim() || "/shop", gradient: x.gradient.trim() })),
         },
+        homepageSections: sectionsToSettings(d.sections) as HomepageSections,
       })
       toast.success("Online store saved")
       await load()
@@ -311,7 +351,7 @@ export default function OnlineStorePage() {
     }
   }
 
-  const text = (lbl: string, key: keyof Omit<Form, "slides" | "published">, placeholder = "", transform?: (v: string) => string) => (
+  const text = (lbl: string, key: keyof Omit<Form, "slides" | "published" | "sections">, placeholder = "", transform?: (v: string) => string) => (
     <FormField label={lbl} htmlFor={`store-${key}`} className="min-w-0">
       <Input id={`store-${key}`} type="text" className="w-full" value={d[key]} placeholder={placeholder} onChange={(e) => patch({ [key]: transform ? transform(e.target.value) : e.target.value })} />
     </FormField>
@@ -419,6 +459,30 @@ export default function OnlineStorePage() {
           {text("WhatsApp", "whatsapp", "+8801…")}
           {text("YouTube", "youtube", "https://youtube.com/…")}
         </div>
+      </SectionCard>
+
+      <SectionCard
+        aria-label="Ads and social selling"
+        title="Ads & social selling"
+        description="Track visits and purchases from your Facebook / TikTok ads, and let shoppers order on WhatsApp."
+        actions={<Button asChild variant="outline" size="sm"><Link href="/dashboard/marketing/links">Ad order links</Link></Button>}
+        contentClassName="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-3"
+      >
+        <FormField label="Facebook Pixel ID" htmlFor="store-facebookPixelId" className="min-w-0"
+          description="Meta Events Manager → Data sources. Sends PageView, ViewContent, InitiateCheckout and Purchase.">
+          <Input id="store-facebookPixelId" inputMode="numeric" className="w-full font-mono" value={d.facebookPixelId} placeholder="e.g. 123456789012345"
+            onChange={(e) => patch({ facebookPixelId: e.target.value.trim() })} />
+        </FormField>
+        <FormField label="TikTok Pixel ID" htmlFor="store-tiktokPixelId" className="min-w-0"
+          description="TikTok Ads Manager → Assets → Events → Web events.">
+          <Input id="store-tiktokPixelId" className="w-full font-mono" value={d.tiktokPixelId} placeholder="e.g. C9ABCDEF12345678"
+            onChange={(e) => patch({ tiktokPixelId: e.target.value.trim() })} />
+        </FormField>
+        <FormField label="WhatsApp order number" htmlFor="store-whatsappNumber" className="min-w-0"
+          description="Adds an “Order on WhatsApp” button on product pages. Include the country code.">
+          <Input id="store-whatsappNumber" inputMode="tel" className="w-full" value={d.whatsappNumber} placeholder="8801712345678"
+            onChange={(e) => patch({ whatsappNumber: e.target.value })} />
+        </FormField>
       </SectionCard>
 
       <div className="flex flex-col gap-5 xl:flex-row xl:items-start">
@@ -533,6 +597,15 @@ export default function OnlineStorePage() {
         </SectionCard>
         </aside>
       </div>
+
+      <HomepageSectionsEditor
+        value={d.sections}
+        onChange={(sections) => patch({ sections })}
+        linkGroups={linkGroups}
+        categories={categoryChoices}
+        uploading={uploading}
+        uploadImage={uploadImage}
+      />
 
       {(
         <SectionCard

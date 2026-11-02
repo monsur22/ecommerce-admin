@@ -204,6 +204,7 @@ export interface BusinessSettings {
   auraShopHero?: AuraShopHeroSettings;
   onlineStore?: OnlineStoreSettings;
   promoBanner?: PromoBannerSettings;
+  homepageSections?: HomepageSections;
   socialLinks?: {
     facebook?: string;
     instagram?: string;
@@ -220,6 +221,12 @@ export interface OnlineStoreSettings {
   companyId?: string;
   policies?: { returns?: string; shipping?: string; privacy?: string };
   social?: { facebook?: string; instagram?: string; whatsapp?: string; youtube?: string };
+  /** Meta (Facebook) Pixel ID — digits, 5–20 (AD_ORDERS_API_CONTRACT.md §4.5) */
+  facebookPixelId?: string;
+  /** TikTok Pixel ID — letters/digits, 5–40 */
+  tiktokPixelId?: string;
+  /** Store WhatsApp number for "Order on WhatsApp", e.g. 8801712345678 */
+  whatsappNumber?: string;
 }
 
 export interface AuraShopHeroSlide {
@@ -237,6 +244,37 @@ export interface AuraShopHeroSlide {
 export interface AuraShopHeroSettings {
   autoplayMs: number;
   slides: AuraShopHeroSlide[];
+}
+
+// Aura Shop homepage blocks below the hero. A section left undefined keeps the storefront's automatic content.
+export interface HomepageAisle {
+  id: string;
+  label: string;
+  tagline: string;
+  emoji: string;
+  imagePath: string;
+  link: string;
+  enabled: boolean;
+}
+
+export type HomepageProductSource = 'latest' | 'featured' | 'best_seller' | 'hot_deal' | 'on_sale';
+
+export type HomepagePerkIcon = 'truck' | 'rotate' | 'shield' | 'heart' | 'gift' | 'star' | 'sparkles' | 'package' | 'clock' | 'phone';
+
+export interface HomepagePerk {
+  id: string;
+  icon: HomepagePerkIcon;
+  title: string;
+  text: string;
+  link: string;
+}
+
+export interface HomepageSections {
+  aisles?: { enabled: boolean; title: string; subtitle: string; items: HomepageAisle[] };
+  products?: { enabled: boolean; title: string; subtitle: string; source: HomepageProductSource; categoryId: number | null; limit: number };
+  lookbook?: { enabled: boolean; tag: string; title: string; text: string; cta: string; link: string; images: string[] };
+  perks?: { enabled: boolean; items: HomepagePerk[] };
+  footer?: { tagline: string };
 }
 
 export interface PromoBannerSettings {

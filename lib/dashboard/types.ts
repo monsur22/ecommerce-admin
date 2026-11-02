@@ -99,6 +99,8 @@ export interface TopProductsData {
 export interface ChannelsData {
   channels: { key: string; orders: number; revenue: number }[]
   paymentMethods: { method: string; orders: number; revenue: number }[]
+  /** Orders attributed to a social / ad source (non-null adSource), revenue desc (AD_ORDERS_API_CONTRACT.md §2.5) */
+  adSources?: { key: string; orders: number; revenue: number }[]
 }
 
 export interface ObligationsData {

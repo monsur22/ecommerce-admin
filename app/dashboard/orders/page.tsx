@@ -36,6 +36,7 @@ import {
   SaleDetailDialog, SALE_PAY_VARIANT, salePayment,
 } from "@/components/sales/sale-detail-dialog"
 import { FollowUpDialog, canFollowUp, followUpSummary } from "@/components/sales/order-follow-up"
+import { AD_SOURCE_FILTERS, AdSourceBadge, OrderFlagBadges, adSourceLabel, campaignHint, isAdSourceFilter } from "@/components/sales/ad-source"
 import { sellsApi, type SellResponse } from "@/lib/sellsApi"
 import { fetchSection } from "@/lib/dashboard/api"
 import { printSaleInvoice } from "@/lib/invoice-print"
@@ -133,6 +134,10 @@ export default function OrdersPage() {
   const [tab, setTab] = useState<Tab>("all")
   const [search, setSearch] = useState("")
   const [source, setSource] = useState<Source>("all")
+  const [adSource, setAdSource] = useState("all")
+  /** ?campaignLinkId= from the Ad order links page (orders of one link) */
+  const [campaignLinkId, setCampaignLinkId] = useState<number | null>(null)
+  const [adCounts, setAdCounts] = useState<Record<string, number>>({})
   const [methodFilter, setMethodFilter] = useState("all")
   const [payFilter, setPayFilter] = useState<Pay>("all")
   const [startDate, setStartDate] = useState("")
@@ -149,7 +154,7 @@ export default function OrdersPage() {
   const latestFetch = useRef(0)
   const blocked = useModuleGuard("Orders")
 
-  // Deep links: ?status= (all 7), ?customer= / ?q= / ?search=, ?source=, ?pay=
+  // Deep links: ?status= (all 7), ?customer= / ?q= / ?search=, ?source=, ?pay=, ?method=
   useEffect(() => {
     const st = searchParams.get("status")?.toLowerCase()
     if (st) {
@@ -165,7 +170,16 @@ export default function OrdersPage() {
     }
     const pay = searchParams.get("pay")?.toLowerCase()
     if (pay && ["paid", "partial", "unpaid"].includes(pay)) { setPayFilter(pay as Pay); setPage(1) }
+    const method = searchParams.get("method")
+    if (method) {
+      const m = ["Cash", "Card", "Online", "COD", "bKash", "Nagad", "Bank"].find((x) => x.toLowerCase() === method.toLowerCase())
+      if (m) { setMethodFilter(m); setPage(1) }
+    }
     if (searchParams.get("followUp")?.toLowerCase() === "due") { setDueOnly(true); setPage(1) }
+    const ad = searchParams.get("adSource")?.toLowerCase()
+    if (ad && isAdSourceFilter(ad)) { setAdSource(ad); setPage(1) }
+    const linkId = Number(searchParams.get("campaignLinkId"))
+    if (linkId > 0) { setCampaignLinkId(linkId); setPage(1) }
   }, [searchParams])
 
   const filterParams = useCallback(() => {
@@ -173,13 +187,15 @@ export default function OrdersPage() {
     if (search) params.search = search
     if (tab !== "all") params.status = tab.toLowerCase()
     if (source !== "all") params.source = source
+    if (adSource !== "all") params.adSource = adSource
+    if (campaignLinkId) params.campaignLinkId = String(campaignLinkId)
     if (payFilter !== "all") params.payment = payFilter
     if (methodFilter !== "all") params.method = methodFilter
     if (startDate) params.start_date = startDate
     if (endDate) params.end_date = endDate
     if (dueOnly) params.followUp = "due"
     return params
-  }, [search, tab, source, payFilter, methodFilter, startDate, endDate, dueOnly])
+  }, [search, tab, source, adSource, campaignLinkId, payFilter, methodFilter, startDate, endDate, dueOnly])
 
   const fetchOrders = useCallback(async () => {
     const id = ++latestFetch.current
@@ -206,6 +222,7 @@ export default function OrdersPage() {
     for (const t of TAB_VALUES) if (c[t.toLowerCase()] !== undefined) counts[t] = num(c[t.toLowerCase()])
     setTabCounts({ all: c.all !== undefined ? num(c.all) : undefined, ...counts })
     setFollowUpDue(c.followUpDue !== undefined ? num(c.followUpDue) : null)
+    setAdCounts(meta.adSourceCounts && typeof meta.adSourceCounts === "object" ? meta.adSourceCounts : {})
     setStats({
       total: num(k.totalOrders), last30: num(k.last30Days), due: num(k.dueToCollect), unpaid: num(k.unpaidCount),
       revenue: num(k.revenue), pending: num(k.pending), processing: num(k.confirmedOrPacked),
@@ -242,10 +259,10 @@ export default function OrdersPage() {
   if (blocked) return blocked
 
   const refresh = () => { fetchOrders(); fetchStats() }
-  const hasFilters = !!(search || source !== "all" || payFilter !== "all" || methodFilter !== "all" || startDate || endDate || tab !== "all" || dueOnly)
+  const hasFilters = !!(search || source !== "all" || adSource !== "all" || campaignLinkId || payFilter !== "all" || methodFilter !== "all" || startDate || endDate || tab !== "all" || dueOnly)
 
   const resetFilters = () => {
-    setSearch(""); setTab("all"); setSource("all"); setPayFilter("all"); setMethodFilter("all"); setDueOnly(false)
+    setSearch(""); setTab("all"); setSource("all"); setAdSource("all"); setCampaignLinkId(null); setPayFilter("all"); setMethodFilter("all"); setDueOnly(false)
     setStartDate(""); setEndDate(""); setPage(1); setResetCount((n) => n + 1); setChecked(new Set())
   }
   const changeTab = (t: string) => { setTab(t as Tab); setPage(1); setChecked(new Set()) }
@@ -331,7 +348,7 @@ export default function OrdersPage() {
     }
   }
 
-  const EXPORT_HEADERS = ["Invoice", "Date", "Customer", "Phone", "Channel", "Status", "Payment", "Method", "Items", "Delivery address", "Subtotal", "Discount", "Tax", "Delivery", "Total", "Paid", "Due"]
+  const EXPORT_HEADERS = ["Invoice", "Date", "Customer", "Phone", "Channel", "Ad source", "Campaign", "Status", "Payment", "Method", "Items", "Delivery address", "Subtotal", "Discount", "Tax", "Delivery", "Total", "Paid", "Due"]
 
   const toExportRow = (o: SellResponse) => {
     const total = num(o.amount), delivery = num(o.shippingCost), discount = num(o.discount)
@@ -345,6 +362,8 @@ export default function OrdersPage() {
       customer: o.customerName,
       phone: o.shippingPhone ?? "",
       channel: SOURCE_CHIP[o.source ?? "manual"]?.label ?? o.source ?? "",
+      ad_source: o.adSourceLabel || adSourceLabel(o.adSource),
+      campaign: o.campaignLink?.name || o.utmCampaign || "",
       status: orderStage(o),
       payment: o.status === "Cancelled" ? "Cancelled" : pay.label === "Due" ? "Unpaid" : pay.label,
       method: o.method,
@@ -481,6 +500,16 @@ export default function OrdersPage() {
             onValueChange={(v) => { setSource(v as Source); setPage(1) }}
             options={SOURCES}
           />
+          <Select value={adSource} onValueChange={(v) => { setAdSource(v); setPage(1) }}>
+            <SelectTrigger aria-label="Ad source" className="w-[170px]"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {AD_SOURCE_FILTERS.map((f) => (
+                <SelectItem key={f.value} value={f.value}>
+                  {f.label}{f.value !== "all" && adCounts[f.value] !== undefined ? ` (${num(adCounts[f.value])})` : ""}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <Select value={payFilter} onValueChange={(v) => { setPayFilter(v as Pay); setPage(1) }}>
             <SelectTrigger aria-label="Payment status" className="w-[140px]"><SelectValue /></SelectTrigger>
             <SelectContent>
@@ -518,6 +547,17 @@ export default function OrdersPage() {
               <Badge variant={dueOnly ? "secondary" : followUpDue > 0 ? "destructive" : "outline"} className="tabular-nums">{followUpDue}</Badge>
             )}
           </Button>
+          {campaignLinkId && (
+            <Badge variant="secondary" className="h-9 gap-1.5 pr-1 text-sm">
+              {orders.find((o) => o.campaignLinkId === campaignLinkId)?.campaignLink?.name ?? `Order link #${campaignLinkId}`}
+              <WithTooltip content="Show all orders">
+                <Button type="button" variant="ghost" size="icon" className="size-6" aria-label="Remove order link filter"
+                  onClick={() => { setCampaignLinkId(null); setPage(1); router.replace("/dashboard/orders") }}>
+                  <X className="size-3.5" />
+                </Button>
+              </WithTooltip>
+            </Badge>
+          )}
           {hasFilters && (
             <Button type="button" variant="ghost" onClick={resetFilters}>
               <X className="size-4" aria-hidden /> Clear
@@ -616,7 +656,11 @@ export default function OrdersPage() {
                         <div className="text-xs text-muted-foreground">{qty > 0 ? `${qty} item${qty === 1 ? "" : "s"}` : "—"}</div>
                       </TableCell>
                       <TableCell>
-                        <Badge variant={src.variant}>{src.label}</Badge>
+                        <div className="flex flex-wrap items-center gap-1">
+                          <Badge variant={src.variant}>{src.label}</Badge>
+                          <AdSourceBadge source={o.adSource} label={o.adSourceLabel} title={campaignHint(o) || undefined} />
+                        </div>
+                        <OrderFlagBadges order={o} className="mt-1" />
                       </TableCell>
                       <TableCell>
                         <div>{o.method}</div>
