@@ -34,6 +34,7 @@ import { useToast } from "@/hooks/use-toast"
 import { CustomerCombobox } from "@/components/pos/customer-combobox"
 import { cn } from "@/lib/utils"
 import { WithTooltip } from "@/components/common/WithTooltip"
+import { AD_SOURCE_META, MANUAL_SOURCE_OPTIONS } from "@/components/sales/ad-source"
 
 interface Row { productId: string; productName: string; quantity: number; price: number; discount: number; /** price follows the quantity (wholesale tiers) until edited by hand */ auto?: boolean }
 const emptyRow = (): Row => ({ productId: "", productName: "", quantity: 1, price: 0, discount: 0 })
@@ -97,6 +98,7 @@ export function NewSaleModal({ open, onOpenChange, onCreated, initialCustomerId 
   const [tried, setTried] = useState(false)
   const [custErr, setCustErr] = useState("")
   const [note, setNote] = useState("")
+  const [adSource, setAdSource] = useState("direct")
   const [printAfter, setPrintAfter] = useState(true)
   const [saving, setSaving] = useState(false)
 
@@ -275,7 +277,7 @@ export function NewSaleModal({ open, onOpenChange, onCreated, initialCustomerId 
     setCustomerId(""); setCustomerName("Walk-in Customer"); setRows([emptyRow()]); setTried(false)
     setDelivery(STORE_PICKUP); setShip(emptyShip); setDeliveryNote(""); setCourier(COURIERS[0]); setDiscount(""); setDiscType("flat"); setShipOverride(null)
     setMethod(defMethod); setPaidMode("full"); setPartialAmount(""); setTxId("")
-    setStatus("Pending"); setNote("")
+    setStatus("Pending"); setNote(""); setAdSource("direct")
   }
 
   // Validation (discount messages show live, the rest after the first save attempt)
@@ -320,6 +322,7 @@ export function NewSaleModal({ open, onOpenChange, onCreated, initialCustomerId 
         } : {}),
         method,
         source: "manual",
+        adSource: adSource !== "direct" ? adSource : undefined,
         amount: total,
         paidAmount: paidNow,
         locationId: locationId ? Number(locationId) : undefined,
@@ -402,6 +405,22 @@ export function NewSaleModal({ open, onOpenChange, onCreated, initialCustomerId 
                 ) : null
               })()}
               {!customerId && <p className="text-xs text-muted-foreground">Walk-in sales must be paid in full.</p>}
+              <FormField label="Order came from" htmlFor="ns-ad-source" className="mt-1"
+                description="For orders taken from Facebook, WhatsApp or other chats. Shows on the order and in ad reports.">
+                <Select value={adSource} onValueChange={setAdSource}>
+                  <SelectTrigger id="ns-ad-source" className="w-full sm:w-[240px]"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {MANUAL_SOURCE_OPTIONS.map((o) => {
+                      const Icon = AD_SOURCE_META[o.value]?.icon
+                      return (
+                        <SelectItem key={o.value} value={o.value}>
+                          {Icon && <Icon className="size-4" aria-hidden />}{o.label}
+                        </SelectItem>
+                      )
+                    })}
+                  </SelectContent>
+                </Select>
+              </FormField>
             </fieldset>
 
             {/* 2 · Products */}

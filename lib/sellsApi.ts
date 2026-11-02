@@ -159,6 +159,21 @@ export interface SellResponse {
   lastFollowUpAt?: string | null;
   lastFollowUpOutcome?: FollowUpOutcome | null;
   nextFollowUpAt?: string | null;
+  /** Attribution (orders from social ads; AD_ORDERS_API_CONTRACT.md) */
+  adSource?: string | null;
+  adSourceLabel?: string | null;
+  utmSource?: string | null;
+  utmMedium?: string | null;
+  utmCampaign?: string | null;
+  utmContent?: string | null;
+  utmTerm?: string | null;
+  clickId?: string | null;
+  landingUrl?: string | null;
+  referrer?: string | null;
+  campaignLinkId?: number | null;
+  campaignLink?: { id: number; name: string; code: string; channel?: string } | null;
+  isQuickOrder?: boolean;
+  possibleDuplicate?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -241,6 +256,8 @@ export interface CreateSellData {
   shippingCountry?: string;
   method: string;
   source?: 'pos' | 'storefront' | 'manual';
+  /** Where a manual order came from (facebook, whatsapp, phone…; "direct"/null = walk-in); see components/sales/ad-source.tsx */
+  adSource?: string | null;
   /** Warehouse / branch the sale was made from */
   locationId?: number;
   /** Open register shift this sale belongs to */
@@ -325,6 +342,14 @@ export const sellsApi = {
     status?: string;
     method?: string;
     source?: string;
+    /** facebook | instagram | … , `any` (any social / ad source, not phone) or `none` (direct) */
+    adSource?: string;
+    /** Orders attributed to one campaign link */
+    campaignLinkId?: number;
+    /** 1 = only quick orders */
+    quickOrder?: 1 | '1';
+    /** 1 = only orders flagged as possible duplicates */
+    possibleDuplicate?: 1 | '1';
     payment?: string;
     fulfillment?: string;
     customer_id?: number;

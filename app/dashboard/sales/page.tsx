@@ -28,6 +28,7 @@ import { WithTooltip } from "@/components/common/WithTooltip"
 import { saleDisplayStatus, SALE_PAY_VARIANT, SaleDetailDialog } from "@/components/sales/sale-detail-dialog"
 import { RecordPaymentDialog, salePaymentDue } from "@/components/sales/record-payment-dialog"
 import { NewSaleModal } from "@/components/sales/new-sale-modal"
+import { AD_SOURCE_FILTERS, AdSourceBadge, OrderFlagBadges, adSourceLabel, campaignHint, isAdSourceFilter } from "@/components/sales/ad-source"
 import { sellsApi, type SellResponse } from "@/lib/sellsApi"
 import { printSaleInvoice } from "@/lib/invoice-print"
 import { exportToCSV } from "@/lib/export-import-utils"
@@ -121,6 +122,8 @@ export default function SalesPage() {
   const [paymentFilter, setPaymentFilter] = useState("all")
   const [methodFilter, setMethodFilter] = useState("all")
   const [channel, setChannel] = useState("all")
+  const [adSource, setAdSource] = useState("all")
+  const [adCounts, setAdCounts] = useState<Record<string, number>>({})
   const [startDate, setStartDate] = useState("")
   const [endDate, setEndDate] = useState("")
   const [page, setPage] = useState(1)
@@ -144,6 +147,7 @@ export default function SalesPage() {
 
   useEffect(() => { if (searchParams.get("new") === "1") setNewOpen(true) }, [searchParams])
   useEffect(() => { const q = searchParams.get("q"); if (q) { setSearch(q); setPage(1) } }, [searchParams])
+  useEffect(() => { const a = searchParams.get("adSource")?.toLowerCase(); if (a && isAdSourceFilter(a)) { setAdSource(a); setPage(1) } }, [searchParams])
 
   const filterParams = useCallback(() => {
     const params: Record<string, string> = { source: channel }
@@ -154,10 +158,11 @@ export default function SalesPage() {
     if (tab === "Packed") params.fulfillment = "packed"
     if (tab === "Shipped") params.fulfillment = "shipped"
     if (methodFilter !== "all") params.method = methodFilter
+    if (adSource !== "all") params.adSource = adSource
     if (startDate) params.start_date = startDate
     if (endDate) params.end_date = endDate
     return params
-  }, [search, tab, paymentFilter, methodFilter, channel, startDate, endDate])
+  }, [search, tab, paymentFilter, methodFilter, channel, adSource, startDate, endDate])
 
   const fetchSales = useCallback(async () => {
     setLoading(true)
@@ -166,6 +171,8 @@ export default function SalesPage() {
       setSales(res.data ?? [])
       setTotal(res.total ?? res.data?.length ?? 0)
       setSummary(res.summary ?? null)
+      const ac = res.meta?.adSourceCounts
+      setAdCounts(ac && typeof ac === "object" ? ac : {})
     } catch {
       setSales([])
     } finally {
@@ -215,10 +222,10 @@ export default function SalesPage() {
   if (blocked) return blocked
 
   const refresh = () => { fetchSales(); fetchStats() }
-  const hasFilters = !!(search || paymentFilter !== "all" || methodFilter !== "all" || channel !== "all" || startDate || endDate || tab !== "all")
+  const hasFilters = !!(search || paymentFilter !== "all" || methodFilter !== "all" || channel !== "all" || adSource !== "all" || startDate || endDate || tab !== "all")
 
   const resetFilters = () => {
-    setSearch(""); setTab("all"); setPaymentFilter("all"); setMethodFilter("all"); setChannel("all")
+    setSearch(""); setTab("all"); setPaymentFilter("all"); setMethodFilter("all"); setChannel("all"); setAdSource("all")
     setStartDate(""); setEndDate(""); setPage(1); setResetCount((n) => n + 1); setChecked(new Set())
   }
 
@@ -296,6 +303,8 @@ export default function SalesPage() {
       customer: s.customerName,
       phone: s.shippingPhone ?? "",
       channel: CHANNEL_LABEL[s.source ?? "manual"] ?? s.source ?? "",
+      ad_source: s.adSourceLabel || adSourceLabel(s.adSource),
+      campaign: s.campaignLink?.name || s.utmCampaign || "",
       status: saleDisplayStatus(s),
       payment: paymentOf(s).label,
       method: s.method,
@@ -311,7 +320,7 @@ export default function SalesPage() {
     }
   }
 
-  const EXPORT_HEADERS = ["Invoice", "Date", "Customer", "Phone", "Channel", "Status", "Payment", "Method", "Items", "Delivery address", "Subtotal", "Discount", "Tax", "Delivery", "Total", "Paid", "Due"]
+  const EXPORT_HEADERS = ["Invoice", "Date", "Customer", "Phone", "Channel", "Ad source", "Campaign", "Status", "Payment", "Method", "Items", "Delivery address", "Subtotal", "Discount", "Tax", "Delivery", "Total", "Paid", "Due"]
 
   const handleExport = async () => {
     setExporting(true)
@@ -442,6 +451,16 @@ export default function SalesPage() {
               <SelectItem value="storefront">Channel: Online</SelectItem>
             </SelectContent>
           </Select>
+          <Select value={adSource} onValueChange={(v) => { setAdSource(v); setPage(1) }}>
+            <SelectTrigger aria-label="Ad source" className="w-[170px]"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {AD_SOURCE_FILTERS.map((f) => (
+                <SelectItem key={f.value} value={f.value}>
+                  {f.label}{f.value !== "all" && adCounts[f.value] !== undefined ? ` (${Number(adCounts[f.value]) || 0})` : ""}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <DateRangeFilter
             key={resetCount}
             start={startDate}
@@ -536,6 +555,12 @@ export default function SalesPage() {
                       <TableCell>
                         <div className="font-semibold">{s.customerName}</div>
                         <div className="text-xs text-muted-foreground">{s.shippingPhone || "—"} · {CHANNEL_LABEL[s.source ?? "manual"] ?? s.source}</div>
+                        {(s.adSource || s.isQuickOrder || s.possibleDuplicate) && (
+                          <div className="mt-1 flex flex-wrap gap-1">
+                            <AdSourceBadge source={s.adSource} label={s.adSourceLabel} title={campaignHint(s) || undefined} />
+                            <OrderFlagBadges order={s} />
+                          </div>
+                        )}
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">

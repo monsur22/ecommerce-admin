@@ -40,6 +40,7 @@ import {
 import { ProductStatusPill } from "@/components/products/ProductStatusPill";
 import { useAuth } from "@/context/AuthContext";
 import { AccessDenied } from "@/components/AccessDenied";
+import { AdSourceBadge, OrderFlagBadge } from "@/components/orders/AdSourceBadge";
 
 function itemPrice(item: Order["items"][number]) {
   return Number(item.unitPrice ?? item.price ?? 0);
@@ -194,8 +195,52 @@ export default function OrderDetailScreen() {
           {order.source ? (
             <ProductStatusPill label={order.source === "pos" ? "POS" : order.source === "storefront" ? "Online" : "Sales"} tone="neutral" />
           ) : null}
+          {order.adSource ? <AdSourceBadge source={order.adSource} size="md" /> : null}
+          {order.isQuickOrder ? <OrderFlagBadge kind="quick" /> : null}
+          {order.possibleDuplicate ? <OrderFlagBadge kind="duplicate" /> : null}
         </View>
+        {order.possibleDuplicate ? (
+          <View style={styles.dupWarn}>
+            <Ionicons name="warning-outline" size={15} color="#b91c1c" />
+            <Text style={styles.dupWarnText}>
+              The same phone ordered this product shortly before. Call to confirm before packing.
+            </Text>
+          </View>
+        ) : null}
       </View>
+
+      {order.adSource || order.campaignLink || order.utmSource || order.utmCampaign || order.clickId || order.referrer ? (
+        <View style={styles.card}>
+          <Text style={styles.sectionTitle}>Ad / campaign</Text>
+          {order.adSource ? (
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Source</Text>
+              <AdSourceBadge source={order.adSource} size="md" />
+            </View>
+          ) : null}
+          {order.campaignLink ? (
+            <InfoRow
+              label="Order link"
+              value={order.campaignLink.code ? `${order.campaignLink.name} (${order.campaignLink.code})` : order.campaignLink.name}
+            />
+          ) : null}
+          {order.utmCampaign ? <InfoRow label="Campaign" value={order.utmCampaign} /> : null}
+          {order.utmSource || order.utmMedium ? (
+            <InfoRow label="UTM source / medium" value={[order.utmSource, order.utmMedium].filter(Boolean).join(" / ")} />
+          ) : null}
+          {order.utmContent ? <InfoRow label="UTM content" value={order.utmContent} /> : null}
+          {order.utmTerm ? <InfoRow label="UTM term" value={order.utmTerm} /> : null}
+          {order.clickId ? <InfoRow label="Click ID" value={order.clickId} /> : null}
+          {order.referrer ? <InfoRow label="Referrer" value={order.referrer} /> : null}
+          {order.landingUrl ? <InfoRow label="Landing page" value={order.landingUrl} /> : null}
+          {order.campaignLink && canRead("Marketing") ? (
+            <Pressable style={styles.linkBtn} onPress={() => router.push(`/marketing/${order.campaignLink!.id}` as any)}>
+              <Ionicons name="stats-chart-outline" size={14} color={colors.primaryDark} />
+              <Text style={styles.linkBtnText}>View link performance</Text>
+            </Pressable>
+          ) : null}
+        </View>
+      ) : null}
 
       <View style={styles.card}>
         <Text style={styles.sectionTitle}>Customer</Text>
@@ -439,6 +484,16 @@ function InfoRow({
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
+  dupWarn: {
+    flexDirection: "row", alignItems: "flex-start", gap: 8, marginTop: 12,
+    backgroundColor: "#fef2f2", borderRadius: 12, borderWidth: 1, borderColor: "#fecaca", padding: 10,
+  },
+  dupWarnText: { flex: 1, color: "#991b1b", fontSize: 12, fontWeight: "600", lineHeight: 17 },
+  linkBtn: {
+    flexDirection: "row", alignItems: "center", gap: 6, alignSelf: "flex-start", marginTop: 6,
+    borderRadius: 10, backgroundColor: "#ecfdf5", paddingHorizontal: 12, paddingVertical: 8,
+  },
+  linkBtnText: { color: colors.primaryDark, fontSize: 13, fontWeight: "700" },
   header: {
     flexDirection: "row", alignItems: "center", justifyContent: "space-between",
     paddingHorizontal: 16, paddingVertical: 12,

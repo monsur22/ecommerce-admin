@@ -56,6 +56,12 @@ export default function MoreTab() {
       ],
     },
     {
+      title: "Marketing",
+      items: [
+        { icon: "megaphone-outline", label: "Ad order links", route: "/marketing", iconBg: "#e7f0fd", module: "Marketing" },
+      ],
+    },
+    {
       title: "Finance",
       items: [
         { icon: "wallet-outline", label: "Finance", route: "/finance", iconBg: "#ecfdf5", module: "Finance" },

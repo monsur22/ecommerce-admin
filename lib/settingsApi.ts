@@ -221,6 +221,12 @@ export interface OnlineStoreSettings {
   companyId?: string;
   policies?: { returns?: string; shipping?: string; privacy?: string };
   social?: { facebook?: string; instagram?: string; whatsapp?: string; youtube?: string };
+  /** Meta (Facebook) Pixel ID — digits, 5–20 (AD_ORDERS_API_CONTRACT.md §4.5) */
+  facebookPixelId?: string;
+  /** TikTok Pixel ID — letters/digits, 5–40 */
+  tiktokPixelId?: string;
+  /** Store WhatsApp number for "Order on WhatsApp", e.g. 8801712345678 */
+  whatsappNumber?: string;
 }
 
 export interface AuraShopHeroSlide {

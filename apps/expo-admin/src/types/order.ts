@@ -1,5 +1,24 @@
 export type OrderStatus = "Pending" | "Processing" | "Delivered" | "Cancelled";
 
+/** Social / ad channel an order came from (attribution), separate from `source` (pos|manual|storefront). */
+export type AdSource =
+  | "facebook"
+  | "instagram"
+  | "whatsapp"
+  | "tiktok"
+  | "google"
+  | "youtube"
+  | "messenger"
+  | "phone"
+  | "other";
+
+export interface OrderCampaignLinkRef {
+  id: number;
+  name: string;
+  code?: string | null;
+  channel?: string | null;
+}
+
 /** Derived list tabs (server `status` filter), built from status + fulfillment + payment. */
 export type OrderTab = "all" | "pending" | "confirmed" | "packed" | "shipped" | "delivered" | "completed" | "cancelled";
 export type OrderTabCounts = Partial<Record<OrderTab, number>> & { followUpDue?: number; followUpScheduled?: number };
@@ -142,6 +161,19 @@ export interface Order {
   lastFollowUpAt?: string | null;
   lastFollowUpOutcome?: FollowUpOutcome | null;
   nextFollowUpAt?: string | null;
+  /** Attribution (orders from social ads) */
+  adSource?: AdSource | string | null;
+  utmSource?: string | null;
+  utmMedium?: string | null;
+  utmCampaign?: string | null;
+  utmContent?: string | null;
+  utmTerm?: string | null;
+  clickId?: string | null;
+  landingUrl?: string | null;
+  referrer?: string | null;
+  campaignLink?: OrderCampaignLinkRef | null;
+  isQuickOrder?: boolean;
+  possibleDuplicate?: boolean;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -155,6 +187,12 @@ export interface OrderListParams {
   followUp?: "due" | "scheduled";
   payment?: string;
   source?: string;
+  /** Attribution channel; "any" = any social / ad source (not phone), "none" = no source */
+  adSource?: string;
+  /** Orders attributed to one ad order link */
+  campaignLinkId?: number;
+  quickOrder?: boolean;
+  possibleDuplicate?: boolean;
   search?: string;
   /** Derived tab (pending, confirmed, packed, shipped, delivered, completed, cancelled) */
   status?: string;
@@ -171,6 +209,8 @@ export interface OrderListResult {
   lastPage?: number;
   tabCounts?: OrderTabCounts;
   kpis?: OrderKpis;
+  /** Order counts per ad source for the current filters (meta.adSourceCounts) */
+  adSourceCounts?: Record<string, number>;
 }
 
 export interface OrderStats {

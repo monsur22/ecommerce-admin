@@ -39,6 +39,7 @@ import {
 } from "@/components/orders/order-utils";
 import { useAuth } from "@/context/AuthContext";
 import { AccessDenied } from "@/components/AccessDenied";
+import { AD_SOURCE_FILTERS, AdSourceBadge, OrderFlagBadge, adSourceLabel } from "@/components/orders/AdSourceBadge";
 
 const METHOD_OPTIONS = ["", "Cash", "Card", "Online", "COD", "bKash", "Nagad", "Bank"];
 const PAYMENT_OPTIONS = ["", "paid", "partial", "unpaid"];
@@ -47,6 +48,12 @@ const PAGE_SIZE = 20;
 
 const optionLabel = (v: string) =>
   v === "" ? "All" : v === "pos" ? "POS" : v.charAt(0).toUpperCase() + v.slice(1);
+
+const AD_SOURCE_OPTIONS = ["", "any", ...AD_SOURCE_FILTERS, "none"];
+const adOptionLabel = (v: string) =>
+  v === "" ? "All" : v === "any" ? "Any ad / social" : v === "none" ? "Direct / unknown" : adSourceLabel(v);
+const FLAG_OPTIONS = ["", "quick", "duplicate"];
+const flagLabel = (v: string) => (v === "quick" ? "Quick orders" : v === "duplicate" ? "Possible duplicates" : "All");
 
 export default function OrdersTab() {
   const router = useRouter();
@@ -68,20 +75,35 @@ export default function OrdersTab() {
   const [methodFilter, setMethodFilter] = useState("");
   const [paymentFilter, setPaymentFilter] = useState("");
   const [sourceFilter, setSourceFilter] = useState("");
+  const [adSourceFilter, setAdSourceFilter] = useState("");
+  const [adSourceCounts, setAdSourceCounts] = useState<Record<string, number>>({});
+  const [flagFilter, setFlagFilter] = useState("");
+  const [campaignLink, setCampaignLink] = useState<{ id: number; name: string } | null>(null);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [filterVisible, setFilterVisible] = useState(false);
   const [followUpTarget, setFollowUpTarget] = useState<Order | null>(null);
   const searchActive = search.trim().length > 0;
   const requestId = useRef(0);
-  const params = useLocalSearchParams<{ followUp?: string; status?: string }>();
+  const params = useLocalSearchParams<{
+    followUp?: string;
+    status?: string;
+    adSource?: string;
+    campaignLinkId?: string;
+    campaignLinkName?: string;
+  }>();
 
   // Deep links from the dashboard: ?followUp=due or ?status=pending
   useEffect(() => {
     if (params.followUp === "due") setDueOnly(true);
     const st = String(params.status ?? "").toLowerCase();
     if (st && ORDER_TABS.some((t) => t.value === st)) setTab(st as OrderTab);
-  }, [params.followUp, params.status]);
+    if (params.adSource) setAdSourceFilter(String(params.adSource));
+    const linkId = Number(params.campaignLinkId);
+    if (params.campaignLinkId && Number.isFinite(linkId) && linkId > 0) {
+      setCampaignLink({ id: linkId, name: String(params.campaignLinkName ?? `Link #${linkId}`) });
+    }
+  }, [params.followUp, params.status, params.adSource, params.campaignLinkId, params.campaignLinkName]);
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(search), 350);
@@ -100,6 +122,10 @@ export default function OrdersTab() {
         method: methodFilter || undefined,
         payment: paymentFilter || undefined,
         source: sourceFilter || undefined,
+        adSource: adSourceFilter || undefined,
+        campaignLinkId: campaignLink?.id,
+        quickOrder: flagFilter === "quick" || undefined,
+        possibleDuplicate: flagFilter === "duplicate" || undefined,
         startDate: startDate || undefined,
         endDate: endDate || undefined,
       });
@@ -111,8 +137,9 @@ export default function OrdersTab() {
       setHasNext(result.lastPage != null ? result.page < result.lastPage : result.page * result.limit < result.total);
       if (result.tabCounts) setTabCounts(result.tabCounts);
       if (result.kpis) setKpis(result.kpis);
+      if (result.adSourceCounts) setAdSourceCounts(result.adSourceCounts);
     },
-    [debouncedSearch, tab, dueOnly, methodFilter, paymentFilter, sourceFilter, startDate, endDate],
+    [debouncedSearch, tab, dueOnly, methodFilter, paymentFilter, sourceFilter, adSourceFilter, campaignLink, flagFilter, startDate, endDate],
   );
 
   const bootstrap = useCallback(async () => {
@@ -163,8 +190,8 @@ export default function OrdersTab() {
   }, [hasNext, loadingMore, loading, loadOrders, page]);
 
   const filtersApplied = useMemo(
-    () => Boolean(methodFilter || paymentFilter || sourceFilter || startDate || endDate),
-    [methodFilter, paymentFilter, sourceFilter, startDate, endDate],
+    () => Boolean(methodFilter || paymentFilter || sourceFilter || adSourceFilter || flagFilter || campaignLink || startDate || endDate),
+    [methodFilter, paymentFilter, sourceFilter, adSourceFilter, flagFilter, campaignLink, startDate, endDate],
   );
 
   if (!canRead('Orders')) return <AccessDenied />;
@@ -295,6 +322,22 @@ export default function OrdersTab() {
             </View>
           ) : null}
         </Pressable>
+        <Pressable
+          style={[styles.tabChip, adSourceFilter !== "" && styles.adsChipActive]}
+          onPress={() => setAdSourceFilter((v) => (v === "" ? "any" : ""))}
+        >
+          <Ionicons name="megaphone-outline" size={13} color={adSourceFilter !== "" ? "#fff" : "#1877f2"} />
+          <Text style={[styles.tabChipText, adSourceFilter !== "" && { color: "#fff" }]}>
+            {adSourceFilter && adSourceFilter !== "any" ? adSourceLabel(adSourceFilter) : "From ads"}
+          </Text>
+          {adSourceCounts.any != null || adSourceCounts[adSourceFilter] != null ? (
+            <View style={[styles.countBadge, adSourceFilter !== "" && { backgroundColor: "rgba(255,255,255,0.25)" }]}>
+              <Text style={[styles.countBadgeText, adSourceFilter !== "" && { color: "#fff" }]}>
+                {adSourceCounts[adSourceFilter || "any"] ?? adSourceCounts.any}
+              </Text>
+            </View>
+          ) : null}
+        </Pressable>
         {ORDER_TABS.map((t) => {
           const active = tab === t.value;
           const count = tabCounts[t.value];
@@ -317,6 +360,15 @@ export default function OrdersTab() {
           {methodFilter ? <ProductStatusPill label={methodFilter} tone="warning" /> : null}
           {paymentFilter ? <ProductStatusPill label={optionLabel(paymentFilter)} tone="info" /> : null}
           {sourceFilter ? <ProductStatusPill label={optionLabel(sourceFilter)} tone="info" /> : null}
+          {adSourceFilter ? <ProductStatusPill label={adOptionLabel(adSourceFilter)} tone="info" /> : null}
+          {flagFilter ? <ProductStatusPill label={flagLabel(flagFilter)} tone="warning" /> : null}
+          {campaignLink ? (
+            <Pressable style={styles.linkPill} onPress={() => setCampaignLink(null)} hitSlop={6}>
+              <Ionicons name="link-outline" size={12} color="#1d4ed8" />
+              <Text style={styles.linkPillText} numberOfLines={1}>{campaignLink.name}</Text>
+              <Ionicons name="close" size={12} color="#1d4ed8" />
+            </Pressable>
+          ) : null}
           {startDate ? <ProductStatusPill label={`From ${startDate}`} tone="neutral" /> : null}
           {endDate ? <ProductStatusPill label={`To ${endDate}`} tone="neutral" /> : null}
         </ScrollView>
@@ -378,6 +430,9 @@ export default function OrdersTab() {
                   ) : null}
                   <StatusPill label={item.method} bg="#ede9fe" color="#6d28d9" />
                   {item.source === "pos" ? <StatusPill label="POS" bg="#e0f2fe" color="#0369a1" /> : null}
+                  {item.adSource ? <AdSourceBadge source={item.adSource} /> : null}
+                  {item.isQuickOrder ? <OrderFlagBadge kind="quick" /> : null}
+                  {item.possibleDuplicate ? <OrderFlagBadge kind="duplicate" /> : null}
                   {item.shipments.length > 0 && (
                     <StatusPill
                       label={`${item.shipments.length} shipment${item.shipments.length > 1 ? "s" : ""}`}
@@ -386,6 +441,13 @@ export default function OrdersTab() {
                     />
                   )}
                 </View>
+
+                {item.campaignLink ? (
+                  <View style={styles.cardMeta}>
+                    <Ionicons name="link-outline" size={13} color={colors.muted} />
+                    <Text style={styles.time} numberOfLines={1}>{item.campaignLink.name}</Text>
+                  </View>
+                ) : null}
 
                 {/* Follow-up line + quick actions */}
                 {fu || followable ? (
@@ -433,7 +495,7 @@ export default function OrdersTab() {
               <Ionicons name="receipt-outline" size={36} color={colors.muted} />
               <Text style={styles.emptyTitle}>No orders found</Text>
               <Text style={styles.emptyText}>
-                {dueOnly ? "No calls are due right now." : filtersApplied || tab !== "all" ? "Try another tab or adjust the filters." : "Recent sells will appear here."}
+                {dueOnly ? "No calls are due right now." : adSourceFilter ? "No orders from this source yet. Share an ad order link from More → Ad order links." : filtersApplied || tab !== "all" ? "Try another tab or adjust the filters." : "Recent sells will appear here."}
               </Text>
             </View>
           }
@@ -471,6 +533,23 @@ export default function OrdersTab() {
                 onChange={setSourceFilter}
               />
               <FilterGroup
+                title="Ad / social source"
+                options={AD_SOURCE_OPTIONS}
+                value={adSourceFilter}
+                onChange={setAdSourceFilter}
+                labelFor={(v) => {
+                  const c = adSourceCounts[v === "" ? "all" : v];
+                  return c != null && v !== "" ? `${adOptionLabel(v)} (${c})` : adOptionLabel(v);
+                }}
+              />
+              <FilterGroup
+                title="Flags"
+                options={FLAG_OPTIONS}
+                value={flagFilter}
+                onChange={setFlagFilter}
+                labelFor={flagLabel}
+              />
+              <FilterGroup
                 title="Method"
                 options={METHOD_OPTIONS}
                 value={methodFilter}
@@ -504,6 +583,9 @@ export default function OrdersTab() {
                   setMethodFilter("");
                   setPaymentFilter("");
                   setSourceFilter("");
+                  setAdSourceFilter("");
+                  setFlagFilter("");
+                  setCampaignLink(null);
                   setStartDate("");
                   setEndDate("");
                 }}
@@ -579,22 +661,24 @@ function FilterGroup({
   options,
   value,
   onChange,
+  labelFor = optionLabel,
 }: {
   title: string;
   options: string[];
   value: string;
   onChange: (value: string) => void;
+  labelFor?: (value: string) => string;
 }) {
   return (
     <View style={styles.filterGroup}>
       <Text style={styles.filterLabel}>{title}</Text>
       <View style={styles.filterOptions}>
         {options.map((option) => {
-          const label = optionLabel(option);
+          const label = labelFor(option);
           const active = option === value;
           return (
             <Pressable
-              key={`${title}-${label}`}
+              key={`${title}-${option}`}
               style={[styles.filterChip, active ? styles.filterChipActive : null]}
               onPress={() => onChange(option)}
             >
@@ -699,6 +783,21 @@ const styles = StyleSheet.create({
   dueChipActive: {
     borderColor: colors.danger,
     backgroundColor: colors.danger,
+  },
+  linkPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    maxWidth: 220,
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    backgroundColor: "#dbeafe",
+  },
+  linkPillText: { color: "#1d4ed8", fontSize: 12, fontWeight: "700", flexShrink: 1 },
+  adsChipActive: {
+    borderColor: "#1877f2",
+    backgroundColor: "#1877f2",
   },
   tabChipText: {
     color: colors.muted,

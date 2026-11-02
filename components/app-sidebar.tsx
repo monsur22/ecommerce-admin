@@ -26,6 +26,7 @@ import {
     Receipt,
     BarChart3,
     Landmark,
+    Megaphone,
 } from "lucide-react"
 
 import {
@@ -78,6 +79,14 @@ const NAV_CONFIG = [
         ],
     },
     { section: "Sell", name: "Customers", href: "/dashboard/customers", icon: Users, module: "Customers" },
+    {
+        section: "Sell",
+        name: "Marketing",
+        icon: Megaphone,
+        items: [
+            { name: "Ad order links", href: "/dashboard/marketing/links", module: "Marketing" },
+        ],
+    },
 
     {
         section: "Catalog",

@@ -165,6 +165,31 @@ type SellResponse = {
   lastFollowUpAt?: string | null;
   lastFollowUpOutcome?: FollowUpOutcome | null;
   nextFollowUpAt?: string | null;
+  adSource?: string | null;
+  ad_source?: string | null;
+  utmSource?: string | null;
+  utm_source?: string | null;
+  utmMedium?: string | null;
+  utm_medium?: string | null;
+  utmCampaign?: string | null;
+  utm_campaign?: string | null;
+  utmContent?: string | null;
+  utm_content?: string | null;
+  utmTerm?: string | null;
+  utm_term?: string | null;
+  clickId?: string | null;
+  click_id?: string | null;
+  landingUrl?: string | null;
+  landing_url?: string | null;
+  referrer?: string | null;
+  campaignLinkId?: number | null;
+  campaign_link_id?: number | null;
+  campaignLink?: { id?: number | string; name?: string; code?: string | null; channel?: string | null } | null;
+  campaign_link?: { id?: number | string; name?: string; code?: string | null; channel?: string | null } | null;
+  isQuickOrder?: boolean | number | null;
+  is_quick_order?: boolean | number | null;
+  possibleDuplicate?: boolean | number | null;
+  possible_duplicate?: boolean | number | null;
   createdAt?: string;
   created_at?: string;
   updatedAt?: string;
@@ -277,9 +302,13 @@ function normalizeSellShipment(item: SellShipmentResponse) {
   };
 }
 
+const flag = (v: unknown) => v === true || v === 1 || v === "1" || v === "true";
+
 function normalizeOrder(order: SellResponse): Order {
   const shippingAddress = order.shippingAddress ?? order.shipping_address;
   const cust = order.customer;
+  const link = order.campaignLink ?? order.campaign_link;
+  const linkId = link?.id ?? order.campaignLinkId ?? order.campaign_link_id;
 
   return {
     id: order.id,
@@ -353,6 +382,18 @@ function normalizeOrder(order: SellResponse): Order {
     lastFollowUpAt: order.lastFollowUpAt ?? null,
     lastFollowUpOutcome: order.lastFollowUpOutcome ?? null,
     nextFollowUpAt: order.nextFollowUpAt ?? null,
+    adSource: (order.adSource ?? order.ad_source ?? null) || null,
+    utmSource: order.utmSource ?? order.utm_source ?? null,
+    utmMedium: order.utmMedium ?? order.utm_medium ?? null,
+    utmCampaign: order.utmCampaign ?? order.utm_campaign ?? null,
+    utmContent: order.utmContent ?? order.utm_content ?? null,
+    utmTerm: order.utmTerm ?? order.utm_term ?? null,
+    clickId: order.clickId ?? order.click_id ?? null,
+    landingUrl: order.landingUrl ?? order.landing_url ?? null,
+    referrer: order.referrer ?? null,
+    campaignLink: linkId != null ? { id: Number(linkId), name: link?.name ?? `Link #${linkId}`, code: link?.code ?? null, channel: link?.channel ?? null } : null,
+    isQuickOrder: flag(order.isQuickOrder ?? order.is_quick_order),
+    possibleDuplicate: flag(order.possibleDuplicate ?? order.possible_duplicate),
     createdAt: order.createdAt ?? order.created_at,
     updatedAt: order.updatedAt ?? order.updated_at,
   };
@@ -435,6 +476,10 @@ export async function getOrders(params?: OrderListParams): Promise<OrderListResu
       method: params?.method,
       payment: params?.payment,
       source: params?.source,
+      adSource: params?.adSource || undefined,
+      campaignLinkId: params?.campaignLinkId || undefined,
+      quickOrder: params?.quickOrder ? 1 : undefined,
+      possibleDuplicate: params?.possibleDuplicate ? 1 : undefined,
       followUp: params?.followUp,
       start_date: params?.startDate,
       end_date: params?.endDate,
@@ -470,7 +515,13 @@ export async function getOrders(params?: OrderListParams): Promise<OrderListResu
     lastPage: pagination.last_page != null ? num(pagination.last_page) : undefined,
     tabCounts,
     kpis,
+    adSourceCounts: parseCounts(meta.adSourceCounts ?? meta.ad_source_counts),
   };
+}
+
+function parseCounts(raw: unknown): Record<string, number> | undefined {
+  if (!raw || typeof raw !== "object") return undefined;
+  return Object.fromEntries(Object.entries(raw as Record<string, unknown>).map(([k, v]) => [k, num(v)]));
 }
 
 export async function getOrderStats(): Promise<OrderStats> {

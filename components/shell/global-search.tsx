@@ -22,6 +22,7 @@ const PAGES = [
   { label: "Orders", href: "/dashboard/orders", module: "Orders" },
   { label: "Shipments", href: "/dashboard/orders/shipments", module: "Shipments" },
   { label: "Customers", href: "/dashboard/customers", module: "Customers" },
+  { label: "Ad order links (Facebook, WhatsApp, TikTok…)", href: "/dashboard/marketing/links", module: "Marketing" },
   { label: "Products", href: "/dashboard/products", module: "Products" },
   { label: "Categories", href: "/dashboard/categories", module: "Categories" },
   { label: "Collections", href: "/dashboard/collections", module: "Collections" },

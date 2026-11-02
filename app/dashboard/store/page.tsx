@@ -51,6 +51,9 @@ interface Form {
   instagram: string
   whatsapp: string
   youtube: string
+  facebookPixelId: string
+  tiktokPixelId: string
+  whatsappNumber: string
   secs: string
   slides: Slide[]
   sections: SectionsForm
@@ -117,6 +120,9 @@ const normalize = (business: any): Form => {
     instagram: S(so.instagram),
     whatsapp: S(so.whatsapp),
     youtube: S(so.youtube),
+    facebookPixelId: S(o.facebookPixelId),
+    tiktokPixelId: S(o.tiktokPixelId),
+    whatsappNumber: S(o.whatsappNumber),
     secs: String(ms >= 2000 ? Math.round(ms / 1000) : 6),
     slides,
     sections: sectionsFromSettings(business?.homepageSections),
@@ -307,6 +313,11 @@ export default function OnlineStorePage() {
     }
     const wa = d.whatsapp.trim()
     if (wa && !URLRE.test(wa) && !/^\+?[0-9][0-9\s-]{6,}$/.test(wa)) return fail("WhatsApp must be a phone number or a URL.")
+    const fbPixel = d.facebookPixelId.trim(), ttPixel = d.tiktokPixelId.trim()
+    if (fbPixel && !/^\d{5,20}$/.test(fbPixel)) return fail("Facebook Pixel ID must be 5–20 digits (Events Manager → Data sources).")
+    if (ttPixel && !/^[A-Za-z0-9]{5,40}$/.test(ttPixel)) return fail("TikTok Pixel ID must be 5–40 letters or digits.")
+    const waNumber = d.whatsappNumber.replace(/[\s-]/g, "").replace(/^\+/, "")
+    if (waNumber && !/^\d{8,15}$/.test(waNumber)) return fail("WhatsApp order number must be a phone number with country code, e.g. 8801712345678.")
     const secs = Number(d.secs)
     if (!(secs >= 2 && secs <= 60)) return fail("Slide timing must be between 2 and 60 seconds.")
     for (let i = 0; i < d.slides.length; i++) {
@@ -321,6 +332,7 @@ export default function OnlineStorePage() {
           name, slug, theme: d.theme, published: d.published, apiUrl: d.apiUrl.trim(), companyId: d.companyId.trim(),
           policies: { returns: d.returns.trim(), shipping: d.shipping.trim(), privacy: d.privacy.trim() },
           social: { facebook: d.facebook.trim(), instagram: d.instagram.trim(), whatsapp: wa, youtube: d.youtube.trim() },
+          facebookPixelId: fbPixel, tiktokPixelId: ttPixel, whatsappNumber: waNumber,
         },
         auraShopHero: {
           autoplayMs: Math.round(secs * 1000),
@@ -447,6 +459,30 @@ export default function OnlineStorePage() {
           {text("WhatsApp", "whatsapp", "+8801…")}
           {text("YouTube", "youtube", "https://youtube.com/…")}
         </div>
+      </SectionCard>
+
+      <SectionCard
+        aria-label="Ads and social selling"
+        title="Ads & social selling"
+        description="Track visits and purchases from your Facebook / TikTok ads, and let shoppers order on WhatsApp."
+        actions={<Button asChild variant="outline" size="sm"><Link href="/dashboard/marketing/links">Ad order links</Link></Button>}
+        contentClassName="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-3"
+      >
+        <FormField label="Facebook Pixel ID" htmlFor="store-facebookPixelId" className="min-w-0"
+          description="Meta Events Manager → Data sources. Sends PageView, ViewContent, InitiateCheckout and Purchase.">
+          <Input id="store-facebookPixelId" inputMode="numeric" className="w-full font-mono" value={d.facebookPixelId} placeholder="e.g. 123456789012345"
+            onChange={(e) => patch({ facebookPixelId: e.target.value.trim() })} />
+        </FormField>
+        <FormField label="TikTok Pixel ID" htmlFor="store-tiktokPixelId" className="min-w-0"
+          description="TikTok Ads Manager → Assets → Events → Web events.">
+          <Input id="store-tiktokPixelId" className="w-full font-mono" value={d.tiktokPixelId} placeholder="e.g. C9ABCDEF12345678"
+            onChange={(e) => patch({ tiktokPixelId: e.target.value.trim() })} />
+        </FormField>
+        <FormField label="WhatsApp order number" htmlFor="store-whatsappNumber" className="min-w-0"
+          description="Adds an “Order on WhatsApp” button on product pages. Include the country code.">
+          <Input id="store-whatsappNumber" inputMode="tel" className="w-full" value={d.whatsappNumber} placeholder="8801712345678"
+            onChange={(e) => patch({ whatsappNumber: e.target.value })} />
+        </FormField>
       </SectionCard>
 
       <div className="flex flex-col gap-5 xl:flex-row xl:items-start">

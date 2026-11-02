@@ -16,6 +16,7 @@ export const PERMISSION_MODULES = [
     "Customers",
     "Orders",
     "Shipments",
+    "Marketing",
     "Vendors",
     "POS",
     "Sells",
