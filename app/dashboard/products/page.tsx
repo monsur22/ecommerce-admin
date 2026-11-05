@@ -25,6 +25,7 @@ import { FormField } from "@/components/common/FormField"
 import { StatusBadge } from "@/components/common/StatusBadge"
 import { UserAvatar } from "@/components/common/UserAvatar"
 import { InfoList, InfoRow } from "@/components/common/InfoList"
+import { StatTile } from "@/components/common/StatTile"
 import { WithTooltip } from "@/components/common/WithTooltip"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -791,37 +792,49 @@ export default function ProductsPage() {
             const vStock = stockAt(viewing, warehouse)
             const whLabel = warehouse === "all" ? "all locations" : warehouses.find((w) => String(w.id) === warehouse)?.name
             const m = marginOf(viewing)
-            const info: [string, string][] = [
-              ["Category", viewing.category || "—"],
-              ["Supplier", supplierName(viewing) || "—"],
-              ["Location", viewing.locationName || warehouses.find((w) => String(w.id) === viewing.locationId)?.name || "—"],
-              ["Brand", viewing.brandName || "—"],
-              ["Unit", viewing.unitName || "—"],
-              ["Stock", `${vStock}${viewing.unitName ? ` ${viewing.unitName}` : ""} · ${whLabel}`],
-              ["Reorder at", reorderOf(viewing) > 0 ? String(reorderOf(viewing)) : "Alert off"],
-              ["SKU", viewing.sku || "—"],
-              ["Barcode", viewing.barcode || "—"],
-              ["Barcode type", viewing.barcodeType || "—"],
-              ["Tracking", viewing.trackingType === "serial" ? "Serial numbers" : viewing.trackingType === "batch" ? "Batches" : "Quantity only"],
-              ...(seeCost ? [["Cost", viewing.costPrice ? money(viewing.costPrice) : "—"] as [string, string]] : []),
-              ["List price", money(viewing.price)],
-              ["Sale price", money(viewing.salePrice)],
-              ...(seeCost ? [["Margin", m === null ? "—" : `${m}%`] as [string, string]] : []),
-              ...(offer !== null ? [["Offer price", money(offer)] as [string, string]] : []),
+            const sell = offer ?? viewing.salePrice
+            const cost = Number(viewing.costPrice) || 0
+            const sections: { title: string; rows: [string, string | null][] }[] = [
+              {
+                title: "Details",
+                rows: [
+                  ["Category", viewing.category || null],
+                  ["Brand", viewing.brandName || null],
+                  ["Supplier", supplierName(viewing) || null],
+                  ["Unit", viewing.unitName || null],
+                  ["Location", viewing.locationName || warehouses.find((w) => String(w.id) === viewing.locationId)?.name || null],
+                ],
+              },
+              {
+                title: "Codes & tracking",
+                rows: [
+                  ["SKU", viewing.sku || null],
+                  ["Barcode", viewing.barcode || null],
+                  ["Barcode type", viewing.barcodeType || null],
+                  ["Tracking", viewing.trackingType === "serial" ? "Serial numbers" : viewing.trackingType === "batch" ? "Batches" : "Quantity only"],
+                  ["Reorder alert", reorderOf(viewing) > 0 ? `At ${reorderOf(viewing)}` : "Off"],
+                ],
+              },
+            ]
+            const extras: [string, string][] = [
+              ...(offer !== null ? [["Regular sale price", money(viewing.salePrice)] as [string, string]] : []),
               ...(viewing.offerEndsAt ? [["Offer ends", new Date(viewing.offerEndsAt).toLocaleDateString()] as [string, string]] : []),
               ...(viewing.wholesalePrice ? [["Wholesale", `${money(viewing.wholesalePrice)}${viewing.minWholesaleQty ? ` · min ${viewing.minWholesaleQty}` : ""}`] as [string, string]] : []),
               ...(viewing.isBundle && viewing.bundlePriceOverride ? [["Bundle price", money(viewing.bundlePriceOverride)] as [string, string]] : []),
               ...(viewing.receiptNumber ? [["Receipt / batch no.", viewing.receiptNumber] as [string, string]] : []),
             ]
+            if (extras.length > 0) sections.push({ title: "Pricing & batch", rows: extras })
+            const tile = "gap-1 p-3.5 shadow-none"
+            const tileValue = "block truncate text-lg"
             return (
               <>
                 <DialogHeader>
-                  <div className="flex items-start gap-3.5">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <UserAvatar shape="square" src={viewing.image || "/placeholder.svg"} alt="" name={viewing.name} className="size-20" />
+                  <div className="flex items-start gap-4">
+                    <UserAvatar shape="square" src={viewing.image && viewing.image !== "/placeholder.svg" ? viewing.image : null} alt="" name={viewing.name}
+                      fallback={<Package className="size-7 text-muted-foreground" aria-hidden />} className="size-20 shrink-0" />
                     <div className="min-w-0 text-left">
                       <DialogTitle className="font-dash-display text-xl font-bold">{viewing.name}</DialogTitle>
-                      <DialogDescription className="line-clamp-2">{viewing.description || "No description."}</DialogDescription>
+                      <DialogDescription className={viewing.description ? "line-clamp-2" : "sr-only"}>{viewing.description || "Product details"}</DialogDescription>
                       <div className="mt-2 flex flex-wrap gap-1.5">
                         <StatusBadge status={stockStatus(st)} label={st === "ok" ? "In stock" : st === "low" ? "Low stock" : "Out of stock"} />
                         <Badge variant="outline">{viewing.published ? "Online" : "Hidden online"}</Badge>
@@ -833,12 +846,40 @@ export default function ProductsPage() {
                     </div>
                   </div>
                 </DialogHeader>
-                <InfoList className="grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-3">
-                  {info.map(([k, v]) => (
-                    <InfoRow key={k} layout="stacked" className="min-w-0" label={<span className="text-xs">{k}</span>}
-                      value={<span className="block truncate tabular-nums">{v}</span>} />
+                <div className={cn("grid grid-cols-2 gap-3", seeCost && "sm:grid-cols-4")}>
+                  <StatTile className={tile} label={offer !== null ? "Offer price" : "Selling price"} icon={<Banknote aria-hidden />}
+                    value={<span className={tileValue}>{money(sell)}</span>}
+                    hint={viewing.price > sell ? <>List <s className="tabular-nums">{money(viewing.price)}</s></> : "Same as list price"} />
+                  <StatTile label="In stock" icon={<Boxes aria-hidden />}
+                    className={cn(tile, st === "out" && "border-dash-danger-soft bg-dash-danger-soft", st === "low" && "border-dash-warn-soft bg-dash-warn-soft")}
+                    value={<span className={tileValue}>{vStock}{viewing.unitName ? ` ${viewing.unitName}` : ""}</span>}
+                    hint={<span className="block truncate capitalize">{whLabel}</span>} />
+                  {seeCost && (
+                    <StatTile className={tile} label="Cost" icon={<Package aria-hidden />}
+                      value={<span className={tileValue}>{cost > 0 ? money(cost) : "Not set"}</span>}
+                      hint="Per unit" />
+                  )}
+                  {seeCost && (
+                    <StatTile className={tile} label="Margin" icon={<Percent aria-hidden />}
+                      value={<span className={tileValue}>{m === null ? "—" : `${m}%`}</span>}
+                      hint={m === null ? "Add a cost to see it" : `${money(viewing.salePrice - cost)} per unit`} />
+                  )}
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {sections.map((s) => (
+                    <div key={s.title} className="min-w-0">
+                      <SectionTitle className="mb-2">{s.title}</SectionTitle>
+                      <Card className="gap-0 py-0 shadow-none">
+                        <InfoList className="gap-0 divide-y divide-dash-border-soft">
+                          {s.rows.map(([k, v]) => (
+                            <InfoRow key={k} className="px-3.5 py-2.5" label={k}
+                              value={v ? <span className="break-all tabular-nums">{v}</span> : <span className="font-normal text-muted-foreground">Not set</span>} />
+                          ))}
+                        </InfoList>
+                      </Card>
+                    </div>
                   ))}
-                </InfoList>
+                </div>
                 {(viewing.gallery?.length ?? 0) > 1 && (
                   <div className="flex gap-2 overflow-x-auto">
                     {viewing.gallery!.map((src, i) => (
