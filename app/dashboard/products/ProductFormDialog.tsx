@@ -38,6 +38,7 @@ import { useProduct, type Product, type Variant } from "@/contexts/product-conte
 import { productApi } from "@/lib/productApi"
 import { useVendor } from "@/contexts/vendor-context"
 import { useCategory } from "@/contexts/category-context"
+import { CategoryPicker } from "@/components/products/category-picker"
 import { unitApi, type UnitResponse } from "@/lib/unitApi"
 import { brandApi, type BrandResponse } from "@/lib/brandApi"
 import { useWarehouse } from "@/contexts/warehouse-context"
@@ -1252,22 +1253,8 @@ export function ProductFormDialog({ open, editingProduct, onClose }: ProductForm
                 <div className="flex flex-col gap-3">
                   <FormField className="min-w-0">
                     <span className="flex items-center justify-between"><Label id="catLbl">Category</Label><Button asChild variant="link" size="sm" className="h-auto p-0 text-xs"><a href="/dashboard/categories" target="_blank" rel="noreferrer">+ Category</a></Button></span>
-                    <Select value={formData.categoryId || NONE}
-                      onValueChange={(value) => {
-                        const cat = allCategories.find(c => c.id === value)
-                        setFormData(prev => ({ ...prev, categoryId: value === NONE ? "" : value, category: value === NONE ? "" : cat?.category_name || "" }))
-                      }}>
-                      <SelectTrigger aria-labelledby="catLbl" className={selectCls}><SelectValue placeholder="Select category" /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value={NONE}>No category</SelectItem>
-                        {allCategories.map((cat) => (
-                          <SelectItem key={cat.id} value={cat.id} textValue={cat.category_name}>
-                            {cat.parent_id !== null ? `  └─ ${cat.category_name}` : cat.category_name}
-                            {!cat.status ? " (Inactive)" : ""}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <CategoryPicker labelledBy="catLbl" categories={allCategories} value={formData.categoryId}
+                      onChange={(id, name) => setFormData(prev => ({ ...prev, categoryId: id, category: name }))} />
                   </FormField>
                   <FormField className="min-w-0">
                     <span className="flex items-center justify-between"><Label id="brandLbl">Brand</Label><Button asChild variant="link" size="sm" className="h-auto p-0 text-xs"><a href="/dashboard/brands" target="_blank" rel="noreferrer">+ Brand</a></Button></span>
