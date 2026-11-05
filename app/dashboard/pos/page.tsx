@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, useRef, useCallback } from "react"
 import Link from "next/link"
-import { Barcode, Building2, Circle, LayoutGrid, Grid2X2, List, Maximize2, Package, PanelLeft, Search, ShoppingCart, Tag } from "lucide-react"
+import { Barcode, Building2, ChevronRight, Circle, LayoutGrid, Grid2X2, List, Maximize2, Package, PanelLeft, Search, ShoppingCart } from "lucide-react"
 import { toast } from "sonner"
 import { PosProductCard, cardPrice, variantUnitPrice, productUnitPrice, stockPill, type PosTint } from "@/components/pos/pos-product-card"
 import { PosCartItem } from "@/components/pos/pos-cart-item"
@@ -158,7 +158,7 @@ export default function PosPage() {
         const params: Record<string, any> = {
             limit: 200,
             pos: 1,
-            location_id: Number(selectedWarehouseId),
+            locationId: Number(selectedWarehouseId),
         }
         productApi.getAll(params)
             .then(res => {
@@ -170,7 +170,7 @@ export default function PosPage() {
                         id: String(p.id),
                         name: p.name,
                         description: p.description || "",
-                        category: categoryObj ? categoryObj.category_name : (p.category as string || ""),
+                        category: categoryObj ? (categoryObj.name ?? categoryObj.category_name) : (p.category as string || ""),
                         categoryId: categoryObj ? String(categoryObj.id) : p.category_id ? String(p.category_id) : undefined,
                         price: p.price,
                         salePrice: p.sale_price ?? p.salePrice ?? p.price,
@@ -180,6 +180,8 @@ export default function PosPage() {
                         wholesalePrice: p.wholesalePrice ?? p.wholesale_price ?? undefined,
                         minWholesaleQty: p.minWholesaleQty ?? p.min_wholesale_qty ?? undefined,
                         stock: p.stock,
+                        // Products without variants keep their per-location stock here
+                        inventory: (p.stockByLocation ?? []).map((l: any) => ({ warehouseId: String(l.locationId), quantity: Number(l.quantity) || 0 })),
                         status: p.status || (p.stock > 0 ? "Selling" : "Out of Stock"),
                         published: p.published ?? true,
                         image: (() => {
@@ -306,10 +308,10 @@ export default function PosPage() {
     const categories = useMemo(() => {
         const active = getAllCategoriesFlat().filter((c) => c.status)
         const roots = active.filter((c) => !c.parent_id || !active.some((x) => x.id === c.parent_id))
-        const ordered: { id: string; name: string; sub: boolean }[] = []
+        const ordered: { id: string; name: string; sub: boolean; rootId: string }[] = []
         roots.forEach((r) => {
-            ordered.push({ id: r.id, name: r.category_name, sub: false })
-            active.filter((c) => c.parent_id === r.id).forEach((c) => ordered.push({ id: c.id, name: c.category_name, sub: true }))
+            ordered.push({ id: r.id, name: r.category_name, sub: false, rootId: r.id })
+            active.filter((c) => c.parent_id === r.id).forEach((c) => ordered.push({ id: c.id, name: c.category_name, sub: true, rootId: r.id }))
         })
         return ordered
     }, [getAllCategoriesFlat])
@@ -334,6 +336,12 @@ export default function PosPage() {
 
     const catIds = selectedCategory === "all" ? null : descend(selectedCategory)
     const inCategory = (p: Product) => !catIds || (p.categoryId ? catIds.includes(p.categoryId) : false)
+
+    // Rail: only categories that have products here; sub-categories show under the open parent
+    const openRootId = categories.find((c) => c.id === selectedCategory)?.rootId
+    const hasProducts = (id: string) => { const ids = descend(id); return products.some((p) => !!p.categoryId && ids.includes(p.categoryId)) }
+    const hasSubs = (rootId: string) => categories.some((c) => c.sub && c.rootId === rootId && hasProducts(c.id))
+    const railCategories = categories.filter((c) => (c.id === selectedCategory || hasProducts(c.id)) && (!c.sub || c.rootId === openRootId))
 
     const matchingProducts = useMemo(() => {
         const q = searchQuery.toLowerCase()
@@ -815,11 +823,11 @@ export default function PosPage() {
                 {/* Categories */}
                 <Card role="complementary" aria-label="Categories" className="w-full shrink-0 gap-1 self-start p-2.5 pt-3.5 lg:max-h-full lg:w-[220px] lg:overflow-y-auto">
                     <SectionTitle as="h2" className="px-2.5 pb-2">Categories</SectionTitle>
-                    {[{ id: "all", name: "All items", sub: false }, ...categories].map((cat) => {
+                    {[{ id: "all", name: "All items", sub: false, rootId: "all" }, ...railCategories].map((cat) => {
                         const sel = selectedCategory === cat.id
                         const ids = cat.id === "all" ? null : descend(cat.id)
                         const n = products.filter((p) => (!ids || (p.categoryId ? ids.includes(p.categoryId) : false)) && getAvailableStock(p) > 0).length
-                        const tint = cat.id === "all" ? NEUTRAL : categoryTint(cat.id)
+                        const expandable = !cat.sub && cat.id !== "all" && hasSubs(cat.id)
                         return (
                             <Button
                                 key={cat.id}
@@ -827,13 +835,12 @@ export default function PosPage() {
                                 variant={sel ? "default" : "ghost"}
                                 aria-pressed={sel}
                                 onClick={() => setSelectedCategory(cat.id)}
-                                className="h-auto min-h-11 w-full justify-start gap-2.5 px-2.5 text-left"
+                                className={cn("h-auto w-full justify-start gap-2 text-left", cat.sub ? "min-h-10 pl-7 pr-2.5" : "min-h-11 px-2.5")}
                             >
-                                <span className="flex size-[30px] shrink-0 items-center justify-center rounded-lg" style={{ background: tint.bg, color: tint.fg }}>
-                                    {cat.id === "all" ? <LayoutGrid className="size-4" aria-hidden /> : <Tag className="size-4" aria-hidden />}
-                                </span>
-                                <span className="flex-1 truncate text-sm font-semibold">{cat.sub ? "– " : ""}{cat.name}</span>
-                                <Badge variant={n > 0 || sel ? "secondary" : "destructive"} className="min-w-6 rounded-full px-1.5 tabular-nums">{n}</Badge>
+                                {cat.id === "all" && <LayoutGrid className="size-4 shrink-0" aria-hidden />}
+                                {expandable && <ChevronRight className={cn("size-4 shrink-0 transition-transform", openRootId === cat.id && "rotate-90")} aria-hidden />}
+                                <span className={cn("min-w-0 flex-1 whitespace-normal text-sm", cat.sub ? "font-normal" : "font-medium", !expandable && !cat.sub && cat.id !== "all" && "pl-6")}>{cat.name}</span>
+                                <span className={cn("shrink-0 text-xs tabular-nums", sel ? "opacity-90" : "text-muted-foreground")}>{n}</span>
                             </Button>
                         )
                     })}
