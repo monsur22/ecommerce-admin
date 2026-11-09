@@ -253,6 +253,27 @@ export function SaleDetailDialog({ sale: saleProp, onClose, onPrint, onRecordPay
                   <AlertDescription>The same phone ordered the same product within 30 minutes. Call the customer before confirming.</AlertDescription>
                 </Alert>
               )}
+              {cancelled && sale.paymentStatus === "paid" && /refund/i.test(sale.cancelReason ?? "") && (
+                <Alert variant="destructive">
+                  <AlertTriangle aria-hidden />
+                  <AlertTitle>Refund needed</AlertTitle>
+                  <AlertDescription>The customer paid after the payment window closed and the stock was already sold. Refund the payment.</AlertDescription>
+                </Alert>
+              )}
+              {cancelled && sale.cancelReason && !/refund/i.test(sale.cancelReason) && (
+                <Alert>
+                  <AlertTitle>Cancelled: {sale.cancelReason}</AlertTitle>
+                  <AlertDescription>The order's stock went back on sale.</AlertDescription>
+                </Alert>
+              )}
+              {!cancelled && sale.paymentStatus === "pending_payment" && sale.stockHoldExpiresAt && (
+                <Alert>
+                  <AlertTitle>Waiting for online payment</AlertTitle>
+                  <AlertDescription>
+                    Stock is held until {new Date(sale.stockHoldExpiresAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}. If the customer has not paid by then, the order is cancelled and the stock is released.
+                  </AlertDescription>
+                </Alert>
+              )}
               <InfoList className="grid-cols-2 gap-4 sm:grid-cols-3">
                 <InfoRow layout="stacked" label="Date" value={new Date(sale.orderTime).toLocaleString()} />
                 <InfoRow layout="stacked" label="Customer" value={sale.customerName} />

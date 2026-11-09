@@ -81,7 +81,7 @@ const buildMethods = (p?: PaymentSettings | null): MMap => {
 }
 
 type Form = { id: number | null; name: string; desc: string; gateway: string; icon: string; sort: string; active: boolean }
-type Cod = { deposit: boolean; max: string; fee: string; verify: "new" | "always" | "never" }
+type Cod = { deposit: boolean; max: string; fee: string; verify: "new" | "always" | "never"; hold: string }
 
 export default function PaymentMethodsPage() {
   const blocked = useModuleGuard("Payment Methods")
@@ -97,7 +97,7 @@ export default function PaymentMethodsPage() {
   const [busyId, setBusyId] = useState<number | null>(null)
 
   const [payment, setPayment] = useState<PaymentSettings | null>(null)
-  const [base, setBase] = useState<Cod>({ deposit: false, max: "5000", fee: "0", verify: "new" })
+  const [base, setBase] = useState<Cod>({ deposit: false, max: "5000", fee: "0", verify: "new", hold: "15" })
   const [cod, setCod] = useState<Cod>(base)
   const [codErr, setCodErr] = useState("")
   const [codSaving, setCodSaving] = useState(false)
@@ -120,6 +120,7 @@ export default function PaymentMethodsPage() {
         max: String(p.cod_limit ?? 5000),
         fee: String(p.cod_fee ?? 0),
         verify: p.cod_phone_verify ?? "new",
+        hold: String(p.payment_hold_minutes ?? 15),
       }
       setBase(c)
       setCod(c)
@@ -204,7 +205,7 @@ export default function PaymentMethodsPage() {
   }
 
   const saveCod = async () => {
-    const mx = Number(cod.max), fee = Number(cod.fee)
+    const mx = Number(cod.max), fee = Number(cod.fee), hold = Number(cod.hold)
     let e = ""
     const onN = FIXED.filter((f) => pm[f.slug].enabled).length
     if (!pm[def]?.enabled) e = "The default method must be turned on."
@@ -215,6 +216,7 @@ export default function PaymentMethodsPage() {
     }
     if (!e && (cod.max === "" || !isFinite(mx) || mx < 0)) e = "COD order limit must be 0 or more."
     if (!e && (cod.fee === "" || !isFinite(fee) || fee < 0)) e = "COD fee must be 0 or more."
+    if (!e && (!Number.isInteger(hold) || hold < 5 || hold > 1440)) e = "Payment hold must be between 5 and 1440 minutes."
     if (!e) {
       const noCh = FIXED.find((f) => pm[f.slug].enabled && pm[f.slug].channels.length === 0)
       if (noCh) { e = `${noCh.name} is on but not available in POS or Online. Pick at least one channel.`; setOpenSlug(noCh.slug) }
@@ -227,6 +229,7 @@ export default function PaymentMethodsPage() {
         cod_limit: mx,
         cod_fee: fee,
         cod_phone_verify: cod.verify,
+        payment_hold_minutes: hold,
         methods: pm,
         default: def,
         cod_shipping_deposit: { gateway: "sslcommerz", custom_amount: 0, ...dep, enabled: cod.deposit },
@@ -441,6 +444,16 @@ export default function PaymentMethodsPage() {
                 </Select>
               </FormField>
             </div>
+          </div>
+        )}
+      </SectionCard>
+
+      <SectionCard title="Online payment hold" description="Stock for an order paid by bKash, Nagad, card or another gateway is kept aside while the customer pays.">
+        {loading ? <Skeleton className="h-16" /> : (
+          <div className="grid gap-3 sm:grid-cols-3">
+            <FormField label="Hold stock for (minutes)" htmlFor="pm-hold" description="If the payment is not finished in time, the order is cancelled and the stock goes back on sale. Failed or cancelled payments release it straight away.">
+              <Input id="pm-hold" type="number" min={5} max={1440} step={1} value={cod.hold} onChange={(e) => { setCod({ ...cod, hold: e.target.value }); setCodErr("") }} />
+            </FormField>
           </div>
         )}
       </SectionCard>

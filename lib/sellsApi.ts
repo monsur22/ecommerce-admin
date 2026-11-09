@@ -174,6 +174,10 @@ export interface SellResponse {
   campaignLink?: { id: number; name: string; code: string; channel?: string } | null;
   isQuickOrder?: boolean;
   possibleDuplicate?: boolean;
+  /** Why the order was cancelled (staff, payment failed/cancelled, payment window expired, refund needed) */
+  cancelReason?: string | null;
+  /** Online-gateway orders hold their stock until this time unless paid */
+  stockHoldExpiresAt?: string | null;
   createdAt: string;
   updatedAt: string;
 }

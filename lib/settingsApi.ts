@@ -177,6 +177,8 @@ export interface PaymentSettings {
   /** Extra fee added to COD orders */
   cod_fee?: number;
   cod_phone_verify?: 'new' | 'always' | 'never';
+  /** Minutes an unpaid online-gateway order holds its stock before it is cancelled (5–1440, default 15) */
+  payment_hold_minutes?: number;
   /** The six fixed methods (cash, bkash, nagad, card, bank, cod) */
   methods?: Record<string, PaymentMethodConfig>;
   /** Slug of the default method (must be enabled) */
