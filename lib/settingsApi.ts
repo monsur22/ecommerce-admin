@@ -217,7 +217,12 @@ export interface BusinessSettings {
 export interface OnlineStoreSettings {
   name?: string;
   slug?: string;
-  theme?: string;
+  /** Accent colour hex; null/empty = the theme's own accent */
+  theme?: string | null;
+  /** Storefront theme (lib/storeThemes.ts) */
+  themePreset?: string;
+  /** "theme" = theme colours; "brand" = Company settings brand colours (default) */
+  colorSource?: "theme" | "brand";
   published?: boolean;
   apiUrl?: string;
   companyId?: string;

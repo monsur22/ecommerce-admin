@@ -14,6 +14,8 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrig
 import { StatsCards } from "@/components/ui/stats-card"
 import { bricolage, instrument } from "@/components/dashboard/fonts"
 import { settingsApi, resolveStorageUrl, type AuraShopHeroSlide, type HomepageSections } from "@/lib/settingsApi"
+import { StorefrontThemePicker, type BrandColors, type ColorSource } from "@/components/storefront-theme-picker"
+import { DEFAULT_STORE_THEME, isStoreThemeId, type StoreThemeId } from "@/lib/storeThemes"
 import { HomepageSectionsEditor, sectionsFromSettings, sectionsToSettings, validateSections, type LinkGroup, type SectionsForm } from "@/components/storefront-homepage-sections"
 import wishlistApi, { type WishlistAnalytics } from "@/lib/wishlistApi"
 import { productApi, type ProductResponse } from "@/lib/productApi"
@@ -40,7 +42,10 @@ type Slide = Required<Pick<AuraShopHeroSlide, "id" | "imagePath" | "tag" | "titl
 interface Form {
   name: string
   slug: string
+  /** Accent colour hex, or "" for the theme's own */
   theme: string
+  themePreset: StoreThemeId
+  colorSource: ColorSource
   published: boolean
   apiUrl: string
   companyId: string
@@ -59,7 +64,9 @@ interface Form {
   sections: SectionsForm
 }
 
-const THEMES: [string, string][] = [["#2449E8", "Blue"], ["#0F766E", "Teal"], ["#6D28D9", "Violet"], ["#0E1525", "Ink"]]
+// Accent colours offered on top of a theme (saved as onlineStore.theme)
+const ACCENTS: [string, string][] = [["#2449E8", "Blue"], ["#0F766E", "Teal"], ["#6D28D9", "Violet"], ["#0E1525", "Ink"]]
+const HEX = /^#[0-9a-fA-F]{6}$/
 // Overlay presets share the exact gradient classes used by the Aura Shop settings page / storefront.
 const OVERLAYS: [string, string][] = [
   ["Brand blue", "from-primary/80 via-primary/40 to-transparent"],
@@ -109,7 +116,10 @@ const normalize = (business: any): Form => {
   return {
     name: o.name != null ? S(o.name) : S(business?.businessName),
     slug: S(o.slug),
-    theme: THEMES.some(([c]) => c === o.theme) ? o.theme : THEMES[0][0],
+    theme: ACCENTS.some(([c]) => c === o.theme) ? o.theme : "",
+    themePreset: isStoreThemeId(o.themePreset) ? o.themePreset : DEFAULT_STORE_THEME,
+    // Stores saved before themes keep their brand colours until the owner picks theme colours
+    colorSource: o.colorSource === "theme" ? "theme" : "brand",
     published: o.published === true,
     apiUrl: S(o.apiUrl),
     companyId: S(o.companyId),
@@ -155,7 +165,7 @@ function Bar({ pct }: { pct: number }) {
 
 export default function OnlineStorePage() {
   const blocked = useModuleGuard("Store")
-  const { canRead, canDelete } = useSaasAuth()
+  const { canRead, canDelete, company } = useSaasAuth()
   const { formatCurrency } = useCompanySettings()
   const canViewWishlist = canRead("Store Wishlist")
   const canClearWishlist = canDelete("Store Wishlist")
@@ -165,7 +175,10 @@ export default function OnlineStorePage() {
   const [uploading, setUploading] = useState(false)
   const [saved, setSaved] = useState<Form | null>(null)
   const [d, setD] = useState<Form | null>(null)
+  const [brand, setBrand] = useState<BrandColors | null>(null)
   const [err, setErr] = useState("")
+  // Field the last save error belongs to (shown under that field)
+  const [errField, setErrField] = useState<keyof Form | null>(null)
   const [cur, setCur] = useState(0)
   const [products, setProducts] = useState<ProductResponse[]>([])
   const [categories, setCategories] = useState<CategoryResponse[]>([])
@@ -178,6 +191,15 @@ export default function OnlineStorePage() {
       setLoading(true)
       const res = await settingsApi.getAll()
       const form = normalize(res.data.business || {})
+      const g = res.data.general ?? {}
+      // Never set up: start from the store name in General settings, else the company name
+      if (!form.name.trim()) form.name = S(g.storeName).trim() || company?.name?.trim() || ""
+      const brandHex = (v: unknown) => (typeof v === "string" && HEX.test(v.trim()) ? v.trim() : "")
+      setBrand(
+        [g.primaryColor, g.accentColor, g.backgroundColor].some(brandHex)
+          ? { primaryColor: brandHex(g.primaryColor) || "#1C1917", accentColor: brandHex(g.accentColor) || "#94234A", backgroundColor: brandHex(g.backgroundColor) || "#FFFFFF" }
+          : null,
+      )
       setSaved(form)
       setD(form)
     } catch (e: any) {
@@ -253,7 +275,7 @@ export default function OnlineStorePage() {
   }
 
   const dirty = JSON.stringify(d) !== JSON.stringify(saved)
-  const patch = (p: Partial<Form>) => { setD({ ...d, ...p }); setErr("") }
+  const patch = (p: Partial<Form>) => { setD({ ...d, ...p }); setErr(""); setErrField(null) }
   const idx = d.slides.length ? Math.min(cur, d.slides.length - 1) : -1
   const c = idx >= 0 ? d.slides[idx] : null
   const patchSlide = (p: Partial<Slide>) => patch({ slides: d.slides.map((x, i) => (i === idx ? { ...x, ...p } : x)) })
@@ -262,10 +284,17 @@ export default function OnlineStorePage() {
     ? { tag: c.tag, title: c.title || "(untitled)", sub: c.subtitle, cta: c.cta || "Learn more", bg: c.imagePath ? imgBg(c.imagePath) : "#2A3858", over: overlay(c.gradient), note: `PREVIEW${c.imagePath ? "" : " · no image yet"}` }
     : { tag: "", title: "No slides yet", sub: "Add a slide to build your storefront hero.", cta: "Shop now", bg: "#2A3858", over: "none", note: "PREVIEW" }
 
-  const fail = (m: string, slideIdx?: number) => {
+  const fail = (m: string, slideIdx?: number, field?: keyof Form) => {
     setErr(m)
+    setErrField(field ?? null)
     if (slideIdx != null) setCur(slideIdx)
     toast.error(m)
+    // Take the owner to the field that needs fixing
+    if (field) {
+      const el = document.getElementById(`store-${field}`)
+      el?.scrollIntoView({ behavior: "smooth", block: "center" })
+      el?.focus({ preventScroll: true })
+    }
   }
 
   const upload = async (file?: File) => {
@@ -303,16 +332,16 @@ export default function OnlineStorePage() {
 
   const save = async () => {
     const name = d.name.trim(), slug = d.slug.trim()
-    if (!name) return fail("Store name is required.")
-    if (slug && !/^[a-z0-9]+(?:[-.][a-z0-9]+)*$/.test(slug)) return fail("Domain / slug can use lowercase letters, numbers, dots and hyphens only.")
-    if (d.published && !slug) return fail("Add a domain or slug before publishing the store.")
-    if (d.apiUrl.trim() && !URLRE.test(d.apiUrl.trim())) return fail("API base URL must start with http:// or https://")
+    if (!name) return fail("Store name is required.", undefined, "name")
+    if (slug && !/^[a-z0-9]+(?:[-.][a-z0-9]+)*$/.test(slug)) return fail("Domain / slug can use lowercase letters, numbers, dots and hyphens only.", undefined, "slug")
+    if (d.published && !slug) return fail("Add a domain or slug before publishing the store.", undefined, "slug")
+    if (d.apiUrl.trim() && !URLRE.test(d.apiUrl.trim())) return fail("API base URL must start with http:// or https://", undefined, "apiUrl")
     for (const [k, l] of [["facebook", "Facebook"], ["instagram", "Instagram"], ["youtube", "YouTube"]] as const) {
       const v = d[k].trim()
       if (v && !URLRE.test(v)) return fail(`${l} link must be a full URL starting with http(s)://`)
     }
     const wa = d.whatsapp.trim()
-    if (wa && !URLRE.test(wa) && !/^\+?[0-9][0-9\s-]{6,}$/.test(wa)) return fail("WhatsApp must be a phone number or a URL.")
+    if (wa && !URLRE.test(wa) && !/^\+?[0-9][0-9\s-]{6,}$/.test(wa)) return fail("WhatsApp must be a phone number or a URL.", undefined, "whatsapp")
     const fbPixel = d.facebookPixelId.trim(), ttPixel = d.tiktokPixelId.trim()
     if (fbPixel && !/^\d{5,20}$/.test(fbPixel)) return fail("Facebook Pixel ID must be 5–20 digits (Events Manager → Data sources).")
     if (ttPixel && !/^[A-Za-z0-9]{5,40}$/.test(ttPixel)) return fail("TikTok Pixel ID must be 5–40 letters or digits.")
@@ -329,7 +358,7 @@ export default function OnlineStorePage() {
       setSaving(true)
       await settingsApi.updateBusiness({
         onlineStore: {
-          name, slug, theme: d.theme, published: d.published, apiUrl: d.apiUrl.trim(), companyId: d.companyId.trim(),
+          name, slug, theme: d.theme || null, themePreset: d.themePreset, colorSource: d.colorSource, published: d.published, apiUrl: d.apiUrl.trim(), companyId: d.companyId.trim(),
           policies: { returns: d.returns.trim(), shipping: d.shipping.trim(), privacy: d.privacy.trim() },
           social: { facebook: d.facebook.trim(), instagram: d.instagram.trim(), whatsapp: wa, youtube: d.youtube.trim() },
           facebookPixelId: fbPixel, tiktokPixelId: ttPixel, whatsappNumber: waNumber,
@@ -352,8 +381,8 @@ export default function OnlineStorePage() {
   }
 
   const text = (lbl: string, key: keyof Omit<Form, "slides" | "published" | "sections">, placeholder = "", transform?: (v: string) => string) => (
-    <FormField label={lbl} htmlFor={`store-${key}`} className="min-w-0">
-      <Input id={`store-${key}`} type="text" className="w-full" value={d[key]} placeholder={placeholder} onChange={(e) => patch({ [key]: transform ? transform(e.target.value) : e.target.value })} />
+    <FormField label={lbl} htmlFor={`store-${key}`} className="min-w-0" error={errField === key ? err : undefined}>
+      <Input id={`store-${key}`} type="text" className="w-full" aria-invalid={errField === key || undefined} value={d[key]} placeholder={placeholder} onChange={(e) => patch({ [key]: transform ? transform(e.target.value) : e.target.value })} />
     </FormField>
   )
 
@@ -437,17 +466,6 @@ export default function OnlineStorePage() {
           {text("API base URL", "apiUrl", "https://")}
           {text("Company ID", "companyId", currentCompany ? String(currentCompany) : "")}
         </div>
-        <div className="flex flex-col gap-1.5">
-          <p className="text-sm font-medium">Theme colour</p>
-          <div role="group" aria-label="Theme colour" className="flex flex-wrap gap-2">
-            {THEMES.map(([color, l]) => (
-              <Button key={color} type="button" size="sm" aria-pressed={d.theme === color} onClick={() => patch({ theme: color })}
-                variant={d.theme === color ? "default" : "outline"}>
-                <span className="size-4 rounded-full" style={{ background: color }} />{l}
-              </Button>
-            ))}
-          </div>
-        </div>
         <div className="grid grid-cols-[repeat(auto-fit,minmax(260px,1fr))] gap-3">
           <FormField label="Returns policy" htmlFor="store-returns" className="min-w-0"><Textarea id="store-returns" rows={3} className="w-full" value={d.returns} placeholder="What customers can return and within how many days" onChange={(e) => patch({ returns: e.target.value })} /></FormField>
           <FormField label="Shipping policy" htmlFor="store-shipping" className="min-w-0"><Textarea id="store-shipping" rows={3} className="w-full" value={d.shipping} placeholder="Delivery areas, charges and timelines" onChange={(e) => patch({ shipping: e.target.value })} /></FormField>
@@ -459,6 +477,23 @@ export default function OnlineStorePage() {
           {text("WhatsApp", "whatsapp", "+8801…")}
           {text("YouTube", "youtube", "https://youtube.com/…")}
         </div>
+      </SectionCard>
+
+      <SectionCard
+        aria-label="Template"
+        title="Template"
+        description="The layout of your online store: home page, header, product cards, product page and footer, each with its own colours and fonts. Every template has a dark mode. Cart, checkout and account pages are shared."
+      >
+        <StorefrontThemePicker
+          theme={d.themePreset}
+          onTheme={(id) => patch({ themePreset: id, colorSource: "theme" })}
+          colorSource={d.colorSource}
+          onColorSource={(v) => patch({ colorSource: v })}
+          accent={d.theme}
+          onAccent={(hex) => patch({ theme: hex })}
+          accents={ACCENTS}
+          brand={brand}
+        />
       </SectionCard>
 
       <SectionCard
